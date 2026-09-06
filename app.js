@@ -23,6 +23,8 @@ const state = {
   lives:[0,1,2].map(()=>Object.fromEntries(heartDefs.map(x=>[x.key,0]))),
   decks: JSON.parse(localStorage.getItem('lovepoke_decks')||'[]'),
   selectedDeckId: localStorage.getItem('lovepoke_selected_deck') || '',
+  livePresets: JSON.parse(localStorage.getItem('lovepoke_live_presets')||'[]'),
+  editingLivePresetId:'',
   detailed:false,
   inputMode:false,
   resultDetail:false,
@@ -49,6 +51,17 @@ function numberCell(value,onChange){
   inp.value=String(value);
   inp.readOnly=!state.inputMode;
   if(state.inputMode) inp.classList.add('editing');
+  inp.addEventListener('focus',()=>{
+    if(!state.inputMode)return;
+    if(inp.value==='0'){
+      inp.value='';
+    }else{
+      setTimeout(()=>inp.select(),0);
+    }
+  });
+  inp.addEventListener('click',()=>{
+    if(state.inputMode && inp.value!=='') setTimeout(()=>inp.select(),0);
+  });
   inp.addEventListener('input',()=>{
     const clean=inp.value.replace(/\D/g,'');
     if(inp.value!==clean) inp.value=clean;
@@ -57,7 +70,12 @@ function numberCell(value,onChange){
     renderProbability();
   });
   inp.addEventListener('blur',()=>{
-    if(inp.value==='') inp.value='0';
+    if(inp.value===''){
+      inp.value='0';
+      onChange(0);
+      renderResults();
+      renderProbability();
+    }
   });
   return inp;
 }
@@ -310,6 +328,80 @@ function loadDeckIntoDialog(deck){
   updateDeckTotal();
 }
 function saveDecks(){localStorage.setItem('lovepoke_decks',JSON.stringify(state.decks))}
+
+function saveLivePresets(){
+  localStorage.setItem('lovepoke_live_presets',JSON.stringify(state.livePresets));
+}
+
+function renderLivePresetSelects(){
+  for(let i=0;i<3;i++){
+    const sel=$(`#livePreset${i+1}Select`);
+    if(!sel)continue;
+    const current=sel.value;
+    sel.innerHTML='<option value="">登録ライブを選択</option>';
+    for(const p of state.livePresets){
+      const o=document.createElement('option');
+      o.value=p.id;
+      o.textContent=p.name;
+      sel.append(o);
+    }
+    if(state.livePresets.some(p=>p.id===current)) sel.value=current;
+  }
+
+  const manage=$('#liveManageSelect');
+  if(manage){
+    manage.innerHTML='<option value="">新規登録</option>';
+    for(const p of state.livePresets){
+      const o=document.createElement('option');
+      o.value=p.id;
+      o.textContent=p.name;
+      manage.append(o);
+    }
+    manage.value=state.livePresets.some(p=>p.id===state.editingLivePresetId)?state.editingLivePresetId:'';
+  }
+}
+
+function applyLivePreset(index,presetId){
+  const p=state.livePresets.find(x=>x.id===presetId);
+  if(!p)return;
+  for(const d of heartDefs) state.lives[index][d.key]=clamp(p.counts?.[d.key]);
+  render();
+}
+
+function buildLivePresetCounts(){
+  const box=$('#livePresetCounts');
+  if(!box)return;
+  box.innerHTML='';
+  for(const d of heartDefs){
+    const label=document.createElement('label');
+    label.className='deck-count-item';
+    label.innerHTML=`<span><span class="dot" style="background:${d.color}">♥</span> ${d.label}</span>`;
+    const inp=document.createElement('input');
+    inp.type='number';
+    inp.inputMode='numeric';
+    inp.min='0';
+    inp.value='0';
+    inp.dataset.cat=d.key;
+    inp.addEventListener('focus',()=>{
+      if(inp.value==='0') inp.value='';
+      else inp.select();
+    });
+    inp.addEventListener('blur',()=>{if(inp.value==='')inp.value='0'});
+    label.append(inp);
+    box.append(label);
+  }
+}
+
+function loadLivePresetIntoDialog(id=''){
+  state.editingLivePresetId=id;
+  const p=state.livePresets.find(x=>x.id===id)||null;
+  $('#livePresetName').value=p?.name||'';
+  document.querySelectorAll('#livePresetCounts input').forEach(inp=>{
+    inp.value=p?.counts?.[inp.dataset.cat]||0;
+  });
+  renderLivePresetSelects();
+}
+
 function resetInputs(){
   for(const k of Object.keys(state.owned)) state.owned[k]=0;
   for(const l of state.lives) for(const k of Object.keys(l)) l[k]=0;
@@ -353,6 +445,49 @@ for(const z of ['grave','hand','stage','success']){
   $(`#zone-total-${z}`).oninput=e=>{state.zoneTotals[z]=clamp(e.target.value);renderProbability()};
 }
 $('#resetAllBtn').onclick=()=>{if(confirm('入力値をすべて0に戻しますか？'))resetInputs()};
+
+$('#openLiveBtn').onclick=()=>{
+  buildLivePresetCounts();
+  loadLivePresetIntoDialog(state.livePresets[0]?.id||'');
+  $('#liveDialog').showModal();
+};
+$('#liveManageSelect').onchange=e=>loadLivePresetIntoDialog(e.target.value);
+$('#newLivePresetBtn').onclick=()=>loadLivePresetIntoDialog('');
+$('#saveLivePresetBtn').onclick=()=>{
+  const name=$('#livePresetName').value.trim()||'名称未設定';
+  const counts={};
+  document.querySelectorAll('#livePresetCounts input').forEach(inp=>counts[inp.dataset.cat]=clamp(inp.value));
+  let p=state.livePresets.find(x=>x.id===state.editingLivePresetId);
+  if(p){
+    p.name=name;
+    p.counts=counts;
+  }else{
+    p={id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),name,counts};
+    state.livePresets.push(p);
+    state.editingLivePresetId=p.id;
+  }
+  saveLivePresets();
+  renderLivePresetSelects();
+  $('#liveDialog').close();
+};
+$('#deleteLivePresetBtn').onclick=()=>{
+  const p=state.livePresets.find(x=>x.id===state.editingLivePresetId);
+  if(!p)return;
+  if(confirm(`「${p.name}」を削除しますか？`)){
+    state.livePresets=state.livePresets.filter(x=>x.id!==p.id);
+    state.editingLivePresetId=state.livePresets[0]?.id||'';
+    saveLivePresets();
+    renderLivePresetSelects();
+    loadLivePresetIntoDialog(state.editingLivePresetId);
+  }
+};
+for(let i=0;i<3;i++){
+  $(`#livePreset${i+1}Select`).onchange=e=>{
+    if(!e.target.value)return;
+    applyLivePreset(i,e.target.value);
+  };
+}
+
 $('#resetOwnedBtn').onclick=resetOwned;
 $('#resetLive1Btn').onclick=()=>resetLive(0);
 $('#resetLive2Btn').onclick=()=>resetLive(1);
@@ -372,7 +507,7 @@ $('#toggleResultDetailBtn').onclick=()=>{
 function render(){
   buildHeartGrid();renderResults();renderProbability();
 }
-buildDeckCounts();renderKnownGrid();renderDeckSelect();render();
+buildDeckCounts();renderKnownGrid();renderDeckSelect();renderLivePresetSelects();render();
 
 // =========================
 // ポケモン抽選

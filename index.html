@@ -36,6 +36,19 @@
       <button id="openDeckBtn" class="primary-btn">デッキ管理</button>
     </section>
 
+    <section class="panel live-preset-panel">
+      <div class="section-title-row">
+        <h2>登録ライブ呼び出し</h2>
+        <button id="openLiveBtn" type="button" class="primary-btn">ライブ管理</button>
+      </div>
+      <div class="live-load-grid">
+        <label><span>ライブ1</span><select id="livePreset1Select"><option value="">登録ライブを選択</option></select></label>
+        <label><span>ライブ2</span><select id="livePreset2Select"><option value="">登録ライブを選択</option></select></label>
+        <label><span>ライブ3</span><select id="livePreset3Select"><option value="">登録ライブを選択</option></select></label>
+      </div>
+      <div class="hint">選択すると、そのライブの必要ハートがすぐ入力されます。</div>
+    </section>
+
     <section class="panel input-panel">
       <div class="input-toolbar">
         <div>
@@ -223,6 +236,30 @@
       </section>
     </div>
   </main>
+
+  <dialog id="liveDialog">
+    <form method="dialog" class="dialog-card" id="livePresetForm">
+      <div class="dialog-head">
+        <h2>ライブ管理</h2>
+        <button value="cancel" class="ghost-btn">閉じる</button>
+      </div>
+      <label class="block-label">登録ライブ
+        <select id="liveManageSelect">
+          <option value="">新規登録</option>
+        </select>
+      </label>
+      <label class="block-label">ライブ名
+        <input id="livePresetName" type="text" placeholder="例：決意の光">
+      </label>
+      <div class="label">必要ハート</div>
+      <div id="livePresetCounts" class="deck-counts"></div>
+      <div class="dialog-actions">
+        <button type="button" id="newLivePresetBtn" class="ghost-btn">新規</button>
+        <button type="button" id="deleteLivePresetBtn" class="danger-btn">削除</button>
+        <button type="button" id="saveLivePresetBtn" class="primary-btn">保存</button>
+      </div>
+    </form>
+  </dialog>
 
   <dialog id="deckDialog">
     <form method="dialog" class="dialog-card" id="deckForm">

@@ -205,3 +205,15 @@ button,.nav-btn,.mini-btn,.column-reset,.lock-btn{touch-action:manipulation}
   .result-actions-head{display:block}
   .result-actions-head .player-actions{margin-top:8px}
 }
+
+
+/* ===== Live preset management ===== */
+.live-load-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.live-load-grid label{display:flex;flex-direction:column;gap:5px;font-size:12px;color:#6f6670;font-weight:800}
+.live-load-grid select{font-weight:700}
+#livePresetCounts .deck-count-item span:first-child{display:flex;align-items:center;gap:5px}
+#livePresetCounts .dot{width:20px;height:20px;font-size:9px}
+@media(max-width:560px){
+  .live-load-grid{grid-template-columns:1fr}
+  .live-load-grid label{display:grid;grid-template-columns:70px 1fr;align-items:center}
+}
