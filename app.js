@@ -704,11 +704,8 @@ function resultText(){
       }
       lines.push(line);
     });
-    return lines.join('
-');
-  }).join('
-
-');
+    return lines.join('\n');
+  }).join('\n\n');
 }
 function showCopyToast(text){
   const old=document.querySelector('.copy-toast'); if(old)old.remove();

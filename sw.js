@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lovepoke-v20260906-4';
+const CACHE_NAME = 'lovepoke-v20260906-5';
 const ASSETS = [
   './',
   './index.html',
