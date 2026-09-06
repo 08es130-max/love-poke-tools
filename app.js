@@ -665,6 +665,9 @@ const finalEvolutionOverrides = {"ピチュー":["ライチュウ"],"ピカチ�
 function finalEvolutionList(p){
   const names=finalEvolutionOverrides[p.name];
   if(names?.length){
+    // すでに最終進化のポケモン自身なら、それ以上の進化先は表示しない。
+    // 例：サワムラー／エビワラー／カポエラーはそれぞれ最終進化。
+    if(names.includes(p.name)) return [p];
     return names.map(name=>pokeState.data.find(x=>x.name===name)).filter(Boolean);
   }
   const family=pokeState.data.filter(x=>x.evo===p.evo && !x.formKey);
