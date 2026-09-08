@@ -1,5 +1,5 @@
 window.LOVEPOKE_FIREBASE_CONFIG = {
-  apiKey: "AIzaSyAUy2Dn-KRkt_LH8NkbgyzbtMuho7vECLM",
+  apiKey: "AIzaSyAUy2DN-KRkt_LH8NkbgyzbtMuho7vECLM",
   authDomain: "lovepoke-tools.firebaseapp.com",
   projectId: "lovepoke-tools",
   storageBucket: "lovepoke-tools.firebasestorage.app",
