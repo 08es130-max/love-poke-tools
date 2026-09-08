@@ -23,7 +23,8 @@
 
   <nav class="top-nav">
     <button id="navLove" class="nav-btn active">♥ ラブカ</button>
-    <button id="navPoke" class="nav-btn">◉ ポケモン抽選</button>
+    <button id="navPoke" class="nav-btn">◉ ポケモン</button>
+    <button id="navMahjong" class="nav-btn">🀄 麻雀</button>
   </nav>
 
   <main>
@@ -128,6 +129,13 @@
     </div>
 
     <div id="pokeScreen" class="hidden">
+      <nav class="poke-subnav" aria-label="ポケモン機能">
+        <button type="button" class="poke-tab active" data-poke-pane="draw">抽選</button>
+        <button type="button" class="poke-tab" data-poke-pane="tournament">大会</button>
+        <button type="button" class="poke-tab" data-poke-pane="history">戦歴</button>
+      </nav>
+
+      <div id="pokeDrawPane" class="poke-pane">
       <section class="panel">
         <div class="section-title-row">
           <h2>ポケモン ランダム抽選</h2>
@@ -155,6 +163,12 @@
           <div class="label">プレイヤー名（未入力なら PLAYER 1 などで表示）</div>
           <div id="playerNameInputs" class="player-name-grid"></div>
         </div>
+
+        <section class="manual-pokemon-panel" aria-labelledby="manualPokemonTitle">
+          <h3 id="manualPokemonTitle">使用ポケモン（手動編集）</h3>
+          <p class="hint">抽選結果を初期値に、SVへ連れていけるポケモンを検索・編集できます。</p>
+          <div id="manualPokemonInputs"></div>
+        </section>
 
         <div class="poke-filter-grid">
           <label class="switch-row"><span>伝説を含める</span><input id="includeLegendary" type="checkbox" checked></label>
@@ -234,6 +248,66 @@
         <h2>分類メモ</h2>
         <p>「伝説・準伝説・幻・600族」はアプリ内の分類リストで判定します。分類の考え方に違いがあれば後から調整できます。</p>
       </section>
+      </div>
+
+      <div id="pokeTournamentPane" class="poke-pane hidden">
+        <section id="cloudStatusPanel" class="panel cloud-status-panel">
+          <div class="section-title-row">
+            <h2>大会クラウド同期</h2>
+            <span id="cloudStatusBadge" class="badge">接続準備中</span>
+          </div>
+          <p id="cloudStatusText" class="note">Firebaseへの接続を確認しています。</p>
+        </section>
+        <section id="tournamentSetupPanel" class="panel">
+          <h2>総当たり大会を開始</h2>
+          <label class="block-label">大会名<input id="newTournamentName" type="text" placeholder="例：第1回 LovePoke杯"></label>
+          <div id="tournamentSourcePlayers" class="tournament-source"></div>
+          <p class="hint">抽選画面のプレイヤー名と、現在の抽選結果を参加者情報として使用します。</p>
+          <button id="startTournamentBtn" type="button" class="primary-btn tournament-main-btn">このメンバーで大会開始</button>
+        </section>
+        <div id="activeTournamentArea"></div>
+      </div>
+
+      <div id="pokeHistoryPane" class="poke-pane hidden">
+        <section class="panel">
+          <div class="section-title-row"><h2>プレイヤー通算成績</h2><span id="historyCountBadge" class="badge soft">0大会</span></div>
+          <label class="switch-row stats-setting"><span>サドンデスを通算勝敗に含める</span><input id="includeSuddenInStats" type="checkbox" checked></label>
+          <div id="careerStats" class="career-grid"></div>
+        </section>
+        <section class="panel">
+          <h2>対戦相手別戦績</h2>
+          <select id="headToHeadPlayer"><option value="">プレイヤーを選択</option></select>
+          <div id="headToHeadStats" class="head-to-head-list"></div>
+        </section>
+        <section class="panel">
+          <h2>過去大会</h2>
+          <div id="pastTournamentList"></div>
+          <div id="pastTournamentDetail"></div>
+        </section>
+      </div>
+    </div>
+
+    <div id="mahjongScreen" class="hidden">
+      <nav class="poke-subnav" aria-label="麻雀機能">
+        <button type="button" class="mahjong-tab active" data-mahjong-pane="entry">結果入力</button>
+        <button type="button" class="mahjong-tab" data-mahjong-pane="history">戦歴・成績</button>
+      </nav>
+      <div id="mahjongEntryPane" class="mahjong-pane"><section class="panel">
+        <div class="section-title-row"><h2>麻雀 結果登録</h2><span id="mahjongCloudBadge" class="badge">接続準備中</span></div>
+        <p id="mahjongCloudText" class="note">Firebaseへの接続を確認しています。</p>
+        <div class="mahjong-type"><label><input type="radio" name="mahjongType" value="sanma" checked> 三麻</label><label><input type="radio" name="mahjongType" value="yonma"> 四麻</label></div>
+        <label class="block-label">対局日<input id="mahjongDate" type="date"></label>
+        <h3>参加プレイヤー</h3><div id="mahjongPlayerChoices"></div>
+        <div class="guest-add"><input id="mahjongGuestName" type="text" placeholder="ゲスト名"><button id="addMahjongGuest" type="button" class="ghost-btn">ゲスト追加</button></div>
+        <p id="mahjongSelectionHint" class="hint"></p><div id="mahjongResultInputs"></div>
+        <button id="saveMahjongMatch" type="button" class="primary-btn tournament-main-btn">対局結果を保存</button>
+        <button id="cancelMahjongEdit" type="button" class="wide-btn hidden">編集をキャンセル</button>
+      </section></div>
+      <div id="mahjongHistoryPane" class="mahjong-pane hidden">
+        <section class="panel"><div class="section-title-row"><h2>麻雀 通算成績</h2><span id="mahjongMatchCount" class="badge soft">0局</span></div><div id="mahjongStats"></div></section>
+        <section class="panel"><h2>対戦相手別記録</h2><select id="mahjongH2hPlayer"><option value="">プレイヤーを選択</option></select><div id="mahjongH2h"></div></section>
+        <section class="panel"><h2>過去の対局</h2><div id="mahjongHistory"></div></section>
+      </div>
     </div>
   </main>
 
@@ -279,6 +353,9 @@
   </dialog>
 
   <script src="./pokemon-data.js"></script>
+  <script src="./firebase-config.js"></script>
   <script type="module" src="./app.js"></script>
+  <script type="module" src="./tournament.js"></script>
+  <script type="module" src="./mahjong.js"></script>
 </body>
 </html>
