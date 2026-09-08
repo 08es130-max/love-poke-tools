@@ -42,7 +42,7 @@ const heartGrid=$('#heartGrid'), resultGrid=$('#resultGrid');
 
 function clamp(n){return Math.max(0,Number(n)||0)}
 
-function numberCell(value,onChange){
+function numberCell(value,onChange,position=null){
   const inp=document.createElement('input');
   inp.className='number-cell';
   inp.type='text';
@@ -50,6 +50,30 @@ function numberCell(value,onChange){
   inp.pattern='[0-9]*';
   inp.value=String(value);
   inp.readOnly=!state.inputMode;
+  if(position){
+    // Mobile browser input toolbars use the sequential focus order rather than
+    // dispatching Enter. Keep that order column-major while retaining the
+    // table's row-major DOM and visual layout.
+    inp.tabIndex=state.inputMode
+      ? position.column*heartDefs.length+position.row+1
+      : -1;
+    inp.enterKeyHint=position.row===heartDefs.length-1?'done':'next';
+    inp.addEventListener('keydown',event=>{
+      if(event.key!=='Enter'||!state.inputMode)return;
+      event.preventDefault();
+      const nextRow=position.row+1;
+      if(nextRow<heartDefs.length){
+        document.querySelector(`.number-cell[data-row="${nextRow}"][data-column="${position.column}"]`)?.focus();
+      }else{
+        inp.blur();
+      }
+    });
+    inp.dataset.row=position.row;
+    inp.dataset.column=position.column;
+  }else{
+    // ALL and blade are outside the four seven-color navigation sequences.
+    inp.tabIndex=-1;
+  }
   if(state.inputMode) inp.classList.add('editing');
   inp.addEventListener('focus',()=>{
     if(!state.inputMode)return;
@@ -82,13 +106,13 @@ function numberCell(value,onChange){
 
 function buildHeartGrid(){
   heartGrid.innerHTML='';
-  for(const d of heartDefs){
+  for(const [rowIndex,d] of heartDefs.entries()){
     const row=document.createElement('div');row.className='heart-row';row.style.background=`linear-gradient(90deg, ${d.color}1c, ${d.color}0c)`;
     const lab=document.createElement('div');lab.className='heart-label';lab.innerHTML=`<span class="dot" style="background:${d.color}">♥</span>${d.label}`;
     row.append(lab);
-    row.append(numberCell(state.owned[d.key],v=>{state.owned[d.key]=v}));
+    row.append(numberCell(state.owned[d.key],v=>{state.owned[d.key]=v},{row:rowIndex,column:0}));
     for(let i=0;i<3;i++){
-      row.append(numberCell(state.lives[i][d.key],v=>{state.lives[i][d.key]=v}));
+      row.append(numberCell(state.lives[i][d.key],v=>{state.lives[i][d.key]=v},{row:rowIndex,column:i+1}));
     }
     heartGrid.append(row);
   }
@@ -890,4 +914,21 @@ function renderPokeResults(){
 buildPlayerNameInputs();
 
 
-if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}
+if('serviceWorker' in navigator){
+  let reloadingForUpdate=false;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{
+    if(reloadingForUpdate)return;
+    reloadingForUpdate=true;
+    window.location.reload();
+  });
+
+  window.addEventListener('load',async()=>{
+    try{
+      const registration=await navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'});
+      await registration.update();
+      document.addEventListener('visibilitychange',()=>{
+        if(document.visibilityState==='visible')registration.update().catch(()=>{});
+      });
+    }catch{}
+  });
+}
