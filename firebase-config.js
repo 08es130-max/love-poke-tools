@@ -1,3 +1,6 @@
-// Firebase Consoleで発行されたWebアプリ設定に置き換えてください。
-// この設定値はFirebaseクライアントを接続するための公開識別情報です。
-window.LOVEPOKE_FIREBASE_CONFIG = null;
+apiKey: "AIzaSyAUy2DN-KRkt_LH8NkbgyzbTMuho7vEClM",
+  authDomain: "lovepoke-tools.firebaseapp.com",
+  projectId: "lovepoke-tools",
+  storageBucket: "lovepoke-tools.firebasestorage.app",
+  messagingSenderId: "450305637358",
+  appId: "1:450305637358:web:2ef37852b9803dba116cff",
