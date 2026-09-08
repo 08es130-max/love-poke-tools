@@ -1,11 +1,12 @@
 const CACHE_PREFIX = 'lovepoke-';
-const CACHE_NAME = `${CACHE_PREFIX}v20260909-1`;
+const CACHE_NAME = `${CACHE_PREFIX}v20260909-2`;
 const ASSETS = [
   './',
   './index.html',
   './styles.css',
   './app.js',
   './pokemon-data.js',
+  './pokemon-ui.js',
   './firebase-config.js',
   './firebase-client.js',
   './tournament.js',
