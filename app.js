@@ -51,6 +51,12 @@ function numberCell(value,onChange,position=null){
   inp.value=String(value);
   inp.readOnly=!state.inputMode;
   if(position){
+    // Mobile browser input toolbars use the sequential focus order rather than
+    // dispatching Enter. Keep that order column-major while retaining the
+    // table's row-major DOM and visual layout.
+    inp.tabIndex=state.inputMode
+      ? position.column*heartDefs.length+position.row+1
+      : -1;
     inp.enterKeyHint=position.row===heartDefs.length-1?'done':'next';
     inp.addEventListener('keydown',event=>{
       if(event.key!=='Enter'||!state.inputMode)return;
@@ -64,6 +70,9 @@ function numberCell(value,onChange,position=null){
     });
     inp.dataset.row=position.row;
     inp.dataset.column=position.column;
+  }else{
+    // ALL and blade are outside the four seven-color navigation sequences.
+    inp.tabIndex=-1;
   }
   if(state.inputMode) inp.classList.add('editing');
   inp.addEventListener('focus',()=>{
