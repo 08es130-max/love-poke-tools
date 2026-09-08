@@ -914,4 +914,21 @@ function renderPokeResults(){
 buildPlayerNameInputs();
 
 
-if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}
+if('serviceWorker' in navigator){
+  let reloadingForUpdate=false;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{
+    if(reloadingForUpdate)return;
+    reloadingForUpdate=true;
+    window.location.reload();
+  });
+
+  window.addEventListener('load',async()=>{
+    try{
+      const registration=await navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'});
+      await registration.update();
+      document.addEventListener('visibilitychange',()=>{
+        if(document.visibilityState==='visible')registration.update().catch(()=>{});
+      });
+    }catch{}
+  });
+}
