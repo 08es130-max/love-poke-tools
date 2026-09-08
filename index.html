@@ -1,330 +1,71 @@
-<!doctype html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#f05a8a" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <meta name="apple-mobile-web-app-title" content="LovePoke" />
-  <link rel="manifest" href="./manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="./icons/icon-192.png" />
-  <link rel="stylesheet" href="./styles.css" />
-  <title>LovePoke Tools</title>
-</head>
-<body>
-  <header class="app-header">
-    <div>
-      <div class="eyebrow">OFFLINE PWA</div>
-      <h1 id="appTitle">ラブカ ハート計算</h1>
-    </div>
-    <button id="resetAllBtn" class="ghost-btn">リセット</button>
-  </header>
-
-  <nav class="top-nav">
-    <button id="navLove" class="nav-btn active">♥ ラブカ</button>
-    <button id="navPoke" class="nav-btn">◉ ポケモン抽選</button>
-  </nav>
-
-  <main>
-    <div id="loveScreen">
-    <section class="panel deck-bar">
-      <div>
-        <div class="label">使用デッキ</div>
-        <select id="deckSelect"></select>
-      </div>
-      <button id="openDeckBtn" class="primary-btn">デッキ管理</button>
-    </section>
-
-    <section class="panel live-preset-panel">
-      <div class="section-title-row">
-        <h2>登録ライブ呼び出し</h2>
-        <button id="openLiveBtn" type="button" class="primary-btn">ライブ管理</button>
-      </div>
-      <div class="live-load-grid">
-        <label><span>ライブ1</span><select id="livePreset1Select"><option value="">登録ライブを選択</option></select></label>
-        <label><span>ライブ2</span><select id="livePreset2Select"><option value="">登録ライブを選択</option></select></label>
-        <label><span>ライブ3</span><select id="livePreset3Select"><option value="">登録ライブを選択</option></select></label>
-      </div>
-      <div class="hint">選択すると、そのライブの必要ハートがすぐ入力されます。</div>
-    </section>
-
-    <section class="panel input-panel">
-      <div class="input-toolbar">
-        <div>
-          <h2>ハート入力</h2>
-          <div class="hint compact">入力モードOFF中は数字欄に触れてもキーボードは開きません。</div>
-        </div>
-        <button id="inputModeBtn" type="button" class="ghost-btn input-mode-btn">入力モード：OFF</button>
-      </div>
-      <div class="grid-head">
-        <div></div>
-        <div><span>所持</span><button id="resetOwnedBtn" type="button" class="column-reset">リセット</button></div>
-        <div><span>ライブ1</span><button id="resetLive1Btn" type="button" class="column-reset">リセット</button></div>
-        <div><span>ライブ2</span><button id="resetLive2Btn" type="button" class="column-reset">リセット</button></div>
-        <div><span>ライブ3</span><button id="resetLive3Btn" type="button" class="column-reset">リセット</button></div>
-      </div>
-      <div id="heartGrid"></div>
-      <div class="hint">ALLは任意の1ハート分。各色の余剰は無色の必要分へ充当します。</div>
-    </section>
-
-    <section class="panel">
-      <div class="section-title-row">
-        <h2>ライブ3枚 合算結果</h2>
-        <span id="statusBadge" class="badge">未入力</span>
-      </div>
-      <div id="needHero" class="need-hero"></div>
-      <button id="toggleResultDetailBtn" type="button" class="wide-btn result-detail-btn">内訳を見る</button>
-      <div id="resultDetailArea" class="hidden">
-        <div id="resultGrid" class="result-grid"></div>
-        <div id="summaryText" class="summary"></div>
-      </div>
-    </section>
-
-    <section class="panel probability-panel">
-      <div class="section-title-row">
-        <h2>エール成功確率</h2>
-        <span id="bladeInfo" class="badge soft">ブレード 0</span>
-      </div>
-      <div class="probability-main">
-        <div>
-          <div class="label">登録デッキから</div>
-          <div id="baseProbability" class="prob-number">—</div>
-        </div>
-        <div>
-          <div class="label">現在の残りデッキから</div>
-          <div id="liveProbability" class="prob-number">—</div>
-        </div>
-      </div>
-      <p id="probabilityNote" class="note">デッキを登録すると計算できます。</p>
-    </section>
-
-    <section class="panel">
-      <button id="toggleDetailBtn" class="wide-btn">詳細計算を開く</button>
-      <div id="detailArea" class="detail hidden">
-        <div class="detail-note">控室・手札・ステージに見えているエールを入力すると、残りデッキの内訳と成功確率を更新します。</div>
-
-        <div class="zone-total-grid">
-          <label>控室 総枚数<input id="zone-total-grave" type="number" min="0" value="0"></label>
-          <label>手札 総枚数<input id="zone-total-hand" type="number" min="0" value="0"></label>
-          <label>ステージ 総枚数<input id="zone-total-stage" type="number" min="0" value="0"></label>
-          <label>成功ライブ 総枚数<input id="zone-total-success" type="number" min="0" value="0"></label>
-        </div>
-
-        <div class="known-head">
-          <div>エール</div><div>控室</div><div>手札</div><div>ステージ</div><div>成功ライブ</div>
-        </div>
-        <div id="knownGrid"></div>
-
-        <h3>残りデッキ内のエール</h3>
-        <div id="remainingDeck" class="remaining-grid"></div>
-      </div>
-    </section>
-
-    <section class="panel muted">
-      <h2>メモ</h2>
-      <p>初版では「1枚のエール＝1種類のハート」、例外として「無色×2」を別カテゴリで扱います。データはこの端末内に保存されます。</p>
-    </section>
     </div>
 
-    <div id="pokeScreen" class="hidden">
-      <nav class="poke-subnav" aria-label="ポケモン機能">
-        <button type="button" class="poke-tab active" data-poke-pane="draw">抽選</button>
-        <button type="button" class="poke-tab" data-poke-pane="tournament">大会</button>
-        <button type="button" class="poke-tab" data-poke-pane="history">戦歴</button>
+    <div id="mahjongScreen" class="hidden">
+      <nav class="poke-subnav" aria-label="麻雀機能">
+        <button type="button" class="mahjong-tab active" data-mahjong-pane="entry">結果入力</button>
+        <button type="button" class="mahjong-tab" data-mahjong-pane="history">戦歴・成績</button>
       </nav>
 
-      <div id="pokeDrawPane" class="poke-pane">
-      <section class="panel">
-        <div class="section-title-row">
-          <h2>ポケモン ランダム抽選</h2>
-          <span id="pokeDataStatus" class="badge ok">1025種＋アカツキ 内蔵済み</span>
-        </div>
-
-        <div class="poke-number-controls">
-          <label>人数
-            <div class="inline-counter">
-              <button type="button" id="playersMinus">−</button>
-              <strong id="playersValue">5</strong>
-              <button type="button" id="playersPlus">＋</button>
-            </div>
-          </label>
-          <label>1人あたり
-            <div class="inline-counter">
-              <button type="button" id="perMinus">−</button>
-              <strong id="perValue">6</strong>
-              <button type="button" id="perPlus">＋</button>
-            </div>
-          </label>
-        </div>
-
-        <div class="player-name-panel">
-          <div class="label">プレイヤー名（未入力なら PLAYER 1 などで表示）</div>
-          <div id="playerNameInputs" class="player-name-grid"></div>
-        </div>
-
-        <div class="poke-filter-grid">
-          <label class="switch-row"><span>伝説を含める</span><input id="includeLegendary" type="checkbox" checked></label>
-          <label class="switch-row"><span>準伝説を含める</span><input id="includeSubLegendary" type="checkbox" checked></label>
-          <label class="switch-row"><span>幻を含める</span><input id="includeMythical" type="checkbox" checked></label>
-          <label class="switch-row"><span>600族を含める</span><input id="includePseudo" type="checkbox" checked></label>
-          <label class="switch-row"><span>古代ポケモンを含める</span><input id="includeAncient" type="checkbox" checked></label>
-          <label class="switch-row"><span>未来ポケモンを含める</span><input id="includeFuture" type="checkbox" checked></label>
-          <label class="switch-row wide"><span>SVに連れていけるポケモンのみ</span><input id="svOnly" type="checkbox"></label>
-          <label class="switch-row wide"><span>進化系も含めて重複なし</span><input id="evoUnique" type="checkbox" checked></label>
-        </div>
-
-        <div class="special-panel">
+      <div id="mahjongEntryPane" class="mahjong-pane">
+        <section class="panel">
           <div class="section-title-row">
-            <h3>特殊枠</h3>
-            <span class="badge soft">1人ごと</span>
+            <h2>麻雀 結果登録</h2>
+            <span id="mahjongCloudBadge" class="badge">接続準備中</span>
           </div>
 
-          <div class="special-rule">
-            <div class="special-rule-title">特殊枠A</div>
-            <div class="special-cats">
-              <label><input id="spAlegendary" type="checkbox" checked>伝説</label>
-              <label><input id="spAsub" type="checkbox">準伝</label>
-              <label><input id="spAmythical" type="checkbox">幻</label>
-              <label><input id="spApseudo" type="checkbox">600族</label>
-              <label><input id="spAancient" type="checkbox">古代</label>
-              <label><input id="spAfuture" type="checkbox">未来</label>
-            </div>
-            <div class="special-count">
-              <span>人数ごと</span>
-              <button type="button" id="spAMinus">−</button>
-              <strong id="spAValue">1</strong>
-              <button type="button" id="spAPlus">＋</button>
-              <span>体</span>
-            </div>
+          <p id="mahjongCloudText" class="note">Firebaseへの接続を確認しています。</p>
+
+          <div class="mahjong-type">
+            <label><input type="radio" name="mahjongType" value="sanma" checked> 三麻</label>
+            <label><input type="radio" name="mahjongType" value="yonma"> 四麻</label>
           </div>
 
-          <div class="special-rule">
-            <div class="special-rule-title">特殊枠B</div>
-            <div class="special-cats">
-              <label><input id="spBlegendary" type="checkbox">伝説</label>
-              <label><input id="spBsub" type="checkbox" checked>準伝</label>
-              <label><input id="spBmythical" type="checkbox" checked>幻</label>
-              <label><input id="spBpseudo" type="checkbox" checked>600族</label>
-              <label><input id="spBancient" type="checkbox">古代</label>
-              <label><input id="spBfuture" type="checkbox">未来</label>
-            </div>
-            <div class="special-count">
-              <span>人数ごと</span>
-              <button type="button" id="spBMinus">−</button>
-              <strong id="spBValue">2</strong>
-              <button type="button" id="spBPlus">＋</button>
-              <span>体</span>
-            </div>
+          <label class="block-label">
+            対局日
+            <input id="mahjongDate" type="date">
+          </label>
+
+          <h3>参加プレイヤー</h3>
+          <div id="mahjongPlayerChoices"></div>
+
+          <div class="guest-add">
+            <input id="mahjongGuestName" type="text" placeholder="ゲスト名">
+            <button id="addMahjongGuest" type="button" class="ghost-btn">ゲスト追加</button>
           </div>
 
-          <div class="hint">上から特殊枠A → 特殊枠B → 通常抽選の順で並びます。特殊枠内のカテゴリ同士は自由な組み合わせでランダム抽選します。</div>
-        </div>
+          <p id="mahjongSelectionHint" class="hint"></p>
+          <div id="mahjongResultInputs"></div>
 
-        <button id="drawPokemonBtn" class="primary-btn poke-draw-btn">抽選する</button>
-        <div class="hint">抽選対象は全国図鑑No.1〜1025。全プレイヤー間で重複なしです。</div>
-      </section>
+          <button id="saveMahjongMatch" type="button" class="primary-btn tournament-main-btn">
+            対局結果を保存
+          </button>
 
-
-      <section id="pokeResultsPanel" class="panel hidden">
-        <div class="section-title-row result-actions-head">
-          <h2>抽選結果</h2>
-          <div class="player-actions">
-            <button id="copyResultsBtn" type="button" class="primary-btn mini-action-btn">結果をコピー</button>
-            <button id="rerollAllBtn" type="button" class="ghost-btn mini-action-btn">全員再抽選</button>
-          </div>
-        </div>
-        <div id="pokeResults"></div>
-      </section>
-
-      <section class="panel muted">
-        <h2>分類メモ</h2>
-        <p>「伝説・準伝説・幻・600族」はアプリ内の分類リストで判定します。分類の考え方に違いがあれば後から調整できます。</p>
-      </section>
+          <button id="cancelMahjongEdit" type="button" class="wide-btn hidden">
+            編集をキャンセル
+          </button>
+        </section>
       </div>
 
-      <div id="pokeTournamentPane" class="poke-pane hidden">
-        <section id="cloudStatusPanel" class="panel cloud-status-panel">
+      <div id="mahjongHistoryPane" class="mahjong-pane hidden">
+        <section class="panel">
           <div class="section-title-row">
-            <h2>大会クラウド同期</h2>
-            <span id="cloudStatusBadge" class="badge">接続準備中</span>
+            <h2>麻雀 通算成績</h2>
+            <span id="mahjongMatchCount" class="badge soft">0局</span>
           </div>
-          <p id="cloudStatusText" class="note">Firebaseへの接続を確認しています。</p>
+          <div id="mahjongStats"></div>
         </section>
-        <section id="tournamentSetupPanel" class="panel">
-          <h2>総当たり大会を開始</h2>
-          <label class="block-label">大会名<input id="newTournamentName" type="text" placeholder="例：第1回 LovePoke杯"></label>
-          <div id="tournamentSourcePlayers" class="tournament-source"></div>
-          <p class="hint">抽選画面のプレイヤー名と、現在の抽選結果を参加者情報として使用します。</p>
-          <button id="startTournamentBtn" type="button" class="primary-btn tournament-main-btn">このメンバーで大会開始</button>
-        </section>
-        <div id="activeTournamentArea"></div>
-      </div>
 
-      <div id="pokeHistoryPane" class="poke-pane hidden">
         <section class="panel">
-          <div class="section-title-row"><h2>プレイヤー通算成績</h2><span id="historyCountBadge" class="badge soft">0大会</span></div>
-          <label class="switch-row stats-setting"><span>サドンデスを通算勝敗に含める</span><input id="includeSuddenInStats" type="checkbox" checked></label>
-          <div id="careerStats" class="career-grid"></div>
+          <h2>対戦相手別記録</h2>
+          <select id="mahjongH2hPlayer">
+            <option value="">プレイヤーを選択</option>
+          </select>
+          <div id="mahjongH2h"></div>
         </section>
+
         <section class="panel">
-          <h2>対戦相手別戦績</h2>
-          <select id="headToHeadPlayer"><option value="">プレイヤーを選択</option></select>
-          <div id="headToHeadStats" class="head-to-head-list"></div>
-        </section>
-        <section class="panel">
-          <h2>過去大会</h2>
-          <div id="pastTournamentList"></div>
-          <div id="pastTournamentDetail"></div>
+          <h2>過去の対局</h2>
+          <div id="mahjongHistory"></div>
         </section>
       </div>
     </div>
-  </main>
-
-  <dialog id="liveDialog">
-    <form method="dialog" class="dialog-card" id="livePresetForm">
-      <div class="dialog-head">
-        <h2>ライブ管理</h2>
-        <button value="cancel" class="ghost-btn">閉じる</button>
-      </div>
-      <label class="block-label">登録ライブ
-        <select id="liveManageSelect">
-          <option value="">新規登録</option>
-        </select>
-      </label>
-      <label class="block-label">ライブ名
-        <input id="livePresetName" type="text" placeholder="例：決意の光">
-      </label>
-      <div class="label">必要ハート</div>
-      <div id="livePresetCounts" class="deck-counts"></div>
-      <div class="dialog-actions">
-        <button type="button" id="newLivePresetBtn" class="ghost-btn">新規</button>
-        <button type="button" id="deleteLivePresetBtn" class="danger-btn">削除</button>
-        <button type="button" id="saveLivePresetBtn" class="primary-btn">保存</button>
-      </div>
-    </form>
-  </dialog>
-
-  <dialog id="deckDialog">
-    <form method="dialog" class="dialog-card" id="deckForm">
-      <div class="dialog-head">
-        <h2>デッキ管理</h2>
-        <button value="cancel" class="ghost-btn">閉じる</button>
-      </div>
-      <label class="block-label">デッキ名<input id="deckName" type="text" placeholder="例：Emotionデッキ"></label>
-      <div id="deckCounts" class="deck-counts"></div>
-      <div class="deck-total">登録合計：<strong id="deckTotal">0</strong>枚</div>
-      <div class="dialog-actions">
-        <button type="button" id="newDeckBtn" class="ghost-btn">新規</button>
-        <button type="button" id="deleteDeckBtn" class="danger-btn">削除</button>
-        <button type="button" id="saveDeckBtn" class="primary-btn">保存</button>
-      </div>
-    </form>
-  </dialog>
-
-  <script src="./pokemon-data.js"></script>
-  <script src="./firebase-config.js"></script>
-  <script type="module" src="./app.js"></script>
-  <script type="module" src="./tournament.js"></script>
-</body>
-</html>
