@@ -574,6 +574,10 @@ $('#navPoke').onclick=()=>setScreen('poke');
 function playerDisplayName(pi){
   return (pokeState.playerNames[pi]||'').trim() || `PLAYER ${pi+1}`;
 }
+window.getLovePokeTournamentParticipants=()=>Array.from({length:pokeState.players},(_,pi)=>({
+  name:playerDisplayName(pi),
+  pokemon:(pokeState.groups[pi]||[]).map(p=>({id:p.id,name:p.name,formKey:p.formKey||''}))
+}));
 function buildPlayerNameInputs(){
   const box=$('#playerNameInputs'); if(!box)return;
   box.innerHTML='';
