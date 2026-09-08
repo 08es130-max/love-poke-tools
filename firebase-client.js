@@ -1,3 +1,5 @@
+import './pokemon-ui.js';
+
 const FIREBASE_VERSION='10.14.1';
 let contextPromise=null;
 export function getFirebaseContext(){
