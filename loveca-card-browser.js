@@ -113,11 +113,52 @@
           <label>収録商品
             <select id="lovecaExpansionFilter"><option value="">すべて</option></select>
           </label>
+          <label>コスト下限
+            <input id="lovecaCostMin" type="number" inputmode="numeric" min="0" placeholder="例 2">
+          </label>
+          <label>コスト上限
+            <input id="lovecaCostMax" type="number" inputmode="numeric" min="0" placeholder="例 4">
+          </label>
+          <label>ライブスコア下限
+            <input id="lovecaScoreMin" type="number" inputmode="numeric" min="0" placeholder="例 1">
+          </label>
+          <label>ライブスコア上限
+            <input id="lovecaScoreMax" type="number" inputmode="numeric" min="0" placeholder="例 3">
+          </label>
+          <label>ハート種類
+            <select id="lovecaHeartType">
+              <option value="">指定なし</option>
+              <option value="pink">桃</option>
+              <option value="red">赤</option>
+              <option value="yellow">黄</option>
+              <option value="green">緑</option>
+              <option value="blue">青</option>
+              <option value="purple">紫</option>
+              <option value="colorless">無色</option>
+            </select>
+          </label>
+          <label>ハート数 下限
+            <input id="lovecaHeartMin" type="number" inputmode="numeric" min="0" placeholder="例 2">
+          </label>
+          <label>ハート数 上限
+            <input id="lovecaHeartMax" type="number" inputmode="numeric" min="0" placeholder="例 4">
+          </label>
+          <label>ブレード
+            <select id="lovecaBladeFilter">
+              <option value="all">指定なし</option>
+              <option value="yes">あり</option>
+              <option value="no">なし</option>
+            </select>
+          </label>
           <label>並び順
             <select id="lovecaSort">
               <option value="no-asc">カード番号 昇順</option>
               <option value="no-desc">カード番号 降順</option>
               <option value="name">カード名</option>
+              <option value="cost-asc">コスト 昇順</option>
+              <option value="cost-desc">コスト 降順</option>
+              <option value="score-asc">ライブスコア 昇順</option>
+              <option value="score-desc">ライブスコア 降順</option>
             </select>
           </label>
           <label class="loveca-check-row"><span>☆お気に入りライブのみ</span><input id="lovecaFavoritesOnly" type="checkbox"></label>
@@ -186,20 +227,48 @@
   }
 
   function bindBrowserControls(){
-    ['#lovecaQuery','#lovecaTypeFilter','#lovecaColorFilter','#lovecaRarityFilter','#lovecaExpansionFilter','#lovecaSort','#lovecaFavoritesOnly']
-      .forEach(selector=>document.querySelector(selector)?.addEventListener(selector==='#lovecaQuery'?'input':'change',()=>{visibleCount=PAGE_SIZE;applyFilters()}));
+    ['#lovecaQuery','#lovecaTypeFilter','#lovecaColorFilter','#lovecaRarityFilter','#lovecaExpansionFilter','#lovecaCostMin','#lovecaCostMax','#lovecaScoreMin','#lovecaScoreMax','#lovecaHeartType','#lovecaHeartMin','#lovecaHeartMax','#lovecaBladeFilter','#lovecaSort','#lovecaFavoritesOnly']
+      .forEach(selector=>document.querySelector(selector)?.addEventListener(['#lovecaQuery','#lovecaCostMin','#lovecaCostMax','#lovecaScoreMin','#lovecaScoreMax','#lovecaHeartMin','#lovecaHeartMax'].includes(selector)?'input':'change',()=>{visibleCount=PAGE_SIZE;applyFilters()}));
     document.querySelector('#lovecaClearFilters')?.addEventListener('click',()=>{
       document.querySelector('#lovecaQuery').value='';
       document.querySelector('#lovecaTypeFilter').value='all';
       document.querySelector('#lovecaColorFilter').value='';
       document.querySelector('#lovecaRarityFilter').value='';
       document.querySelector('#lovecaExpansionFilter').value='';
+      document.querySelector('#lovecaCostMin').value='';
+      document.querySelector('#lovecaCostMax').value='';
+      document.querySelector('#lovecaScoreMin').value='';
+      document.querySelector('#lovecaScoreMax').value='';
+      document.querySelector('#lovecaHeartType').value='';
+      document.querySelector('#lovecaHeartMin').value='';
+      document.querySelector('#lovecaHeartMax').value='';
+      document.querySelector('#lovecaBladeFilter').value='all';
       document.querySelector('#lovecaSort').value='no-asc';
       document.querySelector('#lovecaFavoritesOnly').checked=false;
       visibleCount=PAGE_SIZE;applyFilters();
     });
     document.querySelector('#lovecaLoadMore')?.addEventListener('click',()=>{visibleCount+=PAGE_SIZE;renderCards()});
     document.querySelector('#lovecaQuery')?.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();event.currentTarget.blur();}});
+  }
+
+
+  function numberOrNull(value){
+    const text=String(value??'').trim();
+    if(!text||!/^\d+(?:\.\d+)?$/.test(text))return null;
+    const n=Number(text);
+    return Number.isFinite(n)?n:null;
+  }
+
+  function bladeCount(card){
+    const candidates=[card.bladeHeart,card.attack];
+    for(const value of candidates){
+      const text=String(value??'').trim();
+      if(!text||text==='-'||text==='0')continue;
+      const nums=text.match(/\d+/g);
+      if(nums)return nums.map(Number).reduce((a,b)=>a+b,0);
+      if(/blade|ブレード/i.test(text))return 1;
+    }
+    return 0;
   }
 
   function applyFilters(){
@@ -209,6 +278,14 @@
     const color=document.querySelector('#lovecaColorFilter')?.value||'';
     const rarity=document.querySelector('#lovecaRarityFilter')?.value||'';
     const expansion=document.querySelector('#lovecaExpansionFilter')?.value||'';
+    const costMin=numberOrNull(document.querySelector('#lovecaCostMin')?.value);
+    const costMax=numberOrNull(document.querySelector('#lovecaCostMax')?.value);
+    const scoreMin=numberOrNull(document.querySelector('#lovecaScoreMin')?.value);
+    const scoreMax=numberOrNull(document.querySelector('#lovecaScoreMax')?.value);
+    const heartType=document.querySelector('#lovecaHeartType')?.value||'';
+    const heartMin=numberOrNull(document.querySelector('#lovecaHeartMin')?.value);
+    const heartMax=numberOrNull(document.querySelector('#lovecaHeartMax')?.value);
+    const bladeFilter=document.querySelector('#lovecaBladeFilter')?.value||'all';
     const favOnly=!!document.querySelector('#lovecaFavoritesOnly')?.checked;
     const favs=favorites();
 
@@ -220,6 +297,29 @@
       if(color&&String(card.color||'')!==color)return false;
       if(rarity&&String(card.rarity||'')!==rarity)return false;
       if(expansion&&String(card.expansion||'')!==expansion)return false;
+
+      const cost=numberOrNull(card.cost);
+      if(costMin!==null&&(cost===null||cost<costMin))return false;
+      if(costMax!==null&&(cost===null||cost>costMax))return false;
+
+      const score=numberOrNull(card.score);
+      if(scoreMin!==null&&(!card.isLive||score===null||score<scoreMin))return false;
+      if(scoreMax!==null&&(!card.isLive||score===null||score>scoreMax))return false;
+
+      if(heartType){
+        const heartCount=Number(card.hearts?.[heartType])||0;
+        const effectiveMin=heartMin===null?1:heartMin;
+        if(heartCount<effectiveMin)return false;
+        if(heartMax!==null&&heartCount>heartMax)return false;
+      }else if(heartMin!==null||heartMax!==null){
+        const values=Object.values(card.hearts||{}).map(Number).filter(Number.isFinite);
+        const matches=values.some(value=>(heartMin===null||value>=heartMin)&&(heartMax===null||value<=heartMax));
+        if(!matches)return false;
+      }
+
+      const hasBlade=bladeCount(card)>0;
+      if(bladeFilter==='yes'&&!hasBlade)return false;
+      if(bladeFilter==='no'&&hasBlade)return false;
       if(favOnly&&!favs.has(String(card.id)))return false;
       if(query){
         const hay=[card.name,card.cardNo,card.text,card.expansion,card.work,card.unit,card.rarity].join(' ').toLocaleLowerCase('ja');
@@ -231,6 +331,16 @@
     const sort=document.querySelector('#lovecaSort')?.value||'no-asc';
     filtered.sort((a,b)=>{
       if(sort==='name')return String(a.name||'').localeCompare(String(b.name||''),'ja',{numeric:true});
+      if(sort==='cost-asc'||sort==='cost-desc'){
+        const av=numberOrNull(a.cost),bv=numberOrNull(b.cost);
+        const result=(av??9999)-(bv??9999);
+        return sort==='cost-desc'?-result:result;
+      }
+      if(sort==='score-asc'||sort==='score-desc'){
+        const av=numberOrNull(a.score),bv=numberOrNull(b.score);
+        const result=(av??9999)-(bv??9999);
+        return sort==='score-desc'?-result:result;
+      }
       const result=String(a.cardNo||'').localeCompare(String(b.cardNo||''),'ja',{numeric:true});
       return sort==='no-desc'?-result:result;
     });
