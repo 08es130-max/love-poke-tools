@@ -10,7 +10,7 @@ import requests
 from bs4 import BeautifulSoup
 
 BASE = "https://llofficial-cardgame.com"
-SEARCH_URL = BASE + "/cardlist/searchresults/?parallel=all&sort=new&view=text"
+SEARCH_URL = BASE + "/cardlist/searchresults/?expansion=&view=text"
 OUT = Path(__file__).resolve().parents[1] / "loveca-cards.json"
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/152 Safari/537.36 LovePokeTools/1.0"
@@ -24,15 +24,16 @@ def clean(text: str) -> str:
 def find_card_container(label_node):
     node = label_node
     best = None
-    for _ in range(8):
+    for _ in range(10):
         node = getattr(node, "parent", None)
         if node is None:
             break
         text = clean(node.get_text(" ", strip=True))
         if "カード番号" in text and "カードタイプ" in text and "収録商品" in text:
             best = node
-            links = node.find_all("a", href=True)
-            if any("詳しく" in clean(a.get_text(" ", strip=True)) for a in links):
+            # Prefer the smallest ancestor that looks like a single card entry.
+            numbers = node.find_all(string=lambda s: s and clean(s) == "カード番号")
+            if len(numbers) == 1:
                 return node
     return best
 
@@ -109,7 +110,7 @@ def parse_cards(html: str):
 
 
 def main():
-    response = requests.get(SEARCH_URL, headers=HEADERS, timeout=45)
+    response = requests.get(SEARCH_URL, headers=HEADERS, timeout=60)
     response.raise_for_status()
     cards = parse_cards(response.text)
     print(f"parsed cards: {len(cards)}")
