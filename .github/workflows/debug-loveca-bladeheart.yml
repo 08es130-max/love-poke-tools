@@ -16,46 +16,31 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: pip install requests beautifulsoup4
-      - name: Inspect official search form and sample card pages
+      - run: pip install requests
+      - name: Inspect raw official API cards
         run: |
           python - <<'PY'
-          import json, re, requests
-          from bs4 import BeautifulSoup
-
-          headers={'User-Agent':'Mozilla/5.0 LovePokeTools/1.0'}
-          out={}
-
-          html=requests.get('https://llofficial-cardgame.com/cardlist/',headers=headers,timeout=60).text
-          soup=BeautifulSoup(html,'html.parser')
-          blade=[]
-          for inp in soup.find_all('input'):
-              name=inp.get('name','')
-              if 'blade' in name.lower() or 'heart' in name.lower():
-                  blade.append({'name':name,'value':inp.get('value',''),'type':inp.get('type',''),'class':inp.get('class',[])})
-          out['form_inputs']=blade
-
-          for cardno in ['PL!-sd1-022-SD','PL!N-bp7-025-L','PL!N-bp7-020-N']:
-              url='https://llofficial-cardgame.com/cardlist/searchresults/'
-              h=requests.get(url,params={'cardno':cardno,'view':'text'},headers=headers,timeout=60).text
-              s=BeautifulSoup(h,'html.parser')
-              # Keep compact evidence around labels and icon image sources/alts.
-              text=s.get_text('\n',strip=True)
-              imgs=[]
-              for img in s.find_all('img'):
-                  src=img.get('src','')
-                  alt=img.get('alt','')
-                  title=img.get('title','')
-                  if any(k in (src+' '+alt+' '+title).lower() for k in ['heart','blade','draw','note','music','all']):
-                      imgs.append({'src':src,'alt':alt,'title':title})
-              out[cardno]={'labels':[line for line in text.split('\n') if line in ['ブレードハート','特殊ハート','スコア','必要ハート'] or 'ブレードハート' in line or '特殊ハート' in line][:30], 'images':imgs[:80]}
-
-          open('loveca-bladeheart-debug.json','w',encoding='utf-8').write(json.dumps(out,ensure_ascii=False,indent=2))
+          import json, requests
+          targets={'PL!-sd1-022-SD','PL!N-bp7-025-L','PL!N-bp7-020-N','PL!N-bp4-025-L'}
+          found={}
+          url='https://llofficial-cardgame.com/manage/card-list-user/list'
+          headers={'User-Agent':'Mozilla/5.0 LovePokeTools/1.0','Accept':'application/json,text/plain,*/*','Referer':'https://llofficial-cardgame.com/cardlist/searchresults/'}
+          for page in range(1,40):
+              r=requests.get(url,params={'page':page,'per_page':100,'sort':'no','parallel':'all'},headers=headers,timeout=60)
+              r.raise_for_status()
+              data=r.json()
+              items=data.get('items') or []
+              for item in items:
+                  no=str(item.get('card_number') or '')
+                  if no in targets:
+                      found[no]=item
+              if targets.issubset(found) or len(items)<100: break
+          open('loveca-bladeheart-debug.json','w',encoding='utf-8').write(json.dumps(found,ensure_ascii=False,indent=2))
           PY
       - name: Commit debug output
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add loveca-bladeheart-debug.json
-          git commit -m "Capture LoveCa blade heart metadata" || exit 0
+          git commit -m "Capture raw LoveCa live fields" || exit 0
           git push
