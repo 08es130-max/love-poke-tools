@@ -22,14 +22,21 @@ jobs:
           python-version: '3.12'
       - name: Install scraper dependencies
         run: pip install requests beautifulsoup4
+      - name: Capture official cardlist JS for debugging
+        run: |
+          curl -L --fail --silent --show-error \
+            'https://llofficial-cardgame.com/wordpress/wp-content/plugins/bushiroad-card-manager/assets/sys.cardlist.js?ver=1786063967' \
+            -o loveca-cardlist-script.js
       - name: Build card database
         run: python scripts/update_loveca_cards.py
-      - name: Upload debug HTML if parsing fails
+      - name: Upload debug files if parsing fails
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: loveca-cardlist-debug
-          path: loveca-cardlist-debug.html
+          path: |
+            loveca-cardlist-debug.html
+            loveca-cardlist-script.js
           if-no-files-found: ignore
       - name: Commit database update
         run: |
