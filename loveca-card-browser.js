@@ -392,7 +392,7 @@
         <p class="loveca-effect">${esc(card.text||'')}</p>
         <div class="loveca-card-actions">
           ${card.isLive?`<button type="button" class="${fav?'primary-btn':'ghost-btn'} loveca-favorite-btn" data-favorite-card="${esc(card.id)}">${fav?'★ お気に入り':'☆ お気に入り'}</button>`:''}
-          ${card.detailUrl?`<a class="ghost-btn loveca-official-link" href="${esc(card.detailUrl)}" target="_blank" rel="noopener">公式詳細</a>`:''}
+          <a class="ghost-btn loveca-official-link" href="https://llofficial-cardgame.com/cardlist/" target="_blank" rel="noopener">公式カードリスト</a>
         </div>
       </div>
     </article>`;
