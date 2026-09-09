@@ -28,38 +28,64 @@ def clean_value(value):
     return value
 
 
+def num_or_zero(value):
+    text = str(value if value is not None else "").strip()
+    if not text:
+        return 0
+    try:
+        return int(text)
+    except ValueError:
+        return text
+
+
+def is_live_card(raw: dict) -> bool:
+    kind = str(raw.get("card_kind") or raw.get("card_kind_code") or "").strip().lower()
+    return kind == "l" or "live" in kind or "ライブ" in kind
+
+
 def normalize_card(raw: dict) -> dict:
     card_id = raw.get("id")
     card_no = clean_value(raw.get("card_number"))
     picture = clean_value(raw.get("picture"))
     image_url = urljoin(BASE + "/wordpress/wp-content/images/cardlist/", picture) if picture else ""
     detail_url = f"{BASE}/cardlist/detail/?id={card_id}" if card_id not in (None, "") else ""
+    live = is_live_card(raw)
 
-    card = {
+    hearts = {
+        "pink": num_or_zero(raw.get("heart01")),
+        "red": num_or_zero(raw.get("heart02")),
+        "yellow": num_or_zero(raw.get("heart03")),
+        "green": num_or_zero(raw.get("heart04")),
+        "blue": num_or_zero(raw.get("heart05")),
+        "purple": num_or_zero(raw.get("heart06")),
+        "colorless": num_or_zero(raw.get("heart0")),
+    }
+
+    return {
         "id": str(card_id if card_id is not None else card_no),
         "cardNo": card_no,
         "name": clean_value(raw.get("card_name")),
         "cardType": clean_value(raw.get("card_kind") or raw.get("kind")),
         "cardTypeSub": clean_value(raw.get("card_kind_sub") or raw.get("kind_sub")),
+        "isLive": live,
         "expansion": clean_value(raw.get("expansion_name") or raw.get("expansion")),
         "text": clean_value(raw.get("text")),
         "imageUrl": image_url,
         "detailUrl": detail_url,
         "cost": clean_value(raw.get("cost")),
-        "score": clean_value(raw.get("score")),
-        "hearts": raw.get("hearts") or {},
+        "score": clean_value(raw.get("blade_heart")) if live else "",
+        "hearts": hearts,
+        "heartText": clean_value(raw.get("heart")),
+        "bladeHeart": clean_value(raw.get("blade") or raw.get("attack")) if live else clean_value(raw.get("blade_heart")),
+        "specialHeart": clean_value(raw.get("cost")) if live else "",
         "rarity": clean_value(raw.get("rare")),
-        "work": clean_value(raw.get("work")),
-        "unit": clean_value(raw.get("unit")),
+        "work": clean_value(raw.get("work_title") or raw.get("work")),
+        "unit": clean_value(raw.get("unit_name") or raw.get("unit")),
         "color": clean_value(raw.get("color")),
         "power": clean_value(raw.get("power")),
         "attack": clean_value(raw.get("attack")),
-        "type": clean_value(raw.get("type")),
-        "aptitude": clean_value(raw.get("aptitude")),
         "picture": picture,
-        "raw": raw,
     }
-    return card
 
 
 def fetch_page(session: requests.Session, page: int) -> dict:
@@ -90,8 +116,6 @@ def main():
         if total is None:
             total = data.get("total")
             print(f"official API total: {total}")
-            if items:
-                print("first item keys:", ", ".join(sorted(items[0].keys())))
 
         print(f"page {page}: {len(items)} cards")
         if not items:
