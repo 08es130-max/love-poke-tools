@@ -18,6 +18,15 @@ HEADERS = {
     "Referer": SEARCH_URL,
 }
 PER_PAGE = 100
+BLADE_HEART_FILTERS = (
+    ("pink", "桃"),
+    ("red", "赤"),
+    ("yellow", "黄"),
+    ("green", "緑"),
+    ("blue", "青"),
+    ("purple", "紫"),
+    ("all", "ALL"),
+)
 
 
 def clean_value(value):
@@ -44,12 +53,6 @@ def is_live_card(raw: dict) -> bool:
 
 
 def infer_work_title(card_no: str) -> str:
-    """The public list API currently omits work_title, while the official site exposes it.
-
-    LoveCa card numbers encode the represented series, so use that stable prefix as the
-    local database fallback. Cross-series LL-* cards remain grouped separately instead of
-    being incorrectly assigned to one title.
-    """
     no = (card_no or "").upper()
     prefix_map = (
         ("PL!SP-", "ラブライブ！スーパースター!!"),
@@ -64,6 +67,17 @@ def infer_work_title(card_no: str) -> str:
         if no.startswith(prefix):
             return title
     return ""
+
+
+def normalize_special_heart(value) -> str:
+    text = str(value if value is not None else "").strip()
+    if not text or text in {"-", "0"} or text.isdigit():
+        return ""
+    if "ドロー" in text:
+        return "draw"
+    if "音符" in text or any(mark in text for mark in ("♪", "♫", "♬", "♩")):
+        return "note"
+    return text
 
 
 def normalize_card(raw: dict) -> dict:
@@ -86,6 +100,7 @@ def normalize_card(raw: dict) -> dict:
 
     api_work = clean_value(raw.get("work_title") or raw.get("work"))
     work = api_work or infer_work_title(card_no)
+    special_heart = normalize_special_heart(raw.get("cost")) if live else ""
 
     return {
         "id": str(card_id if card_id is not None else card_no),
@@ -98,36 +113,56 @@ def normalize_card(raw: dict) -> dict:
         "text": clean_value(raw.get("text")),
         "imageUrl": image_url,
         "detailUrl": detail_url,
-        "cost": clean_value(raw.get("cost")),
-        "score": clean_value(raw.get("blade_heart")) if live else "",
+        "cost": "" if live else clean_value(raw.get("cost")),
+        "score": clean_value(raw.get("score")),
         "hearts": hearts,
         "heartText": clean_value(raw.get("heart")),
-        "bladeHeart": clean_value(raw.get("blade") or raw.get("attack")) if live else clean_value(raw.get("blade_heart")),
-        "specialHeart": clean_value(raw.get("cost")) if live else "",
+        "bladeHeart": clean_value(raw.get("attack")) if live else "",
+        "bladeHeartTypes": [],
+        "hasBladeHeart": False,
+        "specialHeart": special_heart,
         "rarity": clean_value(raw.get("rare")),
         "work": work,
         "unit": clean_value(raw.get("unit_name") or raw.get("unit")),
         "color": clean_value(raw.get("color")),
-        "bladeColor": clean_value(raw.get("color")) if not live else "",
         "power": clean_value(raw.get("power")),
         "attack": clean_value(raw.get("attack")),
         "picture": picture,
     }
 
 
-def fetch_page(session: requests.Session, page: int) -> dict:
+def fetch_page(session: requests.Session, page: int, extra_params=None) -> dict:
     params = {
         "page": page,
         "per_page": PER_PAGE,
         "sort": "no",
         "parallel": "all",
     }
+    if extra_params:
+        params.update(extra_params)
     response = session.get(API_URL, params=params, headers=HEADERS, timeout=60)
     response.raise_for_status()
     data = response.json()
     if not isinstance(data, dict):
         raise RuntimeError(f"Unexpected API response type: {type(data).__name__}")
     return data
+
+
+def fetch_card_numbers_for_blade_heart(session: requests.Session, value: str) -> set[str]:
+    result: set[str] = set()
+    page = 1
+    while True:
+        data = fetch_page(session, page, {"blade_heart[]": value})
+        items = data.get("items") or []
+        for raw in items:
+            number = str(raw.get("card_number") or "").strip()
+            if number:
+                result.add(number)
+        if len(items) < PER_PAGE:
+            break
+        page += 1
+        time.sleep(0.08)
+    return result
 
 
 def main():
@@ -164,6 +199,21 @@ def main():
 
     if len(cards) < 100:
         raise SystemExit(f"Official API returned too few cards: {len(cards)}")
+
+    print("fetching blade-heart classifications")
+    blade_sets = {}
+    for key, official_value in BLADE_HEART_FILTERS:
+        numbers = fetch_card_numbers_for_blade_heart(session, official_value)
+        blade_sets[key] = numbers
+        print(f"blade heart {official_value}: {len(numbers)} cards")
+
+    any_blade = fetch_card_numbers_for_blade_heart(session, "1")
+    print(f"any blade heart: {len(any_blade)} cards")
+
+    for card in cards:
+        no = card.get("cardNo", "")
+        card["bladeHeartTypes"] = [key for key, _ in BLADE_HEART_FILTERS if no in blade_sets[key]]
+        card["hasBladeHeart"] = no in any_blade or bool(card["bladeHeartTypes"])
 
     payload = {
         "updatedAt": datetime.now(timezone.utc).isoformat(),
