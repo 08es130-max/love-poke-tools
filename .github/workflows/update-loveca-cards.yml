@@ -22,11 +22,31 @@ jobs:
           python-version: '3.12'
       - name: Install scraper dependencies
         run: pip install requests beautifulsoup4
-      - name: Capture official cardlist JS for debugging
+      - name: Capture official cardlist scripts for debugging
+        continue-on-error: true
         run: |
-          curl -L --fail --silent --show-error \
-            'https://llofficial-cardgame.com/wordpress/wp-content/plugins/bushiroad-card-manager/assets/sys.cardlist.js?ver=1786063967' \
-            -o loveca-cardlist-script.js
+          python - <<'PY'
+          import pathlib, requests
+          from bs4 import BeautifulSoup
+          from urllib.parse import urljoin
+
+          page='https://llofficial-cardgame.com/cardlist/searchresults/?expansion=&view=text'
+          headers={'User-Agent':'Mozilla/5.0 LovePokeTools/1.0'}
+          html=requests.get(page,headers=headers,timeout=45).text
+          pathlib.Path('loveca-debug-scripts').mkdir(exist_ok=True)
+          soup=BeautifulSoup(html,'html.parser')
+          for i,tag in enumerate(soup.find_all('script',src=True)):
+              url=urljoin(page,tag['src'])
+              if 'cardlist' not in url and 'card-manager' not in url:
+                  continue
+              try:
+                  r=requests.get(url,headers=headers,timeout=45)
+                  print(r.status_code,url)
+                  name=f'{i:02d}-'+url.split('/')[-1].split('?')[0]
+                  pathlib.Path('loveca-debug-scripts',name).write_bytes(r.content)
+              except Exception as exc:
+                  print('ERR',url,exc)
+          PY
       - name: Build card database
         run: python scripts/update_loveca_cards.py
       - name: Upload debug files if parsing fails
@@ -36,7 +56,7 @@ jobs:
           name: loveca-cardlist-debug
           path: |
             loveca-cardlist-debug.html
-            loveca-cardlist-script.js
+            loveca-debug-scripts/
           if-no-files-found: ignore
       - name: Commit database update
         run: |
