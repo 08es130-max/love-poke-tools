@@ -4,7 +4,7 @@
     {id:'work',label:'作品名',selectors:['#lovecaWorkFilter']},
     {id:'cost',label:'コスト',selectors:['#lovecaCostMin','#lovecaCostMax']},
     {id:'score',label:'ライブスコア',selectors:['#lovecaScoreMin','#lovecaScoreMax']},
-    {id:'heart',label:'ハート',selectors:['#lovecaHeart_pink_enabled']},
+    {id:'heart',label:'ハート',selectors:['.loveca-heart-matrix-label']},
     {id:'blade',label:'ブレードハート',selectors:['#lovecaBladeFilter']},
     {id:'rarity',label:'レアリティ',selectors:['#lovecaRarityFilter']},
     {id:'expansion',label:'収録商品',selectors:['#lovecaExpansionFilter']},
