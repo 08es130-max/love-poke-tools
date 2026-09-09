@@ -25,6 +25,7 @@
   margin-top:12px;
 }
 .loveca-search-row input,
+.loveca-search-row textarea,
 .loveca-filter-grid select{
   width:100%;
   min-height:42px;
@@ -176,3 +177,5 @@
   .loveca-card-image-wrap{width:92px;min-height:128px}
   .loveca-card-actions{grid-column:1/-1}
 }
+
+#lovecaQuery{resize:none;overflow:hidden;line-height:1.5;font-size:16px;}

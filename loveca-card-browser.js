@@ -92,7 +92,7 @@
           <span id="lovecaDbStatus" class="badge">読込前</span>
         </div>
         <div class="loveca-search-row">
-          <input id="lovecaQuery" type="text" inputmode="text" lang="ja" autocomplete="off" autocapitalize="off" placeholder="カード名・カード番号・効果などを検索">
+          <textarea id="lovecaQuery" rows="1" inputmode="text" lang="ja" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" placeholder="カード名・カード番号・効果などを検索"></textarea>
           <button id="lovecaClearFilters" type="button" class="ghost-btn">条件クリア</button>
         </div>
         <div class="loveca-filter-grid">
@@ -199,6 +199,7 @@
       visibleCount=PAGE_SIZE;applyFilters();
     });
     document.querySelector('#lovecaLoadMore')?.addEventListener('click',()=>{visibleCount+=PAGE_SIZE;renderCards()});
+    document.querySelector('#lovecaQuery')?.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();event.currentTarget.blur();}});
   }
 
   function applyFilters(){
