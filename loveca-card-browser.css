@@ -1,0 +1,178 @@
+.love-subnav{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+  margin:0 0 12px;
+}
+.love-tab{
+  border:1px solid #e5dce2;
+  border-radius:12px;
+  background:#fff;
+  color:#555;
+  padding:11px 12px;
+  font-weight:700;
+}
+.love-tab.active{
+  border-color:#f05a8a;
+  background:#fff1f6;
+  color:#d83f73;
+}
+.loveca-browser-head .section-title-row{align-items:flex-start}
+.loveca-search-row{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:8px;
+  margin-top:12px;
+}
+.loveca-search-row input,
+.loveca-filter-grid select{
+  width:100%;
+  min-height:42px;
+  border:1px solid #d9d3d7;
+  border-radius:10px;
+  background:#fff;
+  padding:8px 10px;
+  font:inherit;
+}
+.loveca-filter-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+  margin-top:12px;
+}
+.loveca-filter-grid label{
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+  color:#666;
+  font-size:.85rem;
+  font-weight:700;
+}
+.loveca-filter-grid .loveca-check-row{
+  flex-direction:row;
+  align-items:center;
+  justify-content:space-between;
+  min-height:42px;
+  padding:8px 10px;
+  border:1px solid #e4dde1;
+  border-radius:10px;
+  background:#fff;
+}
+.loveca-filter-grid .loveca-check-row input{
+  width:20px;
+  height:20px;
+}
+.loveca-card-grid{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:12px;
+}
+.loveca-card-item{
+  display:grid;
+  grid-template-columns:112px minmax(0,1fr);
+  gap:12px;
+  padding:12px;
+  border:1px solid #ece4e9;
+  border-radius:14px;
+  background:#fff;
+}
+.loveca-card-image-wrap{
+  width:112px;
+  min-height:156px;
+  border-radius:9px;
+  overflow:hidden;
+  background:#f5f2f4;
+}
+.loveca-card-image{
+  display:block;
+  width:100%;
+  height:auto;
+}
+.loveca-card-body{min-width:0}
+.loveca-card-body h3{
+  margin:5px 0 4px;
+  font-size:1rem;
+  line-height:1.35;
+}
+.loveca-card-meta{
+  display:flex;
+  flex-wrap:wrap;
+  gap:5px;
+}
+.loveca-card-meta span{
+  display:inline-flex;
+  align-items:center;
+  min-height:23px;
+  padding:2px 7px;
+  border-radius:999px;
+  background:#f6f2f5;
+  color:#655d62;
+  font-size:.72rem;
+  font-weight:700;
+}
+.loveca-card-sub{
+  color:#777;
+  font-size:.78rem;
+  line-height:1.45;
+}
+.loveca-hearts{
+  display:flex;
+  flex-wrap:wrap;
+  gap:5px;
+  margin-top:8px;
+}
+.loveca-heart{
+  display:inline-flex;
+  align-items:center;
+  padding:3px 7px;
+  border-radius:999px;
+  background:#f5f2f4;
+  font-size:.74rem;
+  font-weight:800;
+}
+.loveca-heart-pink{background:#fceaf3;color:#bc3f76}
+.loveca-heart-red{background:#fdebea;color:#c33f35}
+.loveca-heart-yellow{background:#fff5d7;color:#9c7200}
+.loveca-heart-green{background:#e7f7ed;color:#277747}
+.loveca-heart-blue{background:#e8f5fb;color:#26759a}
+.loveca-heart-purple{background:#f1eaf7;color:#70438d}
+.loveca-heart-colorless{background:#eeeeee;color:#555}
+.loveca-effect{
+  margin:8px 0 0;
+  color:#555;
+  font-size:.82rem;
+  line-height:1.55;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+}
+.loveca-card-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px;
+  margin-top:10px;
+}
+.loveca-card-actions .ghost-btn,
+.loveca-card-actions .primary-btn{
+  min-height:34px;
+  padding:6px 10px;
+  font-size:.78rem;
+}
+.loveca-official-link{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  text-decoration:none;
+}
+#lovecaLoadMore{margin-top:12px}
+
+@media (min-width:760px){
+  .loveca-filter-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .loveca-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:480px){
+  .loveca-search-row{grid-template-columns:1fr}
+  .loveca-filter-grid{grid-template-columns:1fr 1fr}
+  .loveca-card-item{grid-template-columns:92px minmax(0,1fr);gap:10px;padding:10px}
+  .loveca-card-image-wrap{width:92px;min-height:128px}
+  .loveca-card-actions{grid-column:1/-1}
+}
