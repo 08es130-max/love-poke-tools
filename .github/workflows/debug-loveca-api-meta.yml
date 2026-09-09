@@ -1,0 +1,36 @@
+name: Debug LoveCa API meta
+
+on:
+  push:
+    paths:
+      - '.github/workflows/debug-loveca-api-meta.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install requests
+      - name: Capture metadata
+        run: |
+          python - <<'PY'
+          import json, requests
+          url='https://llofficial-cardgame.com/manage/card-list-user/list'
+          r=requests.get(url,params={'page':1,'per_page':1,'sort':'no','parallel':'all'},headers={'User-Agent':'Mozilla/5.0 LovePokeTools/1.0','Accept':'application/json,text/plain,*/*','Referer':'https://llofficial-cardgame.com/cardlist/searchresults/'},timeout=60)
+          r.raise_for_status()
+          data=r.json()
+          open('loveca-api-meta.json','w',encoding='utf-8').write(json.dumps(data.get('meta'),ensure_ascii=False,indent=2))
+          PY
+      - name: Commit meta
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add loveca-api-meta.json
+          git commit -m "Capture LoveCa API metadata" || exit 0
+          git push
