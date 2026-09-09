@@ -1,0 +1,49 @@
+name: Add Pokemon stats display
+
+on:
+  push:
+    paths:
+      - 'scripts/add_pokemon_stats.py'
+      - '.github/workflows/add-pokemon-stats.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build Pokemon stat data
+        run: |
+          python - <<'PY'
+          import csv, io, json, urllib.request
+          url='https://raw.githubusercontent.com/PokeAPI/pokeapi/master/data/v2/csv/pokemon_stats.csv'
+          raw=urllib.request.urlopen(url,timeout=60).read().decode('utf-8')
+          stats={}
+          for row in csv.DictReader(io.StringIO(raw)):
+              pid=int(row['pokemon_id'])
+              if pid<1 or pid>1025: continue
+              stat_id=int(row['stat_id'])
+              value=int(row['base_stat'])
+              rec=stats.setdefault(str(pid),{'bst':0,'speed':None})
+              rec['bst']+=value
+              if stat_id==6: rec['speed']=value
+          if len(stats)<1025:
+              raise SystemExit(f'only {len(stats)} base Pokemon stats found')
+          open('pokemon-stats.js','w',encoding='utf-8').write('window.POKEMON_STATS = '+json.dumps(stats,separators=(',',':'))+';\n')
+          print('wrote',len(stats),'Pokemon stats')
+          PY
+      - name: Patch UI
+        run: python scripts/add_pokemon_stats.py
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pokemon-stats.js app.js index.html styles.css sw.js
+          git commit -m "Show Pokemon BST and speed in draw results" || exit 0
+          git push
