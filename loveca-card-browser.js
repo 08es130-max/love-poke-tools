@@ -146,13 +146,17 @@
               <option value="no">なし</option>
             </select>
             <div id="lovecaBladeColors" class="loveca-blade-color-grid">
-              <label><input id="lovecaBladeColor_pink" type="checkbox" value="桃">桃</label>
-              <label><input id="lovecaBladeColor_red" type="checkbox" value="赤">赤</label>
-              <label><input id="lovecaBladeColor_yellow" type="checkbox" value="黄">黄</label>
-              <label><input id="lovecaBladeColor_green" type="checkbox" value="緑">緑</label>
-              <label><input id="lovecaBladeColor_blue" type="checkbox" value="青">青</label>
-              <label><input id="lovecaBladeColor_purple" type="checkbox" value="紫">紫</label>
+              <label><input id="lovecaBladeColor_pink" type="checkbox" value="pink">桃</label>
+              <label><input id="lovecaBladeColor_red" type="checkbox" value="red">赤</label>
+              <label><input id="lovecaBladeColor_yellow" type="checkbox" value="yellow">黄</label>
+              <label><input id="lovecaBladeColor_green" type="checkbox" value="green">緑</label>
+              <label><input id="lovecaBladeColor_blue" type="checkbox" value="blue">青</label>
+              <label><input id="lovecaBladeColor_purple" type="checkbox" value="purple">紫</label>
+              <label><input id="lovecaBladeColor_all" type="checkbox" value="all">ALL</label>
+              <label><input id="lovecaBladeSpecial_draw" type="checkbox" value="draw">ドロー</label>
+              <label><input id="lovecaBladeSpecial_note" type="checkbox" value="note">音符</label>
             </div>
+            <span class="hint compact">複数選択した場合は、いずれかを持つカードを表示します。</span>
           </label>
           <label>並び順
             <select id="lovecaSort">
@@ -232,7 +236,7 @@
   }
 
   function bindBrowserControls(){
-    ['#lovecaQuery','#lovecaTypeFilter','#lovecaWorkFilter','#lovecaColorFilter','#lovecaRarityFilter','#lovecaExpansionFilter','#lovecaCostMin','#lovecaCostMax','#lovecaScoreMin','#lovecaScoreMax','#lovecaBladeFilter','#lovecaSort','#lovecaFavoritesOnly',...heartOrder.flatMap(([key])=>[`#lovecaHeart_${key}_enabled`,`#lovecaHeart_${key}_min`,`#lovecaHeart_${key}_max`]),...heartOrder.filter(([key])=>key!=='colorless').map(([key])=>`#lovecaBladeColor_${key}`)]
+    ['#lovecaQuery','#lovecaTypeFilter','#lovecaWorkFilter','#lovecaColorFilter','#lovecaRarityFilter','#lovecaExpansionFilter','#lovecaCostMin','#lovecaCostMax','#lovecaScoreMin','#lovecaScoreMax','#lovecaBladeFilter','#lovecaSort','#lovecaFavoritesOnly',...heartOrder.flatMap(([key])=>[`#lovecaHeart_${key}_enabled`,`#lovecaHeart_${key}_min`,`#lovecaHeart_${key}_max`]),...heartOrder.filter(([key])=>key!=='colorless').map(([key])=>`#lovecaBladeColor_${key}`),'#lovecaBladeColor_all','#lovecaBladeSpecial_draw','#lovecaBladeSpecial_note']
       .forEach(selector=>document.querySelector(selector)?.addEventListener(['#lovecaQuery','#lovecaCostMin','#lovecaCostMax','#lovecaScoreMin','#lovecaScoreMax'].includes(selector)||selector.includes('_min')||selector.includes('_max')?'input':'change',()=>{visibleCount=PAGE_SIZE;applyFilters()}));
     document.querySelector('#lovecaClearFilters')?.addEventListener('click',()=>{
       document.querySelector('#lovecaQuery').value='';
@@ -252,6 +256,7 @@
         const blade=document.querySelector(`#lovecaBladeColor_${key}`);if(blade)blade.checked=false;
       }
       document.querySelector('#lovecaBladeFilter').value='all';
+      ['#lovecaBladeColor_all','#lovecaBladeSpecial_draw','#lovecaBladeSpecial_note'].forEach(selector=>{const el=document.querySelector(selector);if(el)el.checked=false;});
       document.querySelector('#lovecaSort').value='no-asc';
       document.querySelector('#lovecaFavoritesOnly').checked=false;
       visibleCount=PAGE_SIZE;applyFilters();
@@ -268,16 +273,11 @@
     return Number.isFinite(n)?n:null;
   }
 
-  function bladeCount(card){
-    const candidates=[card.bladeHeart,card.attack];
-    for(const value of candidates){
-      const text=String(value??'').trim();
-      if(!text||text==='-'||text==='0')continue;
-      const nums=text.match(/\d+/g);
-      if(nums)return nums.map(Number).reduce((a,b)=>a+b,0);
-      if(/blade|ブレード/i.test(text))return 1;
-    }
-    return 0;
+  function bladeHeartKinds(card){
+    const kinds=new Set(Array.isArray(card.bladeHeartTypes)?card.bladeHeartTypes:[]);
+    if(card.specialHeart==='draw')kinds.add('draw');
+    if(card.specialHeart==='note')kinds.add('note');
+    return kinds;
   }
 
   function applyFilters(){
@@ -299,7 +299,10 @@
       max:numberOrNull(document.querySelector(`#lovecaHeart_${key}_max`)?.value)
     })).filter(x=>x.enabled||x.min!==null||x.max!==null);
     const bladeFilter=document.querySelector('#lovecaBladeFilter')?.value||'all';
-    const bladeColors=new Set(heartOrder.filter(([key])=>key!=='colorless'&&document.querySelector(`#lovecaBladeColor_${key}`)?.checked).map(([,label])=>label));
+    const bladeKinds=new Set(heartOrder.filter(([key])=>key!=='colorless'&&document.querySelector(`#lovecaBladeColor_${key}`)?.checked).map(([key])=>key));
+    if(document.querySelector('#lovecaBladeColor_all')?.checked)bladeKinds.add('all');
+    if(document.querySelector('#lovecaBladeSpecial_draw')?.checked)bladeKinds.add('draw');
+    if(document.querySelector('#lovecaBladeSpecial_note')?.checked)bladeKinds.add('note');
     const favOnly=!!document.querySelector('#lovecaFavoritesOnly')?.checked;
     const favs=favorites();
 
@@ -328,14 +331,11 @@
         if(hf.max!==null&&heartCount>hf.max)return false;
       }
 
-      const hasBlade=bladeCount(card)>0;
-      if(bladeFilter==='yes'&&!hasBlade)return false;
-      if(bladeFilter==='no'&&hasBlade)return false;
-      if(bladeColors.size){
-        if(!hasBlade)return false;
-        const bladeColor=String(card.bladeColor||card.color||'');
-        if(!bladeColors.has(bladeColor))return false;
-      }
+      const cardBladeKinds=bladeHeartKinds(card);
+      const hasBladeHeart=!!card.hasBladeHeart||cardBladeKinds.size>0;
+      if(bladeFilter==='yes'&&!hasBladeHeart)return false;
+      if(bladeFilter==='no'&&hasBladeHeart)return false;
+      if(bladeKinds.size&&![...bladeKinds].some(kind=>cardBladeKinds.has(kind)))return false;
       if(favOnly&&!favs.has(String(card.id)))return false;
       if(query){
         const hay=[card.name,card.cardNo,card.text,card.expansion,card.work,card.unit,card.rarity].join(' ').toLocaleLowerCase('ja');

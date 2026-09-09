@@ -5,7 +5,7 @@
     {id:'cost',label:'コスト',selectors:['#lovecaCostMin','#lovecaCostMax']},
     {id:'score',label:'ライブスコア',selectors:['#lovecaScoreMin','#lovecaScoreMax']},
     {id:'heart',label:'ハート',selectors:['#lovecaHeart_pink_enabled']},
-    {id:'blade',label:'ブレード',selectors:['#lovecaBladeFilter']},
+    {id:'blade',label:'ブレードハート',selectors:['#lovecaBladeFilter']},
     {id:'color',label:'色',selectors:['#lovecaColorFilter']},
     {id:'rarity',label:'レアリティ',selectors:['#lovecaRarityFilter']},
     {id:'expansion',label:'収録商品',selectors:['#lovecaExpansionFilter']},
@@ -36,7 +36,8 @@
     }
     if(group.id==='blade'){
       const bf=field('#lovecaBladeFilter');if(bf)bf.value='all';
-      ['pink','red','yellow','green','blue','purple'].forEach(key=>{const e=field(`#lovecaBladeColor_${key}`);if(e)e.checked=false;});
+      ['pink','red','yellow','green','blue','purple','all'].forEach(key=>{const e=field(`#lovecaBladeColor_${key}`);if(e)e.checked=false;});
+      ['draw','note'].forEach(key=>{const e=field(`#lovecaBladeSpecial_${key}`);if(e)e.checked=false;});
       bf?.dispatchEvent(new Event('change',{bubbles:true}));
       return;
     }
@@ -59,7 +60,16 @@
     if(group.id==='color')return get('#lovecaColorFilter')?.value||'';
     if(group.id==='rarity')return get('#lovecaRarityFilter')?.value||'';
     if(group.id==='expansion')return get('#lovecaExpansionFilter')?.value||'';
-    if(group.id==='blade')return get('#lovecaBladeFilter')?.selectedOptions?.[0]?.textContent||'';
+    if(group.id==='blade'){
+      const parts=[];
+      const mode=get('#lovecaBladeFilter')?.selectedOptions?.[0]?.textContent||'';
+      if(mode&&mode!=='指定なし')parts.push(mode);
+      const labels={pink:'桃',red:'赤',yellow:'黄',green:'緑',blue:'青',purple:'紫',all:'ALL'};
+      Object.entries(labels).forEach(([key,label])=>{if(get(`#lovecaBladeColor_${key}`)?.checked)parts.push(label);});
+      if(get('#lovecaBladeSpecial_draw')?.checked)parts.push('ドロー');
+      if(get('#lovecaBladeSpecial_note')?.checked)parts.push('音符');
+      return parts.join(' / ');
+    }
     if(group.id==='sort')return get('#lovecaSort')?.selectedOptions?.[0]?.textContent||'';
     if(group.id==='favorite')return get('#lovecaFavoritesOnly')?.checked?'お気に入りのみ':'';
     if(group.id==='cost'||group.id==='score'){
