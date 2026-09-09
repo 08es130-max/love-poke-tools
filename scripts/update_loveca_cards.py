@@ -43,6 +43,29 @@ def is_live_card(raw: dict) -> bool:
     return kind == "l" or "live" in kind or "ライブ" in kind
 
 
+def infer_work_title(card_no: str) -> str:
+    """The public list API currently omits work_title, while the official site exposes it.
+
+    LoveCa card numbers encode the represented series, so use that stable prefix as the
+    local database fallback. Cross-series LL-* cards remain grouped separately instead of
+    being incorrectly assigned to one title.
+    """
+    no = (card_no or "").upper()
+    prefix_map = (
+        ("PL!SP-", "ラブライブ！スーパースター!!"),
+        ("PL!HS-", "ラブライブ！蓮ノ空女学院スクールアイドルクラブ"),
+        ("PL!N-", "ラブライブ！虹ヶ咲学園スクールアイドル同好会"),
+        ("PL!S-", "ラブライブ！サンシャイン!!"),
+        ("PL!-", "ラブライブ！"),
+        ("IKZL-", "イキヅライブ！ LOVELIVE! BLUEBIRD"),
+        ("LL-", "ラブライブ！シリーズ（複数作品）"),
+    )
+    for prefix, title in prefix_map:
+        if no.startswith(prefix):
+            return title
+    return ""
+
+
 def normalize_card(raw: dict) -> dict:
     card_id = raw.get("id")
     card_no = clean_value(raw.get("card_number"))
@@ -60,6 +83,9 @@ def normalize_card(raw: dict) -> dict:
         "purple": num_or_zero(raw.get("heart06")),
         "colorless": num_or_zero(raw.get("heart0")),
     }
+
+    api_work = clean_value(raw.get("work_title") or raw.get("work"))
+    work = api_work or infer_work_title(card_no)
 
     return {
         "id": str(card_id if card_id is not None else card_no),
@@ -79,7 +105,7 @@ def normalize_card(raw: dict) -> dict:
         "bladeHeart": clean_value(raw.get("blade") or raw.get("attack")) if live else clean_value(raw.get("blade_heart")),
         "specialHeart": clean_value(raw.get("cost")) if live else "",
         "rarity": clean_value(raw.get("rare")),
-        "work": clean_value(raw.get("work_title") or raw.get("work")),
+        "work": work,
         "unit": clean_value(raw.get("unit_name") or raw.get("unit")),
         "color": clean_value(raw.get("color")),
         "power": clean_value(raw.get("power")),
