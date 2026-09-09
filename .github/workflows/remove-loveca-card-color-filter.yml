@@ -1,0 +1,61 @@
+name: Remove LoveCa card color filter
+
+on:
+  push:
+    paths:
+      - '.github/workflows/remove-loveca-card-color-filter.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Remove card color filter only
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          browser = Path('loveca-card-browser.js')
+          text = browser.read_text(encoding='utf-8')
+
+          text = text.replace('''          <label>色\n            <select id="lovecaColorFilter"><option value="">すべて</option></select>\n          </label>\n''', '')
+          text = text.replace("    fillSelect('#lovecaColorFilter',unique(cards.map(c=>c.color)));\n", '')
+          text = text.replace("'#lovecaWorkFilter','#lovecaColorFilter','#lovecaRarityFilter'", "'#lovecaWorkFilter','#lovecaRarityFilter'")
+          text = text.replace("      document.querySelector('#lovecaColorFilter').value='';\n", '')
+          text = text.replace("    const color=document.querySelector('#lovecaColorFilter')?.value||'';\n", '')
+          text = text.replace("      if(color&&String(card.color||'')!==color)return false;\n", '')
+          browser.write_text(text, encoding='utf-8')
+
+          selector = Path('loveca-filter-selector.js')
+          text = selector.read_text(encoding='utf-8')
+          text = text.replace("    {id:'color',label:'色',selectors:['#lovecaColorFilter']},\n", '')
+          text = text.replace("    if(group.id==='color')return get('#lovecaColorFilter')?.value||'';\n", '')
+          selector.write_text(text, encoding='utf-8')
+
+          sw = Path('sw.js')
+          text = sw.read_text(encoding='utf-8')
+          m = re.search(r'v20260909-(\d+)', text)
+          if m:
+              n = int(m.group(1)) + 1
+              text = text[:m.start()] + f'v20260909-{n}' + text[m.end():]
+              sw.write_text(text, encoding='utf-8')
+          PY
+      - name: Commit changes
+        run: |
+          if git diff --quiet -- loveca-card-browser.js loveca-filter-selector.js sw.js; then
+            echo "No changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add loveca-card-browser.js loveca-filter-selector.js sw.js
+          git commit -m "Remove LoveCa card color filter"
+          git push
