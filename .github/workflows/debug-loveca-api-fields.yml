@@ -1,0 +1,38 @@
+name: Debug LoveCa API fields
+
+on:
+  push:
+    paths:
+      - '.github/workflows/debug-loveca-api-fields.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install requests
+      - name: Capture sample fields
+        run: |
+          python - <<'PY'
+          import json, requests
+          url='https://llofficial-cardgame.com/manage/card-list-user/list'
+          r=requests.get(url,params={'page':1,'per_page':5,'sort':'no','parallel':'all'},headers={'User-Agent':'Mozilla/5.0 LovePokeTools/1.0','Accept':'application/json,text/plain,*/*','Referer':'https://llofficial-cardgame.com/cardlist/searchresults/'},timeout=60)
+          r.raise_for_status()
+          data=r.json()
+          items=data.get('items') or []
+          out={'top_keys':sorted(data.keys()),'item_keys':sorted(items[0].keys()) if items else [],'samples':items[:3]}
+          open('loveca-api-sample.json','w',encoding='utf-8').write(json.dumps(out,ensure_ascii=False,indent=2))
+          PY
+      - name: Commit sample
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add loveca-api-sample.json
+          git commit -m "Capture LoveCa API sample fields" || exit 0
+          git push
