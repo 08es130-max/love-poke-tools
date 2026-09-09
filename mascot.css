@@ -5,9 +5,24 @@
   --mascot-safe-left: env(safe-area-inset-left, 0px);
 }
 
-.mascot-root { position: relative; z-index: 900; pointer-events: none; }
-.mascot-layer { position: fixed; inset: 0; z-index: 900; overflow: hidden; pointer-events: none; }
-.mascot-layer[hidden] { display: none !important; }
+.mascot-root {
+  position: relative;
+  z-index: 900;
+  pointer-events: none;
+}
+
+.mascot-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.mascot-layer[hidden] {
+  display: none !important;
+}
+
 .mascot-sprite {
   --mascot-column: 0;
   --mascot-row: 0;
@@ -16,16 +31,18 @@
   --mascot-sheet-height: 440px;
   --mascot-frame-x: 0px;
   --mascot-frame-y: 0px;
+
   display: block;
   padding: 0;
   border: 0;
-  background-color: transparent;
   overflow: hidden;
+  background-color: transparent;
   background-image: url('./assets/mascot/shioriko-sprite-fixed.png');
   background-repeat: no-repeat;
   background-size: var(--mascot-sheet-width) var(--mascot-sheet-height);
   background-position: var(--mascot-frame-x) var(--mascot-frame-y);
 }
+
 .edge-mascot {
   position: absolute;
   left: 0;
@@ -38,8 +55,17 @@
   filter: drop-shadow(0 3px 3px rgba(0, 0, 0, .2));
   will-change: transform, background-position;
 }
-.edge-mascot:focus-visible { outline: 3px solid #e8508c; outline-offset: 2px; border-radius: 12px; }
-.edge-mascot.mascot-tapped { animation: mascot-hop .55s ease; }
+
+.edge-mascot:focus-visible {
+  outline: 3px solid #e8508c;
+  outline-offset: 2px;
+  border-radius: 12px;
+}
+
+.edge-mascot.mascot-tapped {
+  animation: mascot-hop .55s ease;
+}
+
 .mascot-bubble {
   position: fixed;
   z-index: 2;
@@ -55,6 +81,7 @@
   line-height: 1.45;
   pointer-events: none;
 }
+
 .mascot-settings-btn {
   position: fixed;
   right: max(10px, calc(env(safe-area-inset-right, 0px) + 8px));
@@ -73,27 +100,156 @@
   touch-action: manipulation;
   pointer-events: auto;
 }
-.mascot-dialog { z-index: 950; width: min(92vw, 500px); max-width: none; padding: 0; border: 0; background: transparent; pointer-events: auto; }
-.mascot-dialog::backdrop { background: rgba(28, 20, 24, .46); }
-.mascot-dialog-card { padding: 18px; border-radius: 18px; background: #fff; box-shadow: 0 20px 60px rgba(0, 0, 0, .3); }
-.mascot-dialog-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-.mascot-dialog-head h2 { margin: 0 0 3px; font-size: 20px; }
-.mascot-dialog-head p { margin: 0; color: #70656a; font-size: 13px; }
-.mascot-setting-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; }
-.mascot-setting-grid > label { display: flex; flex-direction: column; gap: 6px; color: #4b4146; font-size: 13px; }
-.mascot-switch { flex-direction: row !important; align-items: center; justify-content: space-between; min-height: 44px; padding: 8px 11px; border-radius: 11px; background: #f8f6f7; }
-.mascot-setting-grid select { min-height: 42px; padding: 7px 9px; border: 1px solid #ddd5d9; border-radius: 9px; background: white; color: inherit; font: inherit; }
-.mascot-setting-grid input[type='checkbox'] { width: 20px; height: 20px; accent-color: #e8508c; }
-.mascot-dialog-actions { display: flex; justify-content: flex-end; margin-top: 14px; }
-@keyframes mascot-hop { 0%, 100% { margin-top: 0; } 45% { margin-top: -16px; } }
+
+.mascot-dialog {
+  z-index: 950;
+  width: min(92vw, 500px);
+  max-width: none;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  pointer-events: auto;
+}
+
+.mascot-dialog::backdrop {
+  background: rgba(28, 20, 24, .46);
+}
+
+.mascot-dialog-card {
+  padding: 18px;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, .3);
+}
+
+.mascot-dialog-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.mascot-dialog-head h2 {
+  margin: 0 0 3px;
+  font-size: 20px;
+}
+
+.mascot-dialog-head p {
+  margin: 0;
+  color: #70656a;
+  font-size: 13px;
+}
+
+.mascot-preview {
+  display: grid;
+  min-height: 112px;
+  margin: 14px 0;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #fff2f7, #f2f6ff);
+}
+
+.mascot-preview .mascot-sprite {
+  width: 100px;
+  height: 80px;
+}
+
+.mascot-image-error .mascot-preview::after {
+  content: '画像を読み込めませんでした';
+  color: #a83252;
+  font-size: 13px;
+}
+
+.mascot-image-error .mascot-preview .mascot-sprite {
+  display: none;
+}
+
+.mascot-setting-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 11px;
+}
+
+.mascot-setting-grid > label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #4b4146;
+  font-size: 13px;
+}
+
+.mascot-switch {
+  flex-direction: row !important;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  padding: 8px 11px;
+  border-radius: 11px;
+  background: #f8f6f7;
+}
+
+.mascot-setting-grid select {
+  min-height: 42px;
+  padding: 7px 9px;
+  border: 1px solid #ddd5d9;
+  border-radius: 9px;
+  background: white;
+  color: inherit;
+  font: inherit;
+}
+
+.mascot-setting-grid input[type='checkbox'] {
+  width: 20px;
+  height: 20px;
+  accent-color: #e8508c;
+}
+
+.mascot-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 14px;
+}
+
+@keyframes mascot-hop {
+  0%, 100% {
+    margin-top: 0;
+  }
+
+  45% {
+    margin-top: -16px;
+  }
+}
 
 @media (max-width: 560px) {
-  .mascot-dialog { width: calc(100vw - 20px); }
-  .mascot-dialog-card { max-height: calc(100dvh - 24px); padding: 14px; overflow: auto; }
-  .mascot-setting-grid { grid-template-columns: 1fr; gap: 8px; }
-  .mascot-bubble { max-width: 145px; font-size: 11px; }
+  .mascot-dialog {
+    width: calc(100vw - 20px);
+  }
+
+  .mascot-dialog-card {
+    max-height: calc(100dvh - 24px);
+    padding: 14px;
+    overflow: auto;
+  }
+
+  .mascot-setting-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .mascot-preview {
+    min-height: 92px;
+    margin: 10px 0;
+  }
+
+  .mascot-bubble {
+    max-width: 145px;
+    font-size: 11px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .edge-mascot.mascot-tapped { animation: none; }
+  .edge-mascot.mascot-tapped {
+    animation: none;
+  }
 }
