@@ -107,9 +107,6 @@
           <label>作品名
             <select id="lovecaWorkFilter"><option value="">すべて</option></select>
           </label>
-          <label>色
-            <select id="lovecaColorFilter"><option value="">すべて</option></select>
-          </label>
           <label>レアリティ
             <select id="lovecaRarityFilter"><option value="">すべて</option></select>
           </label>
@@ -218,7 +215,6 @@
 
   function populateFilters(){
     fillSelect('#lovecaWorkFilter',unique(cards.map(c=>c.work)));
-    fillSelect('#lovecaColorFilter',unique(cards.map(c=>c.color)));
     fillSelect('#lovecaRarityFilter',unique(cards.map(c=>c.rarity)));
     fillSelect('#lovecaExpansionFilter',unique(cards.map(c=>c.expansion)));
   }
@@ -236,13 +232,12 @@
   }
 
   function bindBrowserControls(){
-    ['#lovecaQuery','#lovecaTypeFilter','#lovecaWorkFilter','#lovecaColorFilter','#lovecaRarityFilter','#lovecaExpansionFilter','#lovecaCostMin','#lovecaCostMax','#lovecaScoreMin','#lovecaScoreMax','#lovecaBladeFilter','#lovecaSort','#lovecaFavoritesOnly',...heartOrder.flatMap(([key])=>[`#lovecaHeart_${key}_enabled`,`#lovecaHeart_${key}_min`,`#lovecaHeart_${key}_max`]),...heartOrder.filter(([key])=>key!=='colorless').map(([key])=>`#lovecaBladeColor_${key}`),'#lovecaBladeColor_all','#lovecaBladeSpecial_draw','#lovecaBladeSpecial_note']
+    ['#lovecaQuery','#lovecaTypeFilter','#lovecaWorkFilter','#lovecaRarityFilter','#lovecaExpansionFilter','#lovecaCostMin','#lovecaCostMax','#lovecaScoreMin','#lovecaScoreMax','#lovecaBladeFilter','#lovecaSort','#lovecaFavoritesOnly',...heartOrder.flatMap(([key])=>[`#lovecaHeart_${key}_enabled`,`#lovecaHeart_${key}_min`,`#lovecaHeart_${key}_max`]),...heartOrder.filter(([key])=>key!=='colorless').map(([key])=>`#lovecaBladeColor_${key}`),'#lovecaBladeColor_all','#lovecaBladeSpecial_draw','#lovecaBladeSpecial_note']
       .forEach(selector=>document.querySelector(selector)?.addEventListener(['#lovecaQuery','#lovecaCostMin','#lovecaCostMax','#lovecaScoreMin','#lovecaScoreMax'].includes(selector)||selector.includes('_min')||selector.includes('_max')?'input':'change',()=>{visibleCount=PAGE_SIZE;applyFilters()}));
     document.querySelector('#lovecaClearFilters')?.addEventListener('click',()=>{
       document.querySelector('#lovecaQuery').value='';
       document.querySelector('#lovecaTypeFilter').value='all';
       document.querySelector('#lovecaWorkFilter').value='';
-      document.querySelector('#lovecaColorFilter').value='';
       document.querySelector('#lovecaRarityFilter').value='';
       document.querySelector('#lovecaExpansionFilter').value='';
       document.querySelector('#lovecaCostMin').value='';
@@ -285,7 +280,6 @@
     const query=(document.querySelector('#lovecaQuery')?.value||'').trim().toLocaleLowerCase('ja');
     const type=document.querySelector('#lovecaTypeFilter')?.value||'all';
     const work=document.querySelector('#lovecaWorkFilter')?.value||'';
-    const color=document.querySelector('#lovecaColorFilter')?.value||'';
     const rarity=document.querySelector('#lovecaRarityFilter')?.value||'';
     const expansion=document.querySelector('#lovecaExpansionFilter')?.value||'';
     const costMin=numberOrNull(document.querySelector('#lovecaCostMin')?.value);
@@ -312,7 +306,6 @@
       if(type==='member'&&cardType!=='メンバー')return false;
       if(type==='energy'&&cardType!=='エネルギー')return false;
       if(work&&String(card.work||'')!==work)return false;
-      if(color&&String(card.color||'')!==color)return false;
       if(rarity&&String(card.rarity||'')!==rarity)return false;
       if(expansion&&String(card.expansion||'')!==expansion)return false;
 

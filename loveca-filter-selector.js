@@ -6,7 +6,6 @@
     {id:'score',label:'ライブスコア',selectors:['#lovecaScoreMin','#lovecaScoreMax']},
     {id:'heart',label:'ハート',selectors:['#lovecaHeart_pink_enabled']},
     {id:'blade',label:'ブレードハート',selectors:['#lovecaBladeFilter']},
-    {id:'color',label:'色',selectors:['#lovecaColorFilter']},
     {id:'rarity',label:'レアリティ',selectors:['#lovecaRarityFilter']},
     {id:'expansion',label:'収録商品',selectors:['#lovecaExpansionFilter']},
     {id:'sort',label:'並び順',selectors:['#lovecaSort']},
@@ -57,7 +56,6 @@
     const get=s=>field(s);
     if(group.id==='type')return get('#lovecaTypeFilter')?.selectedOptions?.[0]?.textContent||'';
     if(group.id==='work')return get('#lovecaWorkFilter')?.value||'';
-    if(group.id==='color')return get('#lovecaColorFilter')?.value||'';
     if(group.id==='rarity')return get('#lovecaRarityFilter')?.value||'';
     if(group.id==='expansion')return get('#lovecaExpansionFilter')?.value||'';
     if(group.id==='blade'){
