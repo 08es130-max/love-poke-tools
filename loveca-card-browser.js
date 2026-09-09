@@ -101,6 +101,7 @@
               <option value="all">すべて</option>
               <option value="member">メンバー</option>
               <option value="live">ライブ</option>
+              <option value="energy">エネルギー</option>
             </select>
           </label>
           <label>色
@@ -211,8 +212,10 @@
     const favs=favorites();
 
     filtered=cards.filter(card=>{
+      const cardType=String(card.cardType||'');
       if(type==='live'&&!card.isLive)return false;
-      if(type==='member'&&card.isLive)return false;
+      if(type==='member'&&cardType!=='メンバー')return false;
+      if(type==='energy'&&cardType!=='エネルギー')return false;
       if(color&&String(card.color||'')!==color)return false;
       if(rarity&&String(card.rarity||'')!==rarity)return false;
       if(expansion&&String(card.expansion||'')!==expansion)return false;
@@ -327,7 +330,10 @@
         if(card)applyFavoriteToLive(i,card);
       });
       const observer=new MutationObserver(()=>{
-        if(!favoriteSyncing&&loaded)queueMicrotask(syncFavoriteOptions);
+        if(favoriteSyncing||!loaded)return;
+        const needsFavorites=favoriteLiveCards().length>0;
+        const hasGroup=!!select.querySelector('optgroup[data-loveca-favorites]');
+        if(needsFavorites&&!hasGroup)queueMicrotask(syncFavoriteOptions);
       });
       observer.observe(select,{childList:true});
     }
