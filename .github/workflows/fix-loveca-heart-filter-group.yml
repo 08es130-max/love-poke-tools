@@ -1,0 +1,29 @@
+name: Fix LoveCa heart filter group
+
+on:
+  push:
+    paths:
+      - 'scripts/fix_loveca_heart_filter_group.py'
+      - '.github/workflows/fix-loveca-heart-filter-group.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply targeted fix
+        run: python scripts/fix_loveca_heart_filter_group.py
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add loveca-filter-selector.js sw.js
+          git diff --cached --quiet || git commit -m "Fix LoveCa heart filter display"
+          git push
