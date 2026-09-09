@@ -1,130 +1,127 @@
 from __future__ import annotations
 
 import json
-import re
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urljoin
 
 import requests
-from bs4 import BeautifulSoup
 
 BASE = "https://llofficial-cardgame.com"
-SEARCH_URL = BASE + "/cardlist/searchresults/?expansion=&view=text"
+API_URL = BASE + "/manage/card-list-user/list"
+SEARCH_URL = BASE + "/cardlist/searchresults/"
 OUT = Path(__file__).resolve().parents[1] / "loveca-cards.json"
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/152 Safari/537.36 LovePokeTools/1.0"
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/152 Safari/537.36 LovePokeTools/1.0",
+    "Accept": "application/json,text/plain,*/*",
+    "Referer": SEARCH_URL,
 }
+PER_PAGE = 100
 
 
-def clean(text: str) -> str:
-    return re.sub(r"\s+", " ", text or "").strip()
-
-
-def find_card_container(label_node):
-    node = label_node
-    best = None
-    for _ in range(10):
-        node = getattr(node, "parent", None)
-        if node is None:
-            break
-        text = clean(node.get_text(" ", strip=True))
-        if "カード番号" in text and "カードタイプ" in text and "収録商品" in text:
-            best = node
-            # Prefer the smallest ancestor that looks like a single card entry.
-            numbers = node.find_all(string=lambda s: s and clean(s) == "カード番号")
-            if len(numbers) == 1:
-                return node
-    return best
-
-
-def extract_after_label(container, label: str) -> str:
-    strings = [clean(x) for x in container.stripped_strings]
-    try:
-        i = strings.index(label)
-    except ValueError:
+def clean_value(value):
+    if value is None:
         return ""
-    return strings[i + 1] if i + 1 < len(strings) else ""
+    if isinstance(value, str):
+        return value.strip()
+    return value
 
 
-def parse_cards(html: str):
-    soup = BeautifulSoup(html, "html.parser")
-    containers = []
-    seen = set()
-    for text_node in soup.find_all(string=lambda s: s and clean(s) == "カード番号"):
-        container = find_card_container(text_node)
-        if container is not None and id(container) not in seen:
-            seen.add(id(container))
-            containers.append(container)
+def normalize_card(raw: dict) -> dict:
+    card_id = raw.get("id")
+    card_no = clean_value(raw.get("card_number"))
+    picture = clean_value(raw.get("picture"))
+    image_url = urljoin(BASE + "/wordpress/wp-content/images/cardlist/", picture) if picture else ""
+    detail_url = f"{BASE}/cardlist/detail/?id={card_id}" if card_id not in (None, "") else ""
 
-    cards = []
-    seen_numbers = set()
-    for container in containers:
-        card_no = extract_after_label(container, "カード番号")
-        if not card_no or card_no in seen_numbers:
-            continue
-        seen_numbers.add(card_no)
-        expansion = extract_after_label(container, "収録商品")
-        card_type = extract_after_label(container, "カードタイプ")
+    card = {
+        "id": str(card_id if card_id is not None else card_no),
+        "cardNo": card_no,
+        "name": clean_value(raw.get("card_name")),
+        "cardType": clean_value(raw.get("card_kind") or raw.get("kind")),
+        "cardTypeSub": clean_value(raw.get("card_kind_sub") or raw.get("kind_sub")),
+        "expansion": clean_value(raw.get("expansion_name") or raw.get("expansion")),
+        "text": clean_value(raw.get("text")),
+        "imageUrl": image_url,
+        "detailUrl": detail_url,
+        "cost": clean_value(raw.get("cost")),
+        "score": clean_value(raw.get("score")),
+        "hearts": raw.get("hearts") or {},
+        "rarity": clean_value(raw.get("rare")),
+        "work": clean_value(raw.get("work")),
+        "unit": clean_value(raw.get("unit")),
+        "color": clean_value(raw.get("color")),
+        "power": clean_value(raw.get("power")),
+        "attack": clean_value(raw.get("attack")),
+        "type": clean_value(raw.get("type")),
+        "aptitude": clean_value(raw.get("aptitude")),
+        "picture": picture,
+        "raw": raw,
+    }
+    return card
 
-        detail_link = None
-        for a in container.find_all("a", href=True):
-            if "詳しく" in clean(a.get_text(" ", strip=True)):
-                detail_link = urljoin(BASE, a["href"])
-                break
 
-        img = container.find("img")
-        image_url = urljoin(BASE, img.get("src")) if img and img.get("src") else ""
-        image_alt = clean(img.get("alt", "")) if img else ""
-
-        strings = [clean(x) for x in container.stripped_strings]
-        excluded = {"収録商品", "カードタイプ", "カード番号", expansion, card_type, card_no, "詳しく見る"}
-        candidates = [s for s in strings if s and s not in excluded and not s.startswith("検索結果")]
-        name = image_alt or (candidates[0] if candidates else card_no)
-
-        text_parts = []
-        for s in candidates:
-            if s == name:
-                continue
-            if s not in text_parts:
-                text_parts.append(s)
-        effect_text = " ".join(text_parts)
-
-        cards.append({
-            "id": card_no,
-            "cardNo": card_no,
-            "name": name,
-            "cardType": card_type,
-            "expansion": expansion,
-            "text": effect_text,
-            "imageUrl": image_url,
-            "detailUrl": detail_link or "",
-            "cost": None,
-            "score": None,
-            "hearts": {},
-            "rarity": "",
-            "work": "",
-            "unit": ""
-        })
-    return cards
+def fetch_page(session: requests.Session, page: int) -> dict:
+    params = {
+        "page": page,
+        "per_page": PER_PAGE,
+        "sort": "no",
+        "parallel": "all",
+    }
+    response = session.get(API_URL, params=params, headers=HEADERS, timeout=60)
+    response.raise_for_status()
+    data = response.json()
+    if not isinstance(data, dict):
+        raise RuntimeError(f"Unexpected API response type: {type(data).__name__}")
+    return data
 
 
 def main():
-    response = requests.get(SEARCH_URL, headers=HEADERS, timeout=60)
-    response.raise_for_status()
-    cards = parse_cards(response.text)
-    print(f"parsed cards: {len(cards)}")
+    session = requests.Session()
+    cards = []
+    seen_ids = set()
+    page = 1
+    total = None
+
+    while True:
+        data = fetch_page(session, page)
+        items = data.get("items") or []
+        if total is None:
+            total = data.get("total")
+            print(f"official API total: {total}")
+            if items:
+                print("first item keys:", ", ".join(sorted(items[0].keys())))
+
+        print(f"page {page}: {len(items)} cards")
+        if not items:
+            break
+
+        for raw in items:
+            key = str(raw.get("id") if raw.get("id") is not None else raw.get("card_number"))
+            if key in seen_ids:
+                continue
+            seen_ids.add(key)
+            cards.append(normalize_card(raw))
+
+        if len(items) < PER_PAGE:
+            break
+        if total is not None and len(cards) >= int(total):
+            break
+        page += 1
+        time.sleep(0.15)
+
     if len(cards) < 100:
-        Path("loveca-cardlist-debug.html").write_text(response.text, encoding="utf-8")
-        raise SystemExit("Card parsing returned too few cards; saved loveca-cardlist-debug.html for inspection.")
+        raise SystemExit(f"Official API returned too few cards: {len(cards)}")
 
     payload = {
         "updatedAt": datetime.now(timezone.utc).isoformat(),
-        "source": SEARCH_URL,
+        "source": API_URL,
+        "total": len(cards),
         "cards": cards,
     }
     OUT.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-    print(f"wrote {OUT} ({OUT.stat().st_size:,} bytes)")
+    print(f"wrote {OUT} with {len(cards)} cards ({OUT.stat().st_size:,} bytes)")
 
 
 if __name__ == "__main__":
