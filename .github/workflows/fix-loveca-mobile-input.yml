@@ -1,0 +1,51 @@
+name: Fix LoveCa mobile search input
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/fix-loveca-mobile-input.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Patch mobile search input safely
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          js = Path('loveca-card-browser.js')
+          text = js.read_text(encoding='utf-8')
+          old = '<input id="lovecaQuery" type="search" placeholder="カード名・カード番号・効果などを検索">'
+          new = '<input id="lovecaQuery" type="text" inputmode="text" lang="ja" autocomplete="off" autocapitalize="off" placeholder="カード名・カード番号・効果などを検索">'
+          if old not in text:
+              raise SystemExit('Expected LoveCa search input markup was not found; refusing unsafe patch.')
+          js.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          sw = Path('sw.js')
+          sw_text = sw.read_text(encoding='utf-8')
+          old_cache = "const CACHE_NAME = `${CACHE_PREFIX}v20260909-3`;"
+          new_cache = "const CACHE_NAME = `${CACHE_PREFIX}v20260909-4`;"
+          if old_cache in sw_text:
+              sw_text = sw_text.replace(old_cache, new_cache, 1)
+          sw.write_text(sw_text, encoding='utf-8')
+          PY
+      - name: Commit fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add loveca-card-browser.js sw.js
+          if git diff --cached --quiet; then
+            echo "No changes"
+            exit 0
+          fi
+          git commit -m "Fix Japanese input in LoveCa search"
+          git push
