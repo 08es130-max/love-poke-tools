@@ -200,3 +200,13 @@
 .loveca-filter-dialog-actions{margin-top:16px}
 .loveca-filter-dialog-actions .primary-btn{width:100%;min-height:46px}
 @media (max-width:480px){.loveca-selected-filter-grid,.loveca-filter-choice-grid{grid-template-columns:1fr 1fr}}
+
+.loveca-heart-filter-matrix{display:grid;gap:7px;margin-top:7px}
+.loveca-heart-filter-row{display:grid;grid-template-columns:64px minmax(0,1fr) auto minmax(0,1fr);gap:6px;align-items:center}
+.loveca-heart-filter-row input[type="number"]{min-width:0}
+.loveca-heart-enable{display:flex!important;flex-direction:row!important;align-items:center;gap:5px!important;font-weight:800!important}
+.loveca-heart-enable input{width:18px!important;height:18px!important}
+.loveca-blade-color-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:8px}
+.loveca-blade-color-grid label{display:flex!important;flex-direction:row!important;align-items:center;gap:5px!important;padding:7px 8px;border:1px solid #e4dde1;border-radius:9px;background:#fff}
+.loveca-blade-color-grid input{width:18px!important;height:18px!important}
+@media (max-width:480px){.loveca-heart-filter-row{grid-template-columns:58px minmax(0,1fr) auto minmax(0,1fr)}.loveca-blade-color-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}

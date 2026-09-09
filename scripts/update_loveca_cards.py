@@ -108,6 +108,7 @@ def normalize_card(raw: dict) -> dict:
         "work": work,
         "unit": clean_value(raw.get("unit_name") or raw.get("unit")),
         "color": clean_value(raw.get("color")),
+        "bladeColor": clean_value(raw.get("color")) if not live else "",
         "power": clean_value(raw.get("power")),
         "attack": clean_value(raw.get("attack")),
         "picture": picture,

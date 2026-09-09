@@ -4,7 +4,7 @@
     {id:'work',label:'作品名',selectors:['#lovecaWorkFilter']},
     {id:'cost',label:'コスト',selectors:['#lovecaCostMin','#lovecaCostMax']},
     {id:'score',label:'ライブスコア',selectors:['#lovecaScoreMin','#lovecaScoreMax']},
-    {id:'heart',label:'ハート',selectors:['#lovecaHeartType','#lovecaHeartMin','#lovecaHeartMax']},
+    {id:'heart',label:'ハート',selectors:['#lovecaHeart_pink_enabled']},
     {id:'blade',label:'ブレード',selectors:['#lovecaBladeFilter']},
     {id:'color',label:'色',selectors:['#lovecaColorFilter']},
     {id:'rarity',label:'レアリティ',selectors:['#lovecaRarityFilter']},
@@ -25,6 +25,21 @@
   function labelFor(selector){return field(selector)?.closest('label')||null}
 
   function clearGroup(group){
+    if(group.id==='heart'){
+      ['pink','red','yellow','green','blue','purple','colorless'].forEach(key=>{
+        const e=field(`#lovecaHeart_${key}_enabled`);if(e)e.checked=false;
+        const min=field(`#lovecaHeart_${key}_min`);if(min)min.value='';
+        const max=field(`#lovecaHeart_${key}_max`);if(max)max.value='';
+      });
+      field('#lovecaHeart_pink_enabled')?.dispatchEvent(new Event('change',{bubbles:true}));
+      return;
+    }
+    if(group.id==='blade'){
+      const bf=field('#lovecaBladeFilter');if(bf)bf.value='all';
+      ['pink','red','yellow','green','blue','purple'].forEach(key=>{const e=field(`#lovecaBladeColor_${key}`);if(e)e.checked=false;});
+      bf?.dispatchEvent(new Event('change',{bubbles:true}));
+      return;
+    }
     for(const selector of group.selectors){
       const el=field(selector);if(!el)continue;
       if(el.type==='checkbox')el.checked=false;
@@ -54,11 +69,14 @@
       return min||max?`${min||'－'}～${max||'－'}`:'';
     }
     if(group.id==='heart'){
-      const type=get('#lovecaHeartType')?.selectedOptions?.[0]?.textContent||'';
-      const min=get('#lovecaHeartMin')?.value||'';
-      const max=get('#lovecaHeartMax')?.value||'';
-      const range=min||max?`${min||'－'}～${max||'－'}`:'';
-      return [type==='指定なし'?'':type,range].filter(Boolean).join(' ');
+      const labels={pink:'桃',red:'赤',yellow:'黄',green:'緑',blue:'青',purple:'紫',colorless:'無'};
+      return Object.entries(labels).map(([key,label])=>{
+        const enabled=get(`#lovecaHeart_${key}_enabled`)?.checked;
+        const min=get(`#lovecaHeart_${key}_min`)?.value||'';
+        const max=get(`#lovecaHeart_${key}_max`)?.value||'';
+        if(!enabled&&!min&&!max)return'';
+        return `${label}${min||'1'}～${max||'－'}`;
+      }).filter(Boolean).join(' / ');
     }
     return '';
   }

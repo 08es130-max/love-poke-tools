@@ -128,30 +128,31 @@
           <label>ライブスコア上限
             <input id="lovecaScoreMax" type="number" inputmode="numeric" min="0" placeholder="例 3">
           </label>
-          <label>ハート種類
-            <select id="lovecaHeartType">
-              <option value="">指定なし</option>
-              <option value="pink">桃</option>
-              <option value="red">赤</option>
-              <option value="yellow">黄</option>
-              <option value="green">緑</option>
-              <option value="blue">青</option>
-              <option value="purple">紫</option>
-              <option value="colorless">無色</option>
-            </select>
+          <label class="loveca-heart-matrix-label">ハート（複数色をAND検索）
+            <div id="lovecaHeartMatrix" class="loveca-heart-filter-matrix">
+              ${heartOrder.map(([key,label])=>`<div class="loveca-heart-filter-row">
+                <label class="loveca-heart-enable"><input id="lovecaHeart_${key}_enabled" type="checkbox"> <span>${label}</span></label>
+                <input id="lovecaHeart_${key}_min" type="number" inputmode="numeric" min="0" placeholder="下限">
+                <span>～</span>
+                <input id="lovecaHeart_${key}_max" type="number" inputmode="numeric" min="0" placeholder="上限">
+              </div>`).join('')}
+            </div>
+            <span class="hint compact">例：緑 2～4 と 青 1～2 → 両方を満たすカードだけ表示</span>
           </label>
-          <label>ハート数 下限
-            <input id="lovecaHeartMin" type="number" inputmode="numeric" min="0" placeholder="例 2">
-          </label>
-          <label>ハート数 上限
-            <input id="lovecaHeartMax" type="number" inputmode="numeric" min="0" placeholder="例 4">
-          </label>
-          <label>ブレード
+          <label class="loveca-blade-color-label">ブレードハート
             <select id="lovecaBladeFilter">
               <option value="all">指定なし</option>
               <option value="yes">あり</option>
               <option value="no">なし</option>
             </select>
+            <div id="lovecaBladeColors" class="loveca-blade-color-grid">
+              <label><input id="lovecaBladeColor_pink" type="checkbox" value="桃">桃</label>
+              <label><input id="lovecaBladeColor_red" type="checkbox" value="赤">赤</label>
+              <label><input id="lovecaBladeColor_yellow" type="checkbox" value="黄">黄</label>
+              <label><input id="lovecaBladeColor_green" type="checkbox" value="緑">緑</label>
+              <label><input id="lovecaBladeColor_blue" type="checkbox" value="青">青</label>
+              <label><input id="lovecaBladeColor_purple" type="checkbox" value="紫">紫</label>
+            </div>
           </label>
           <label>並び順
             <select id="lovecaSort">
@@ -231,8 +232,8 @@
   }
 
   function bindBrowserControls(){
-    ['#lovecaQuery','#lovecaTypeFilter','#lovecaWorkFilter','#lovecaColorFilter','#lovecaRarityFilter','#lovecaExpansionFilter','#lovecaCostMin','#lovecaCostMax','#lovecaScoreMin','#lovecaScoreMax','#lovecaHeartType','#lovecaHeartMin','#lovecaHeartMax','#lovecaBladeFilter','#lovecaSort','#lovecaFavoritesOnly']
-      .forEach(selector=>document.querySelector(selector)?.addEventListener(['#lovecaQuery','#lovecaCostMin','#lovecaCostMax','#lovecaScoreMin','#lovecaScoreMax','#lovecaHeartMin','#lovecaHeartMax'].includes(selector)?'input':'change',()=>{visibleCount=PAGE_SIZE;applyFilters()}));
+    ['#lovecaQuery','#lovecaTypeFilter','#lovecaWorkFilter','#lovecaColorFilter','#lovecaRarityFilter','#lovecaExpansionFilter','#lovecaCostMin','#lovecaCostMax','#lovecaScoreMin','#lovecaScoreMax','#lovecaBladeFilter','#lovecaSort','#lovecaFavoritesOnly',...heartOrder.flatMap(([key])=>[`#lovecaHeart_${key}_enabled`,`#lovecaHeart_${key}_min`,`#lovecaHeart_${key}_max`]),...heartOrder.filter(([key])=>key!=='colorless').map(([key])=>`#lovecaBladeColor_${key}`)]
+      .forEach(selector=>document.querySelector(selector)?.addEventListener(['#lovecaQuery','#lovecaCostMin','#lovecaCostMax','#lovecaScoreMin','#lovecaScoreMax'].includes(selector)||selector.includes('_min')||selector.includes('_max')?'input':'change',()=>{visibleCount=PAGE_SIZE;applyFilters()}));
     document.querySelector('#lovecaClearFilters')?.addEventListener('click',()=>{
       document.querySelector('#lovecaQuery').value='';
       document.querySelector('#lovecaTypeFilter').value='all';
@@ -244,9 +245,12 @@
       document.querySelector('#lovecaCostMax').value='';
       document.querySelector('#lovecaScoreMin').value='';
       document.querySelector('#lovecaScoreMax').value='';
-      document.querySelector('#lovecaHeartType').value='';
-      document.querySelector('#lovecaHeartMin').value='';
-      document.querySelector('#lovecaHeartMax').value='';
+      for(const [key] of heartOrder){
+        const enabled=document.querySelector(`#lovecaHeart_${key}_enabled`);if(enabled)enabled.checked=false;
+        const min=document.querySelector(`#lovecaHeart_${key}_min`);if(min)min.value='';
+        const max=document.querySelector(`#lovecaHeart_${key}_max`);if(max)max.value='';
+        const blade=document.querySelector(`#lovecaBladeColor_${key}`);if(blade)blade.checked=false;
+      }
       document.querySelector('#lovecaBladeFilter').value='all';
       document.querySelector('#lovecaSort').value='no-asc';
       document.querySelector('#lovecaFavoritesOnly').checked=false;
@@ -288,10 +292,14 @@
     const costMax=numberOrNull(document.querySelector('#lovecaCostMax')?.value);
     const scoreMin=numberOrNull(document.querySelector('#lovecaScoreMin')?.value);
     const scoreMax=numberOrNull(document.querySelector('#lovecaScoreMax')?.value);
-    const heartType=document.querySelector('#lovecaHeartType')?.value||'';
-    const heartMin=numberOrNull(document.querySelector('#lovecaHeartMin')?.value);
-    const heartMax=numberOrNull(document.querySelector('#lovecaHeartMax')?.value);
+    const heartFilters=heartOrder.map(([key,label])=>({
+      key,label,
+      enabled:!!document.querySelector(`#lovecaHeart_${key}_enabled`)?.checked,
+      min:numberOrNull(document.querySelector(`#lovecaHeart_${key}_min`)?.value),
+      max:numberOrNull(document.querySelector(`#lovecaHeart_${key}_max`)?.value)
+    })).filter(x=>x.enabled||x.min!==null||x.max!==null);
     const bladeFilter=document.querySelector('#lovecaBladeFilter')?.value||'all';
+    const bladeColors=new Set(heartOrder.filter(([key])=>key!=='colorless'&&document.querySelector(`#lovecaBladeColor_${key}`)?.checked).map(([,label])=>label));
     const favOnly=!!document.querySelector('#lovecaFavoritesOnly')?.checked;
     const favs=favorites();
 
@@ -313,20 +321,21 @@
       if(scoreMin!==null&&(!card.isLive||score===null||score<scoreMin))return false;
       if(scoreMax!==null&&(!card.isLive||score===null||score>scoreMax))return false;
 
-      if(heartType){
-        const heartCount=Number(card.hearts?.[heartType])||0;
-        const effectiveMin=heartMin===null?1:heartMin;
+      for(const hf of heartFilters){
+        const heartCount=Number(card.hearts?.[hf.key])||0;
+        const effectiveMin=hf.min===null?1:hf.min;
         if(heartCount<effectiveMin)return false;
-        if(heartMax!==null&&heartCount>heartMax)return false;
-      }else if(heartMin!==null||heartMax!==null){
-        const values=Object.values(card.hearts||{}).map(Number).filter(Number.isFinite);
-        const matches=values.some(value=>(heartMin===null||value>=heartMin)&&(heartMax===null||value<=heartMax));
-        if(!matches)return false;
+        if(hf.max!==null&&heartCount>hf.max)return false;
       }
 
       const hasBlade=bladeCount(card)>0;
       if(bladeFilter==='yes'&&!hasBlade)return false;
       if(bladeFilter==='no'&&hasBlade)return false;
+      if(bladeColors.size){
+        if(!hasBlade)return false;
+        const bladeColor=String(card.bladeColor||card.color||'');
+        if(!bladeColors.has(bladeColor))return false;
+      }
       if(favOnly&&!favs.has(String(card.id)))return false;
       if(query){
         const hay=[card.name,card.cardNo,card.text,card.expansion,card.work,card.unit,card.rarity].join(' ').toLocaleLowerCase('ja');
