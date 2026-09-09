@@ -1,0 +1,61 @@
+name: Fix LoveCa iOS keyboard
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/fix-loveca-ios-keyboard.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Patch LoveCa search field for iOS
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          js=Path('loveca-card-browser.js')
+          text=js.read_text(encoding='utf-8')
+          old='<input id="lovecaQuery" type="text" inputmode="text" lang="ja" autocomplete="off" autocapitalize="off" placeholder="カード名・カード番号・効果などを検索">'
+          new='<textarea id="lovecaQuery" rows="1" inputmode="text" lang="ja" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" placeholder="カード名・カード番号・効果などを検索"></textarea>'
+          if old not in text:
+              raise SystemExit('search input marker not found')
+          text=text.replace(old,new,1)
+          old_bind="document.querySelector('#lovecaLoadMore')?.addEventListener('click',()=>{visibleCount+=PAGE_SIZE;renderCards()});"
+          new_bind=old_bind+"\n    document.querySelector('#lovecaQuery')?.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();event.currentTarget.blur();}});"
+          if old_bind not in text:
+              raise SystemExit('binding marker not found')
+          text=text.replace(old_bind,new_bind,1)
+          js.write_text(text,encoding='utf-8')
+
+          css=Path('loveca-card-browser.css')
+          c=css.read_text(encoding='utf-8')
+          c=c.replace('.loveca-search-row input,\n.loveca-filter-grid select{','.loveca-search-row input,\n.loveca-search-row textarea,\n.loveca-filter-grid select{',1)
+          c += '\n#lovecaQuery{resize:none;overflow:hidden;line-height:1.5;font-size:16px;}\n'
+          css.write_text(c,encoding='utf-8')
+
+          sw=Path('sw.js')
+          s=sw.read_text(encoding='utf-8')
+          import re
+          m=re.search(r"v20260909-(\d+)",s)
+          if not m:
+              raise SystemExit('cache version marker not found')
+          n=int(m.group(1))+1
+          s=s[:m.start()]+f'v20260909-{n}'+s[m.end():]
+          sw.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add loveca-card-browser.js loveca-card-browser.css sw.js
+          git commit -m "Fix LoveCa Japanese keyboard on iOS"
+          git push
