@@ -859,13 +859,27 @@ function finalEvolutionList(p){
   const final=family.reduce((a,b)=>b.id>a.id?b:a,family[0]);
   return [final];
 }
+function pokemonStats(p){
+  if(!p)return {bst:null,speed:null};
+  const stat=window.POKEMON_STATS?.[String(p.id)]||null;
+  return {bst:stat?.bst??null,speed:stat?.speed??null};
+}
+function finalEvolutionStats(p){
+  const finals=finalEvolutionList(p);
+  const withStats=finals.map(f=>({pokemon:f,...pokemonStats(f)})).filter(x=>x.bst!=null);
+  if(!withStats.length)return {bst:null,speed:null,finals:[]};
+  const best=withStats.reduce((a,b)=>b.bst>a.bst?b:a,withStats[0]);
+  return {bst:best.bst,speed:best.speed,finals:withStats};
+}
 function finalEvolutionHtml(p){
   const finals=finalEvolutionList(p);
   if(!finals.length)return '';
   if(finals.length===1 && finals[0].uniqueKey===p.uniqueKey)return '';
   const items=finals.map(f=>{
     const tags=specialTags(f).map(t=>`<span class="cat-tag">${t}</span>`).join('');
-    return `${f.name}${tags}`;
+    const s=pokemonStats(f);
+    const stat=s.bst!=null?` <span class="poke-stat-mini">BST ${s.bst} / S ${s.speed??'—'}</span>`:'';
+    return `${f.name}${tags}${stat}`;
   }).join('／');
   const label=finals.length>1?'最終進化候補':'最終進化';
   return `<div class="final-evo">${label}：${items}</div>`;
@@ -929,10 +943,22 @@ function renderPokeResults(){
       lock.onclick=()=>{pokeState.locks[pi][j]=!pokeState.locks[pi][j];renderPokeResults()};
       const no=document.createElement('div');no.className='dex-no';no.textContent=String(p.id).padStart(4,'0');
       const nm=document.createElement('div');
+      const ownStats=pokemonStats(p);
+      const finalStats=finalEvolutionStats(p);
+      const statLine=ownStats.bst!=null
+        ? `<div class="poke-stat-line">BST ${ownStats.bst} / S ${ownStats.speed??'—'}${finalStats.bst!=null&&finalStats.bst!==ownStats.bst?`　最終BST ${finalStats.bst}`:''}</div>`
+        : '';
       nm.innerHTML=`<div class="poke-name">${p.name}<span class="slot-tag">${slotLabel(j)}</span></div>
-        <div class="category-tags">${tagHtml(p)}</div>${finalEvolutionHtml(p)}`;
+        <div class="category-tags">${tagHtml(p)}</div>${statLine}${finalEvolutionHtml(p)}`;
       row.append(lock,no,nm);list.append(row);
     });
+    const partyFinalBst=g.reduce((sum,p)=>sum+(finalEvolutionStats(p).bst??pokemonStats(p).bst??0),0);
+    if(partyFinalBst){
+      const total=document.createElement('div');
+      total.className='poke-party-stat-total';
+      total.textContent=`パーティ最終進化BST合計 ${partyFinalBst}`;
+      card.append(total);
+    }
     card.append(list);box.append(card);
   });
 }

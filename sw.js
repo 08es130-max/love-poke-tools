@@ -6,6 +6,7 @@ const ASSETS = [
   './styles.css',
   './app.js',
   './pokemon-data.js',
+  './pokemon-stats.js',
   './pokemon-ui.js',
   './loveca-card-browser.js',
   './loveca-filter-selector.js',
