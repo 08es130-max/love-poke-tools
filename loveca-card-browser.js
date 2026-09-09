@@ -92,7 +92,7 @@
           <span id="lovecaDbStatus" class="badge">読込前</span>
         </div>
         <div class="loveca-search-row">
-          <input id="lovecaQuery" type="search" placeholder="カード名・カード番号・効果などを検索">
+          <input id="lovecaQuery" type="text" inputmode="text" lang="ja" autocomplete="off" autocapitalize="off" placeholder="カード名・カード番号・効果などを検索">
           <button id="lovecaClearFilters" type="button" class="ghost-btn">条件クリア</button>
         </div>
         <div class="loveca-filter-grid">
