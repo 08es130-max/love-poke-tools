@@ -37,7 +37,7 @@
   border: 0;
   overflow: hidden;
   background-color: transparent;
-  background-image: url('./assets/mascot/shioriko-sprite-fixed.png');
+  background-image: url('./assets/mascot/shioriko-sprite.png');
   background-repeat: no-repeat;
   background-size: var(--mascot-sheet-width) var(--mascot-sheet-height);
   background-position: var(--mascot-frame-x) var(--mascot-frame-y);
@@ -212,7 +212,8 @@
 }
 
 @keyframes mascot-hop {
-  0%, 100% {
+  0%,
+  100% {
     margin-top: 0;
   }
 
