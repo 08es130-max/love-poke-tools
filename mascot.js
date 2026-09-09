@@ -1,164 +1,288 @@
-(()=>{
-  const SETTINGS_KEY='lovepoke_mascot_settings_v1';
-  const DB_NAME='lovepoke_mascot_db';
-  const DB_STORE='images';
-  const IMAGE_KEY='active';
-  const defaults={enabled:true,moving:true,speech:true,size:'medium',speed:'normal'};
-  let settings=loadSettings();
-  let mascot=null,bubble=null,settingsBtn=null,dialog=null;
-  let imageUrl='';
-  let dir='right';
-  let x=16,y=16;
-  let lastTs=0;
-  let pauseUntil=0;
-  let nextPauseAt=performance.now()+12000+Math.random()*10000;
+(() => {
+  'use strict';
 
-  const speedMap={slow:24,normal:42,fast:68};
-  const sizeMap={small:56,medium:76,large:104};
-  const phrases=['ふふ、順調ですね。','少しだけ見守っています。','次は何をしましょうか？','焦らず進めていきましょう。','ここにいますよ。'];
+  const SETTINGS_KEY = 'lovepoke_mascot_settings_v2';
+  const SPRITE_URL = './assets/mascot/shioriko-sprite.png';
 
-  function loadSettings(){
-    try{return {...defaults,...JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}')}}catch{return {...defaults}}
-  }
-  function saveSettings(){localStorage.setItem(SETTINGS_KEY,JSON.stringify(settings))}
-  function ensureCss(){
-    if(document.querySelector('link[data-mascot-css]'))return;
-    const link=document.createElement('link');link.rel='stylesheet';link.href='./mascot.css';link.dataset.mascotCss='1';document.head.append(link);
-  }
-  function openDb(){
-    return new Promise((resolve,reject)=>{
-      const req=indexedDB.open(DB_NAME,1);
-      req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains(DB_STORE))req.result.createObjectStore(DB_STORE)};
-      req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);
-    });
-  }
-  async function storeImage(blob){
-    const db=await openDb();
-    await new Promise((resolve,reject)=>{const tx=db.transaction(DB_STORE,'readwrite');tx.objectStore(DB_STORE).put(blob,IMAGE_KEY);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)});
-    db.close();
-  }
-  async function loadImage(){
-    try{
-      const db=await openDb();
-      const blob=await new Promise((resolve,reject)=>{const tx=db.transaction(DB_STORE,'readonly');const req=tx.objectStore(DB_STORE).get(IMAGE_KEY);req.onsuccess=()=>resolve(req.result||null);req.onerror=()=>reject(req.error)});
-      db.close();return blob;
-    }catch{return null}
-  }
-  async function clearStoredImage(){
-    try{const db=await openDb();await new Promise((resolve,reject)=>{const tx=db.transaction(DB_STORE,'readwrite');tx.objectStore(DB_STORE).delete(IMAGE_KEY);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)});db.close()}catch{}
-  }
-  function setMascotImage(blob){
-    if(imageUrl)URL.revokeObjectURL(imageUrl);
-    imageUrl=blob?URL.createObjectURL(blob):'';
-    if(mascot){mascot.src=imageUrl;mascot.classList.toggle('mascot-no-image',!imageUrl)}
-    refreshVisibility();
-  }
-  function viewport(){
-    const s=sizeMap[settings.size]||sizeMap.medium;
-    const pad=8;
-    return {s,pad,maxX:Math.max(pad,innerWidth-s-pad),maxY:Math.max(pad,innerHeight-s-pad)};
-  }
-  function clampPosition(){const v=viewport();x=Math.min(v.maxX,Math.max(v.pad,x));y=Math.min(v.maxY,Math.max(v.pad,y))}
-  function applySize(){if(!mascot)return;const s=sizeMap[settings.size]||sizeMap.medium;mascot.style.width=`${s}px`;mascot.style.height=`${s}px`;clampPosition();paint()}
-  function paint(){if(!mascot)return;mascot.style.transform=`translate3d(${x}px,${y}px,0) scaleX(${dir==='left'?-1:1})`}
-  function refreshVisibility(){
-    if(!mascot)return;
-    const visible=settings.enabled&&!!imageUrl;
-    mascot.classList.toggle('hidden',!visible);
-    if(settingsBtn)settingsBtn.classList.toggle('mascot-configured',!!imageUrl);
-  }
-  function maybePause(ts){
-    if(!settings.moving||ts<pauseUntil)return;
-    if(ts>=nextPauseAt){
-      pauseUntil=ts+1100+Math.random()*1900;
-      nextPauseAt=pauseUntil+9000+Math.random()*13000;
-      mascot?.classList.add('mascot-paused');
-      if(settings.speech&&Math.random()<0.45)showBubble(phrases[Math.floor(Math.random()*phrases.length)],1900);
-      setTimeout(()=>mascot?.classList.remove('mascot-paused'),Math.max(0,pauseUntil-performance.now()));
+  // Sprite-sheet adjustments live here. The bundled sheet has four columns and
+  // five rows: right, left, down, up, then idle/reactions.
+  const SPRITE = Object.freeze({
+    frameWidth: 272,
+    frameHeight: 217,
+    columns: 4,
+    rows: Object.freeze({ right: 0, left: 1, down: 2, up: 3, idle: 4 }),
+    frames: Object.freeze({ right: 4, left: 4, down: 4, up: 4, idle: 4 }),
+    walkFrameMs: 150,
+    idleFrameMs: 520
+  });
+
+  const defaults = Object.freeze({ enabled: true, moving: true, speech: true, size: 'medium', speed: 'normal' });
+  const speeds = Object.freeze({ slow: 24, normal: 42, fast: 68 });
+  const sizes = Object.freeze({ small: 52, medium: 72, large: 96 });
+  const phrases = Object.freeze([
+    '栞子が画面の端をうろちょろします',
+    '角に来たら方向転換です',
+    'ときどき立ち止まってしまいます',
+    'タップありがとうございます'
+  ]);
+
+  let settings = loadSettings();
+  let layer;
+  let mascot;
+  let bubble;
+  let dialog;
+  let preview;
+  let x = 0;
+  let y = 0;
+  let direction = 'right';
+  let lastTime = 0;
+  let frame = 0;
+  let lastFrameTime = 0;
+  let pauseUntil = 0;
+  let nextPauseAt = performance.now() + randomBetween(9000, 17000);
+  let bubbleTimer;
+  let imageReady = false;
+
+  function loadSettings() {
+    try {
+      return { ...defaults, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}') };
+    } catch (_) {
+      return { ...defaults };
     }
   }
-  function step(ts){
-    if(!lastTs)lastTs=ts;
-    const dt=Math.min(0.05,(ts-lastTs)/1000);lastTs=ts;
-    maybePause(ts);
-    if(mascot&&settings.enabled&&settings.moving&&imageUrl&&ts>=pauseUntil){
-      const v=viewport();const d=(speedMap[settings.speed]||speedMap.normal)*dt;
-      if(dir==='right'){x+=d;if(x>=v.maxX){x=v.maxX;dir='down'}}
-      else if(dir==='down'){y+=d;if(y>=v.maxY){y=v.maxY;dir='left'}}
-      else if(dir==='left'){x-=d;if(x<=v.pad){x=v.pad;dir='up'}}
-      else {y-=d;if(y<=v.pad){y=v.pad;dir='right'}}
+
+  function saveSettings() {
+    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (_) { /* Storage may be unavailable in private mode. */ }
+  }
+
+  function randomBetween(min, max) { return min + Math.random() * (max - min); }
+
+  function safeInsets() {
+    const style = getComputedStyle(document.documentElement);
+    const number = name => Number.parseFloat(style.getPropertyValue(name)) || 0;
+    return {
+      top: number('--mascot-safe-top'),
+      right: number('--mascot-safe-right'),
+      bottom: number('--mascot-safe-bottom'),
+      left: number('--mascot-safe-left')
+    };
+  }
+
+  function dimensions() {
+    const height = sizes[settings.size] || sizes.medium;
+    const width = height * SPRITE.frameWidth / SPRITE.frameHeight;
+    const inset = safeInsets();
+    const edge = 5;
+    return {
+      width,
+      height,
+      minX: inset.left + edge,
+      minY: inset.top + edge,
+      maxX: Math.max(inset.left + edge, innerWidth - inset.right - width - edge),
+      maxY: Math.max(inset.top + edge, innerHeight - inset.bottom - height - edge)
+    };
+  }
+
+  function clampPosition() {
+    const box = dimensions();
+    x = Math.min(box.maxX, Math.max(box.minX, x));
+    y = Math.min(box.maxY, Math.max(box.minY, y));
+  }
+
+  function renderSprite(target, pose, frameNumber) {
+    if (!target) return;
+    const row = SPRITE.rows[pose];
+    const count = SPRITE.frames[pose];
+    const column = Math.max(0, Math.min(count - 1, frameNumber));
+    target.style.setProperty('--mascot-column', column);
+    target.style.setProperty('--mascot-row', row);
+  }
+
+  function paint() {
+    if (!mascot) return;
+    const box = dimensions();
+    mascot.style.width = `${box.width}px`;
+    mascot.style.height = `${box.height}px`;
+    mascot.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+    renderSprite(mascot, isPaused() ? 'idle' : direction, frame);
+  }
+
+  function isPaused(now = performance.now()) { return !settings.moving || now < pauseUntil; }
+
+  function updateVisibility() {
+    if (!layer) return;
+    layer.hidden = !settings.enabled || !imageReady;
+    if (!settings.speech) hideBubble();
+  }
+
+  function startRandomPause(now) {
+    if (!settings.moving || now < nextPauseAt) return;
+    pauseUntil = now + randomBetween(1400, 3200);
+    nextPauseAt = pauseUntil + randomBetween(8000, 16000);
+    frame = Math.floor(Math.random() * SPRITE.frames.idle);
+  }
+
+  function move(distance) {
+    const box = dimensions();
+    if (direction === 'right') {
+      x += distance;
+      if (x >= box.maxX) { x = box.maxX; direction = 'down'; }
+    } else if (direction === 'down') {
+      y += distance;
+      if (y >= box.maxY) { y = box.maxY; direction = 'left'; }
+    } else if (direction === 'left') {
+      x -= distance;
+      if (x <= box.minX) { x = box.minX; direction = 'up'; }
+    } else {
+      y -= distance;
+      if (y <= box.minY) { y = box.minY; direction = 'right'; }
+    }
+  }
+
+  function animate(now) {
+    const elapsed = Math.min(50, now - (lastTime || now));
+    lastTime = now;
+    startRandomPause(now);
+
+    if (settings.enabled && imageReady) {
+      const paused = isPaused(now);
+      if (!paused) move((speeds[settings.speed] || speeds.normal) * elapsed / 1000);
+      const interval = paused ? SPRITE.idleFrameMs : SPRITE.walkFrameMs;
+      if (now - lastFrameTime >= interval) {
+        frame = (frame + 1) % SPRITE.frames[paused ? 'idle' : direction];
+        lastFrameTime = now;
+      }
       paint();
     }
-    requestAnimationFrame(step);
+    requestAnimationFrame(animate);
   }
-  function showBubble(text,ms=2200){
-    if(!bubble||!settings.speech||!imageUrl)return;
-    bubble.textContent=text;bubble.classList.remove('hidden');
-    const v=viewport();
-    const left=Math.min(innerWidth-190,Math.max(8,x+v.s/2-85));
-    const top=Math.max(8,y-54);
-    bubble.style.left=`${left}px`;bubble.style.top=`${top}px`;
-    clearTimeout(showBubble.timer);showBubble.timer=setTimeout(()=>bubble.classList.add('hidden'),ms);
+
+  function hideBubble() {
+    clearTimeout(bubbleTimer);
+    if (bubble) bubble.hidden = true;
   }
-  function openSettings(){
-    syncDialog();
-    if(typeof dialog.showModal==='function')dialog.showModal();else dialog.setAttribute('open','');
+
+  function showBubble(text) {
+    if (!bubble || !settings.speech || !imageReady || !settings.enabled) return;
+    const box = dimensions();
+    bubble.textContent = text;
+    bubble.hidden = false;
+    bubble.style.left = `${Math.min(innerWidth - 170, Math.max(8, x + box.width / 2 - 80))}px`;
+    bubble.style.top = `${Math.max(8, y - 58)}px`;
+    clearTimeout(bubbleTimer);
+    bubbleTimer = setTimeout(hideBubble, 2800);
   }
-  function syncDialog(){
-    if(!dialog)return;
-    dialog.querySelector('#mascotEnabled').checked=settings.enabled;
-    dialog.querySelector('#mascotMoving').checked=settings.moving;
-    dialog.querySelector('#mascotSpeech').checked=settings.speech;
-    dialog.querySelector('#mascotSize').value=settings.size;
-    dialog.querySelector('#mascotSpeed').value=settings.speed;
-    dialog.querySelector('#mascotImageStatus').textContent=imageUrl?'画像設定済み':'画像未設定';
+
+  function applySettings() {
+    saveSettings();
+    clampPosition();
+    updateVisibility();
+    paint();
   }
-  function bindDialog(){
-    const q=s=>dialog.querySelector(s);
-    q('#mascotEnabled').onchange=e=>{settings.enabled=e.target.checked;saveSettings();refreshVisibility()};
-    q('#mascotMoving').onchange=e=>{settings.moving=e.target.checked;saveSettings()};
-    q('#mascotSpeech').onchange=e=>{settings.speech=e.target.checked;saveSettings();if(!settings.speech)bubble.classList.add('hidden')};
-    q('#mascotSize').onchange=e=>{settings.size=e.target.value;saveSettings();applySize()};
-    q('#mascotSpeed').onchange=e=>{settings.speed=e.target.value;saveSettings()};
-    q('#mascotImageInput').onchange=async e=>{
-      const file=e.target.files?.[0];if(!file)return;
-      if(!file.type.startsWith('image/')){alert('画像ファイルを選んでください。');return}
-      if(file.size>8*1024*1024){alert('画像は8MB以下を推奨します。');return}
-      try{await storeImage(file);setMascotImage(file);settings.enabled=true;saveSettings();syncDialog()}catch{alert('画像を保存できませんでした。')}
-      e.target.value='';
+
+  function syncDialog() {
+    if (!dialog) return;
+    dialog.querySelector('#mascotEnabled').checked = settings.enabled;
+    dialog.querySelector('#mascotMoving').checked = settings.moving;
+    dialog.querySelector('#mascotSpeech').checked = settings.speech;
+    dialog.querySelector('#mascotSize').value = settings.size;
+    dialog.querySelector('#mascotSpeed').value = settings.speed;
+  }
+
+  function bindDialog() {
+    const bind = (selector, key, value = element => element.checked) => {
+      dialog.querySelector(selector).addEventListener('change', event => {
+        settings[key] = value(event.currentTarget);
+        applySettings();
+      });
     };
-    q('#mascotClearImage').onclick=async()=>{await clearStoredImage();setMascotImage(null);syncDialog()};
-    q('#mascotTestSpeech').onclick=()=>showBubble(phrases[Math.floor(Math.random()*phrases.length)],2400);
+    bind('#mascotEnabled', 'enabled');
+    bind('#mascotMoving', 'moving');
+    bind('#mascotSpeech', 'speech');
+    bind('#mascotSize', 'size', element => element.value);
+    bind('#mascotSpeed', 'speed', element => element.value);
+    dialog.querySelector('#mascotTestSpeech').addEventListener('click', () => showBubble(phrases[Math.floor(Math.random() * phrases.length)]));
   }
-  async function init(){
-    ensureCss();
-    mascot=document.createElement('img');
-    mascot.id='edgeMascot';mascot.alt='マスコット';mascot.draggable=false;mascot.className='edge-mascot hidden';
-    mascot.addEventListener('click',()=>{mascot.classList.remove('mascot-hop');void mascot.offsetWidth;mascot.classList.add('mascot-hop');setTimeout(()=>mascot.classList.remove('mascot-hop'),600);showBubble(phrases[Math.floor(Math.random()*phrases.length)])});
 
-    bubble=document.createElement('div');bubble.className='mascot-bubble hidden';
-    settingsBtn=document.createElement('button');settingsBtn.id='mascotSettingsBtn';settingsBtn.type='button';settingsBtn.className='mascot-settings-btn';settingsBtn.textContent='✦';settingsBtn.setAttribute('aria-label','マスコット設定');settingsBtn.onclick=openSettings;
+  function buildUi() {
+    layer = document.createElement('div');
+    layer.className = 'mascot-layer';
+    layer.setAttribute('aria-live', 'polite');
 
-    dialog=document.createElement('dialog');dialog.id='mascotDialog';dialog.className='mascot-dialog';dialog.innerHTML=`<form method="dialog" class="mascot-dialog-card">
-      <div class="mascot-dialog-head"><div><h2>マスコット設定</h2><p>好きな画像をこの端末だけに保存して、画面の端を歩かせます。</p></div><button value="cancel" class="ghost-btn">閉じる</button></div>
+    mascot = document.createElement('button');
+    mascot.type = 'button';
+    mascot.className = 'edge-mascot mascot-sprite';
+    mascot.setAttribute('aria-label', '栞子マスコット。タップすると話します');
+    mascot.addEventListener('click', () => {
+      mascot.classList.remove('mascot-tapped');
+      void mascot.offsetWidth;
+      mascot.classList.add('mascot-tapped');
+      setTimeout(() => mascot.classList.remove('mascot-tapped'), 550);
+      showBubble(phrases[Math.floor(Math.random() * phrases.length)]);
+    });
+    bubble = document.createElement('div');
+    bubble.className = 'mascot-bubble';
+    bubble.hidden = true;
+    layer.append(mascot, bubble);
+
+    const settingsButton = document.createElement('button');
+    settingsButton.type = 'button';
+    settingsButton.className = 'mascot-settings-btn';
+    settingsButton.setAttribute('aria-label', 'マスコット設定を開く');
+    settingsButton.textContent = '⚙';
+
+    dialog = document.createElement('dialog');
+    dialog.className = 'mascot-dialog';
+    dialog.innerHTML = `<form method="dialog" class="mascot-dialog-card">
+      <header class="mascot-dialog-head"><div><h2>マスコット設定</h2><p>栞子が画面の外周を歩きます。</p></div><button class="ghost-btn" value="close">閉じる</button></header>
+      <div class="mascot-preview" aria-label="マスコットのプレビュー"><span class="mascot-sprite"></span></div>
       <div class="mascot-setting-grid">
-        <label class="mascot-switch"><span>表示する</span><input id="mascotEnabled" type="checkbox"></label>
+        <label class="mascot-switch"><span>マスコットを表示</span><input id="mascotEnabled" type="checkbox"></label>
         <label class="mascot-switch"><span>動かす</span><input id="mascotMoving" type="checkbox"></label>
-        <label class="mascot-switch"><span>タップ時にセリフ</span><input id="mascotSpeech" type="checkbox"></label>
-        <label>大きさ<select id="mascotSize"><option value="small">小</option><option value="medium">中</option><option value="large">大</option></select></label>
-        <label>速度<select id="mascotSpeed"><option value="slow">ゆっくり</option><option value="normal">普通</option><option value="fast">速い</option></select></label>
+        <label class="mascot-switch"><span>セリフを表示</span><input id="mascotSpeech" type="checkbox"></label>
+        <label><span>大きさ</span><select id="mascotSize"><option value="small">小</option><option value="medium">中</option><option value="large">大</option></select></label>
+        <label><span>速度</span><select id="mascotSpeed"><option value="slow">ゆっくり</option><option value="normal">普通</option><option value="fast">速い</option></select></label>
       </div>
-      <div class="mascot-image-box">
-        <div><strong id="mascotImageStatus">画像未設定</strong><div class="mascot-note">透過PNGがおすすめです。画像はGitHubやFirebaseへ送らず、この端末内だけに保存します。</div></div>
-        <label class="primary-btn mascot-upload-btn">画像を選ぶ<input id="mascotImageInput" type="file" accept="image/*"></label>
-      </div>
-      <div class="mascot-dialog-actions"><button id="mascotTestSpeech" type="button" class="ghost-btn">タップ反応を試す</button><button id="mascotClearImage" type="button" class="danger-btn">画像を削除</button></div>
+      <div class="mascot-dialog-actions"><button id="mascotTestSpeech" type="button" class="primary-btn">セリフを試す</button></div>
     </form>`;
-    document.body.append(mascot,bubble,settingsBtn,dialog);bindDialog();
-    const blob=await loadImage();if(blob)setMascotImage(blob);else refreshVisibility();
-    const v=viewport();x=v.pad;y=v.maxY;dir='right';applySize();syncDialog();
-    addEventListener('resize',()=>{clampPosition();paint()});
-    requestAnimationFrame(step);
+    preview = dialog.querySelector('.mascot-preview .mascot-sprite');
+    renderSprite(preview, 'down', 0);
+    settingsButton.addEventListener('click', () => {
+      syncDialog();
+      if (typeof dialog.showModal === 'function') dialog.showModal(); else dialog.setAttribute('open', '');
+    });
+    document.body.append(layer, settingsButton, dialog);
+    bindDialog();
   }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+
+  function loadSprite() {
+    const image = new Image();
+    image.onload = () => {
+      imageReady = image.naturalWidth === SPRITE.frameWidth * SPRITE.columns && image.naturalHeight === SPRITE.frameHeight * 5;
+      updateVisibility();
+      dialog?.classList.toggle('mascot-image-error', !imageReady);
+    };
+    image.onerror = () => {
+      imageReady = false;
+      updateVisibility();
+      dialog?.classList.add('mascot-image-error');
+    };
+    image.src = SPRITE_URL;
+  }
+
+  function init() {
+    buildUi();
+    const box = dimensions();
+    x = box.minX;
+    y = box.maxY;
+    clampPosition();
+    paint();
+    syncDialog();
+    loadSprite();
+    addEventListener('resize', () => { clampPosition(); paint(); hideBubble(); }, { passive: true });
+    requestAnimationFrame(animate);
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
+  else init();
 })();
