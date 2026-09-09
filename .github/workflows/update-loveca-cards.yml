@@ -1,0 +1,44 @@
+name: Update LoveCa card database
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '20 18 * * 1'
+  push:
+    paths:
+      - 'scripts/update_loveca_cards.py'
+      - '.github/workflows/update-loveca-cards.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install scraper dependencies
+        run: pip install requests beautifulsoup4
+      - name: Build card database
+        run: python scripts/update_loveca_cards.py
+      - name: Upload debug HTML if parsing fails
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: loveca-cardlist-debug
+          path: loveca-cardlist-debug.html
+          if-no-files-found: ignore
+      - name: Commit database update
+        run: |
+          if git diff --quiet -- loveca-cards.json; then
+            echo "No database changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add loveca-cards.json
+          git commit -m "Update LoveCa card database"
+          git push
