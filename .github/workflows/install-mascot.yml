@@ -1,0 +1,35 @@
+name: Install local animated mascot
+
+on:
+  push:
+    paths:
+      - 'scripts/install_mascot.py'
+      - '.github/workflows/install-mascot.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install mascot integration
+        run: python scripts/install_mascot.py
+      - name: Commit changes
+        run: |
+          if git diff --quiet; then
+            echo "No changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html sw.js
+          git commit -m "Install local animated mascot"
+          git push
