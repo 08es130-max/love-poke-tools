@@ -133,6 +133,14 @@ function standingRows(tournament,final=false){
   });
 }
 
+function tournamentPokemonHtml(players){
+  return players.map(player=>`
+    <div class="source-player tournament-party">
+      <strong>${escapeHtml(player.name)}</strong>
+      <span>${Array.isArray(player.pokemon)&&player.pokemon.length?player.pokemon.map(p=>escapeHtml(p.name)).join('・'):'ポケモン未登録'}</span>
+    </div>`).join('');
+}
+
 async function saveActive(){
   if(!cloud||!activeTournament)return;
   activeTournament.updatedAt=new Date().toISOString();
@@ -184,6 +192,7 @@ function renderActiveTournament(){
     </section>
     <section class="panel"><h2>暫定順位</h2><div class="standings-table">${standingRows(tournament).map(row=>`
       <div class="standing-row"><strong>${row.rank}</strong><span>${escapeHtml(row.player.name)}</span><span>${row.record.wins}勝 ${row.record.losses}敗</span></div>`).join('')}</div></section>
+    <section class="panel"><h2>使用ポケモン</h2><div class="tournament-pokemon-list">${tournamentPokemonHtml(tournament.players)}</div></section>
     <section class="panel"><div class="section-title-row"><h2>通常リーグ</h2><span class="badge ${allMatchesComplete(tournament,'league')?'ok':'warn'}">${league.filter(m=>m.winner).length}/${league.length}試合</span></div>${league.map(m=>matchHtml(tournament,m)).join('')}</section>
     <section class="panel"><div class="section-title-row"><h2>サドンデス</h2><span class="badge soft">${sudden.length}試合</span></div>
       ${sudden.length?sudden.map(m=>`<div class="sudden-label">第${m.round}ラウンド</div>${matchHtml(tournament,m)}`).join(''):'<p class="note">通常リーグ終了後、同勝利数のグループに追加できます。</p>'}
@@ -287,7 +296,7 @@ function renderHeadToHead(){
 }
 function renderPastDetail(id){
   const t=completedTournaments.find(item=>item.id===id);if(!t)return;
-  $('#pastTournamentDetail').innerHTML=`<article class="past-detail"><label class="block-label">大会名<input id="pastTournamentName" type="text" value="${escapeHtml(t.name)}"></label><div>開催日：${escapeHtml(t.heldDate)}</div><h4>最終順位</h4>${standingRows(t,true).map(row=>{const savedRecord=recordFor(t,row.player.id);return `<div>${row.rank} ${escapeHtml(row.player.name)}（${savedRecord.wins}勝${savedRecord.losses}敗）</div><div class="past-pokemon">${row.player.pokemon.map(p=>escapeHtml(p.name)).join('・')||'ポケモン未登録'}</div>`}).join('')}<h4>全対戦結果</h4>${t.matches.map(m=>{const a=playerById(t,m.a),b=playerById(t,m.b),winner=playerById(t,m.winner);return `<div class="past-match"><span>${m.type==='league'?'通常':'サドンデス'}</span> ${escapeHtml(a.name)} vs ${escapeHtml(b.name)} — ${escapeHtml(winner.name)}勝利</div>`}).join('')}<button type="button" id="deletePastBtn" class="danger-btn">この大会ログを削除</button></article>`;
+  $('#pastTournamentDetail').innerHTML=`<article class="past-detail"><label class="block-label">大会名<input id="pastTournamentName" type="text" value="${escapeHtml(t.name)}"></label><div>開催日：${escapeHtml(t.heldDate)}</div><h4>最終順位</h4>${standingRows(t,true).map(row=>{const savedRecord=recordFor(t,row.player.id);return `<div>${row.rank} ${escapeHtml(row.player.name)}（${savedRecord.wins}勝${savedRecord.losses}敗）</div>`}).join('')}<h4>使用ポケモン</h4><div class="tournament-pokemon-list">${tournamentPokemonHtml(t.players)}</div><h4>全対戦結果</h4>${t.matches.map(m=>{const a=playerById(t,m.a),b=playerById(t,m.b),winner=playerById(t,m.winner);return `<div class="past-match"><span>${m.type==='league'?'通常':'サドンデス'}</span> ${escapeHtml(a.name)} vs ${escapeHtml(b.name)} — ${escapeHtml(winner.name)}勝利</div>`}).join('')}<button type="button" id="deletePastBtn" class="danger-btn">この大会ログを削除</button></article>`;
   $('#pastTournamentName').onchange=async event=>{t.name=event.target.value.trim()||'名称未設定';t.updatedAt=new Date().toISOString();await cloud.setCompleted(t);renderHistory()};
   $('#deletePastBtn').onclick=async()=>{if(confirm(`「${t.name}」の大会ログを削除しますか？`))await cloud.deleteCompleted(t.id)};
 }
