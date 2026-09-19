@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'lovepoke-';
-const CACHE_NAME = `${CACHE_PREFIX}v20260919-17`;
+const CACHE_NAME = `${CACHE_PREFIX}v20260919-18`;
 
 const ASSETS = [
   './',
@@ -8,7 +8,7 @@ const ASSETS = [
   './app.js',
   './pokemon-data.js',
   './pokemon-stats.js',
-  './pokemon-types.js',
+  './pokemon-types.js',\n  './pokemon-usage.js',
   './pokemon-sv-learnsets.js',
   './pokemon-ui.js',
   './loveca-card-browser.js',
