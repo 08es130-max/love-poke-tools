@@ -36,6 +36,15 @@ function filterMoves(root,query){
     el.classList.toggle('hidden',!!q&&!el.textContent.includes(q));
   });
 }
+function inheritedEggMoves(p){
+  const family=(window.POKEMON_DATA||[]).filter(x=>!x.formKey&&x.evo===p.evo);
+  const ids=new Set();
+  for(const member of family){
+    const learn=window.POKEMON_SV_LEARNSETS?.[member.id]||{};
+    (learn.e||[]).forEach(id=>ids.add(id));
+  }
+  return [...ids];
+}
 function renderPokemon(id){
   const p=pokemonById(id);
   const detail=$('#guidePokemonDetail');
@@ -43,7 +52,8 @@ function renderPokemon(id){
   const learn=window.POKEMON_SV_LEARNSETS?.[p.id]||{};
   const level=(learn.l||[]).map(([mid,lev])=>moveButton(moveName(mid),levelLabel(lev))).join('');
   const tm=(learn.t||[]).map(([mid,no])=>moveButton(moveName(mid),no?`TM${no}`:'')).join('');
-  const egg=(learn.e||[]).map(mid=>moveButton(moveName(mid),'タマゴ技')).join('');
+  const eggMoves=inheritedEggMoves(p);
+  const egg=eggMoves.map(mid=>moveButton(moveName(mid),'タマゴ技')).join('');
   const reminder=(learn.r||[]).map(mid=>moveButton(moveName(mid),'思い出し')).join('');
   const types=typeNames(p);
   detail.classList.remove('hidden');
@@ -61,7 +71,7 @@ function renderPokemon(id){
     </label>
     <div class="guide-move-section"><h3>レベルで覚える技 <span>${(learn.l||[]).length}</span></h3><div class="guide-move-grid">${level||'<p class="note">データなし</p>'}</div></div>
     <div class="guide-move-section"><h3>わざマシン <span>${(learn.t||[]).length}</span></h3><div class="guide-move-grid">${tm||'<p class="note">データなし</p>'}</div></div>
-    <div class="guide-move-section"><h3>タマゴ技 <span>${(learn.e||[]).length}</span></h3><div class="guide-move-grid">${egg||'<p class="note">なし</p>'}</div></div>
+    <div class="guide-move-section"><h3>タマゴ技 <span>${eggMoves.length}</span></h3><div class="guide-move-grid">${egg||'<p class="note">なし</p>'}</div></div>
     ${(learn.r||[]).length?`<div class="guide-move-section"><h3>思い出し技 <span>${learn.r.length}</span></h3><div class="guide-move-grid">${reminder}</div></div>`:''}
     <p class="hint">SV Ver.3.0.0（藍の円盤込み）の内蔵データを表示しています。特殊フォームは今後個別に補正できます。</p>
   `;
