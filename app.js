@@ -949,7 +949,7 @@ function renderPokeResults(){
       const statLine=ownStats.bst!=null
         ? `<div class="poke-stat-line">BST ${ownStats.bst} / S ${ownStats.speed??'—'}${finalStats.bst!=null&&finalStats.bst!==ownStats.bst?`　最終BST ${finalStats.bst}`:''}</div>`
         : '';
-      nm.innerHTML=`<div class="poke-name">${p.name}<span class="slot-tag">${slotLabel(j)}</span></div>
+      nm.innerHTML=`<div class="poke-name"><button type="button" class="poke-guide-link" data-poke-guide-id="${p.id}">${p.name}</button><span class="slot-tag">${slotLabel(j)}</span></div>
         <div class="category-tags">${tagHtml(p)}</div>${statLine}${finalEvolutionHtml(p)}`;
       row.append(lock,no,nm);list.append(row);
     });
