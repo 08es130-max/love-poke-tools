@@ -267,3 +267,22 @@ button,.nav-btn,.mini-btn,.column-reset,.lock-btn{touch-action:manipulation}
 .poke-stat-line{font-size:.72rem;color:#666;margin-top:3px;line-height:1.35}
 .poke-stat-mini{font-size:.7rem;color:#777;white-space:nowrap}
 .poke-party-stat-total{font-size:.76rem;font-weight:700;color:#666;text-align:right;margin:6px 4px 8px}
+
+
+/* ===== Tournament forecast ===== */
+.forecast-panel{border-color:#efd5df;background:linear-gradient(180deg,#fff,#fff9fb)}
+.forecast-note{font-size:11px;color:#766973;line-height:1.55;margin:2px 0 10px}
+.forecast-list{display:grid;gap:8px}
+.forecast-card{display:grid;grid-template-columns:72px 1fr auto;gap:8px;align-items:center;padding:11px;border:1px solid #eadde3;border-radius:13px;background:#fff}
+.forecast-rank{font-size:11px;font-weight:900;color:#a34265}
+.forecast-main{display:flex;flex-direction:column;gap:2px;min-width:0}
+.forecast-main strong{font-size:14px}
+.forecast-main span{font-size:11px;color:#6f6670}
+.forecast-odds{font-size:18px;font-weight:900;color:#d94176;white-space:nowrap}
+.forecast-stats{grid-column:2/-1;font-size:10px;color:#777;line-height:1.45}
+.past-forecast .forecast-card{grid-template-columns:68px 1fr auto;padding:9px}
+@media(max-width:560px){
+  .forecast-card{grid-template-columns:64px 1fr auto;gap:6px;padding:9px}
+  .forecast-odds{font-size:16px}
+  .forecast-stats{grid-column:1/-1;padding-top:3px}
+}
