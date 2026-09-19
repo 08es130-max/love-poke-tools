@@ -134,6 +134,7 @@
         <button type="button" class="poke-tab active" data-poke-pane="draw">抽選</button>
         <button type="button" class="poke-tab" data-poke-pane="tournament">大会</button>
         <button type="button" class="poke-tab" data-poke-pane="history">戦歴</button>
+        <button type="button" class="poke-tab" data-poke-pane="guide">図鑑・育成</button>
       </nav>
 
       <div id="pokeDrawPane" class="poke-pane">
@@ -269,6 +270,22 @@
         <div id="activeTournamentArea"></div>
       </div>
 
+
+      <div id="pokeGuidePane" class="poke-pane hidden">
+        <section class="panel">
+          <div class="section-title-row">
+            <h2>SV 図鑑・育成</h2>
+            <span class="badge ok">オフライン対応</span>
+          </div>
+          <p class="hint">ポケモンを検索すると、SV Ver.3.0.0（DLC込み）で覚えられる技を確認できます。抽選結果や大会のポケモン名からも直接開けます。</p>
+          <label class="block-label">ポケモン検索
+            <input id="guidePokemonSearch" type="search" placeholder="例：コノヨザル、カイリュー">
+          </label>
+          <div id="guidePokemonSuggestions" class="guide-suggestions"></div>
+        </section>
+        <section id="guidePokemonDetail" class="panel hidden"></section>
+      </div>
+
       <div id="pokeHistoryPane" class="poke-pane hidden">
         <section class="panel">
           <div class="section-title-row"><h2>プレイヤー通算成績</h2><span id="historyCountBadge" class="badge soft">0大会</span></div>
@@ -354,10 +371,13 @@
   </dialog>
 
   <script src="./pokemon-data.js"></script>
-<script src="./pokemon-stats.js"></script>\n  <script src="./pokemon-types.js"></script>
+  <script src="./pokemon-stats.js"></script>
+  <script src="./pokemon-types.js"></script>
+  <script src="./pokemon-sv-learnsets.js"></script>
   <script src="./firebase-config.js"></script>
   <script type="module" src="./app.js"></script>
   <script type="module" src="./tournament.js"></script>
+  <script type="module" src="./pokemon-guide.js"></script>
   <script type="module" src="./mahjong.js"></script>
   <script src="./loveca-card-browser.js"></script>
   <script src="./loveca-filter-selector.js"></script>
