@@ -5,8 +5,12 @@ const TYPE_JA={Normal:'ノーマル',Fire:'ほのお',Water:'みず',Electric:'�
 function escapeHtml(value=''){
   return String(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 }
-function pokemonById(id){
-  const candidates=(window.POKEMON_DATA||[]).filter(p=>Number(p.id)===Number(id));
+function pokemonById(idOrName){
+  const data=window.POKEMON_DATA||[];
+  const numeric=Number(idOrName);
+  const candidates=Number.isFinite(numeric)&&String(idOrName).trim()!==''?
+    data.filter(p=>Number(p.id)===numeric):
+    data.filter(p=>p.name===String(idOrName));
   return candidates.find(p=>!p.formKey)||candidates[0]||null;
 }
 function moveName(id){return window.POKEMON_SV_MOVE_NAMES?.[id]||`技${id}`}
