@@ -859,6 +859,7 @@ function finalEvolutionList(p){
   const final=family.reduce((a,b)=>b.id>a.id?b:a,family[0]);
   return [final];
 }
+window.getLovePokeFinalEvolutionList=finalEvolutionList;
 function pokemonStats(p){
   if(!p)return {bst:null,speed:null};
   const stat=window.POKEMON_STATS?.[String(p.id)]||null;
