@@ -51,7 +51,7 @@ function renderSourceParticipants(){
   $('#tournamentSourcePlayers').innerHTML=players.map((player,index)=>`
     <div class="source-player">
       <strong>${index+1}. ${escapeHtml(player.name)}</strong>
-      <span>${player.pokemon.length?player.pokemon.map(p=>`<button type="button" class="poke-guide-link inline" data-poke-guide-id="${p.id}">${escapeHtml(p.name)}</button>`).join('・'):'ポケモン未抽選'}</span>
+      <span>${player.pokemon.length?player.pokemon.map(p=>`<button type="button" class="poke-guide-link inline" data-poke-guide-id="${escapeHtml(p.id||p.name)}">${escapeHtml(p.name)}</button>`).join('・'):'ポケモン未抽選'}</span>
     </div>`).join('');
 }
 
@@ -137,7 +137,7 @@ function tournamentPokemonHtml(players){
   return players.map(player=>`
     <div class="source-player tournament-party">
       <strong>${escapeHtml(player.name)}</strong>
-      <span>${Array.isArray(player.pokemon)&&player.pokemon.length?player.pokemon.map(p=>`<button type="button" class="poke-guide-link inline" data-poke-guide-id="${p.id}">${escapeHtml(p.name)}</button>`).join('・'):'ポケモン未登録'}</span>
+      <span>${Array.isArray(player.pokemon)&&player.pokemon.length?player.pokemon.map(p=>`<button type="button" class="poke-guide-link inline" data-poke-guide-id="${escapeHtml(p.id||p.name)}">${escapeHtml(p.name)}</button>`).join('・'):'ポケモン未登録'}</span>
     </div>`).join('');
 }
 
