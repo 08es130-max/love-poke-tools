@@ -141,6 +141,107 @@ function tournamentPokemonHtml(players){
     </div>`).join('');
 }
 
+const TYPE_CHART={
+  Normal:{Rock:.5,Ghost:0,Steel:.5},Fire:{Fire:.5,Water:.5,Grass:2,Ice:2,Bug:2,Rock:.5,Dragon:.5,Steel:2},
+  Water:{Fire:2,Water:.5,Grass:.5,Ground:2,Rock:2,Dragon:.5},Electric:{Water:2,Electric:.5,Grass:.5,Ground:0,Flying:2,Dragon:.5},
+  Grass:{Fire:.5,Water:2,Grass:.5,Poison:.5,Ground:2,Flying:.5,Bug:.5,Rock:2,Dragon:.5,Steel:.5},
+  Ice:{Fire:.5,Water:.5,Grass:2,Ice:.5,Ground:2,Flying:2,Dragon:2,Steel:.5},
+  Fighting:{Normal:2,Ice:2,Poison:.5,Flying:.5,Psychic:.5,Bug:.5,Rock:2,Ghost:0,Dark:2,Steel:2,Fairy:.5},
+  Poison:{Grass:2,Poison:.5,Ground:.5,Rock:.5,Ghost:.5,Steel:0,Fairy:2},
+  Ground:{Fire:2,Electric:2,Grass:.5,Poison:2,Flying:0,Bug:.5,Rock:2,Steel:2},
+  Flying:{Electric:.5,Grass:2,Fighting:2,Bug:2,Rock:.5,Steel:.5},
+  Psychic:{Fighting:2,Poison:2,Psychic:.5,Dark:0,Steel:.5},
+  Bug:{Fire:.5,Grass:2,Fighting:.5,Poison:.5,Flying:.5,Psychic:2,Ghost:.5,Dark:2,Steel:.5,Fairy:.5},
+  Rock:{Fire:2,Ice:2,Fighting:.5,Ground:.5,Flying:2,Bug:2,Steel:.5},
+  Ghost:{Normal:0,Psychic:2,Ghost:2,Dark:.5},
+  Dragon:{Dragon:2,Steel:.5,Fairy:0},
+  Dark:{Fighting:.5,Psychic:2,Ghost:2,Dark:.5,Fairy:.5},
+  Steel:{Fire:.5,Water:.5,Electric:.5,Ice:2,Rock:2,Steel:.5,Fairy:2},
+  Fairy:{Fire:.5,Fighting:2,Poison:.5,Dragon:2,Dark:2,Steel:.5}
+};
+const ALL_TYPES=Object.keys(TYPE_CHART);
+
+function typeEffectiveness(attackType,defenderTypes){
+  return defenderTypes.reduce((mult,type)=>mult*(TYPE_CHART[attackType]?.[type]??1),1);
+}
+function finalPokemonForAnalysis(p){
+  const list=window.getLovePokeFinalEvolutionList?.(p)||[];
+  const candidates=list.length?list:[p];
+  return candidates.reduce((best,item)=>{
+    const bst=window.POKEMON_STATS?.[String(item.id)]?.bst??0;
+    const bestBst=window.POKEMON_STATS?.[String(best.id)]?.bst??0;
+    return bst>bestBst?item:best;
+  },candidates[0]);
+}
+function pokemonAnalysisProfile(p){
+  const final=finalPokemonForAnalysis(p);
+  const key=final.formKey?`${final.id}-${final.formKey}`:String(final.id);
+  const stat=window.POKEMON_STATS?.[String(final.id)]||{};
+  return {
+    source:p,final,
+    bst:Number(stat.bst)||0,
+    speed:Number(stat.speed)||0,
+    types:window.POKEMON_TYPES?.[key]||window.POKEMON_TYPES?.[String(final.id)]||[]
+  };
+}
+function partyAnalysis(player){
+  const mons=(player.pokemon||[]).map(pokemonAnalysisProfile);
+  if(!mons.length)return {mons,score:0,avgBst:0,avgSpeed:0,coverage:0,maxWeak:0,weakTypes:[]};
+  const avgBst=mons.reduce((s,p)=>s+p.bst,0)/mons.length;
+  const avgSpeed=mons.reduce((s,p)=>s+p.speed,0)/mons.length;
+  const stabTypes=[...new Set(mons.flatMap(p=>p.types))];
+  const coverage=ALL_TYPES.filter(def=>stabTypes.some(atk=>typeEffectiveness(atk,[def])>1)).length;
+  const weaknessRows=ALL_TYPES.map(atk=>({
+    type:atk,
+    count:mons.filter(mon=>typeEffectiveness(atk,mon.types)>1).length
+  })).sort((a,b)=>b.count-a.count);
+  const maxWeak=weaknessRows[0]?.count||0;
+  const weakTypes=weaknessRows.filter(x=>x.count===maxWeak&&x.count>=2).map(x=>x.type);
+  const score=50+(avgBst-480)*.10+(avgSpeed-70)*.07+(coverage-8)*1.15-(Math.max(0,maxWeak-2))*2.2;
+  return {mons,score,avgBst,avgSpeed,coverage,maxWeak,weakTypes};
+}
+function offensivePressure(a,b){
+  if(!a.mons.length||!b.mons.length)return .5;
+  const hit=b.mons.filter(target=>a.mons.some(attacker=>attacker.types.some(type=>typeEffectiveness(type,target.types)>1))).length;
+  return hit/b.mons.length;
+}
+function matchupProbability(a,b){
+  const power=(a.score-b.score)*.075;
+  const coverage=(offensivePressure(a,b)-offensivePressure(b,a))*1.8;
+  return 1/(1+Math.exp(-(power+coverage)));
+}
+function tournamentForecast(tournament){
+  const rows=tournament.players.map(player=>({player,analysis:partyAnalysis(player)}));
+  if(rows.length<2)return rows.map(row=>({...row,probability:1,odds:1}));
+  rows.forEach(row=>{
+    const opponents=rows.filter(x=>x!==row);
+    row.strength=opponents.reduce((sum,opp)=>sum+matchupProbability(row.analysis,opp.analysis),0)/opponents.length;
+  });
+  const weights=rows.map(row=>Math.exp((row.strength-.5)*5));
+  const total=weights.reduce((a,b)=>a+b,0)||1;
+  rows.forEach((row,i)=>{
+    row.probability=weights[i]/total;
+    row.odds=row.probability?1/row.probability:0;
+  });
+  return rows.sort((a,b)=>b.probability-a.probability);
+}
+function forecastHtml(tournament){
+  if(!window.POKEMON_TYPES||!window.POKEMON_STATS)return '<p class="note">戦力データを読み込み中です。</p>';
+  const rows=tournamentForecast(tournament);
+  if(rows.some(row=>!row.analysis.mons.length))return '<p class="note">使用ポケモンが登録されると予想を表示します。</p>';
+  return `<div class="forecast-note">最終進化後を想定。BST・素早さ・タイプ一致攻撃範囲・弱点重複・参加パーティ同士の相性から算出した参考値です。</div>
+    <div class="forecast-list">${rows.map((row,index)=>{
+      const a=row.analysis;
+      const weakness=a.weakTypes.length?`弱点重複：${a.weakTypes.join('・')} ${a.maxWeak}匹`:'弱点重複：小';
+      return `<article class="forecast-card">
+        <div class="forecast-rank">${index+1}番人気</div>
+        <div class="forecast-main"><strong>${escapeHtml(row.player.name)}</strong><span>予想優勝率 ${(row.probability*100).toFixed(1)}%</span></div>
+        <div class="forecast-odds">${row.odds.toFixed(1)}倍</div>
+        <div class="forecast-stats">戦力 ${a.score.toFixed(1)} ／ 平均BST ${a.avgBst.toFixed(0)} ／ 平均S ${a.avgSpeed.toFixed(0)} ／ 一致弱点範囲 ${a.coverage}/18 ／ ${escapeHtml(weakness)}</div>
+      </article>`;
+    }).join('')}</div>`;
+}
+
 async function saveActive(){
   if(!cloud||!activeTournament)return;
   activeTournament.updatedAt=new Date().toISOString();
@@ -192,6 +293,7 @@ function renderActiveTournament(){
     </section>
     <section class="panel"><h2>暫定順位</h2><div class="standings-table">${standingRows(tournament).map(row=>`
       <div class="standing-row"><strong>${row.rank}</strong><span>${escapeHtml(row.player.name)}</span><span>${row.record.wins}勝 ${row.record.losses}敗</span></div>`).join('')}</div></section>
+    <section class="panel forecast-panel"><div class="section-title-row"><h2>AI優勝予想</h2><span class="badge soft">参考オッズ</span></div>${forecastHtml(tournament)}</section>
     <section class="panel"><h2>使用ポケモン</h2><div class="tournament-pokemon-list">${tournamentPokemonHtml(tournament.players)}</div></section>
     <section class="panel"><div class="section-title-row"><h2>通常リーグ</h2><span class="badge ${allMatchesComplete(tournament,'league')?'ok':'warn'}">${league.filter(m=>m.winner).length}/${league.length}試合</span></div>${league.map(m=>matchHtml(tournament,m)).join('')}</section>
     <section class="panel"><div class="section-title-row"><h2>サドンデス</h2><span class="badge soft">${sudden.length}試合</span></div>
@@ -296,7 +398,7 @@ function renderHeadToHead(){
 }
 function renderPastDetail(id){
   const t=completedTournaments.find(item=>item.id===id);if(!t)return;
-  $('#pastTournamentDetail').innerHTML=`<article class="past-detail"><label class="block-label">大会名<input id="pastTournamentName" type="text" value="${escapeHtml(t.name)}"></label><div>開催日：${escapeHtml(t.heldDate)}</div><h4>最終順位</h4>${standingRows(t,true).map(row=>{const savedRecord=recordFor(t,row.player.id);return `<div>${row.rank} ${escapeHtml(row.player.name)}（${savedRecord.wins}勝${savedRecord.losses}敗）</div>`}).join('')}<h4>使用ポケモン</h4><div class="tournament-pokemon-list">${tournamentPokemonHtml(t.players)}</div><h4>全対戦結果</h4>${t.matches.map(m=>{const a=playerById(t,m.a),b=playerById(t,m.b),winner=playerById(t,m.winner);return `<div class="past-match"><span>${m.type==='league'?'通常':'サドンデス'}</span> ${escapeHtml(a.name)} vs ${escapeHtml(b.name)} — ${escapeHtml(winner.name)}勝利</div>`}).join('')}<button type="button" id="deletePastBtn" class="danger-btn">この大会ログを削除</button></article>`;
+  $('#pastTournamentDetail').innerHTML=`<article class="past-detail"><label class="block-label">大会名<input id="pastTournamentName" type="text" value="${escapeHtml(t.name)}"></label><div>開催日：${escapeHtml(t.heldDate)}</div><h4>最終順位</h4>${standingRows(t,true).map(row=>{const savedRecord=recordFor(t,row.player.id);return `<div>${row.rank} ${escapeHtml(row.player.name)}（${savedRecord.wins}勝${savedRecord.losses}敗）</div>`}).join('')}<h4>大会前AI予想</h4><div class="past-forecast">${forecastHtml(t)}</div><h4>使用ポケモン</h4><div class="tournament-pokemon-list">${tournamentPokemonHtml(t.players)}</div><h4>全対戦結果</h4>${t.matches.map(m=>{const a=playerById(t,m.a),b=playerById(t,m.b),winner=playerById(t,m.winner);return `<div class="past-match"><span>${m.type==='league'?'通常':'サドンデス'}</span> ${escapeHtml(a.name)} vs ${escapeHtml(b.name)} — ${escapeHtml(winner.name)}勝利</div>`}).join('')}<button type="button" id="deletePastBtn" class="danger-btn">この大会ログを削除</button></article>`;
   $('#pastTournamentName').onchange=async event=>{t.name=event.target.value.trim()||'名称未設定';t.updatedAt=new Date().toISOString();await cloud.setCompleted(t);renderHistory()};
   $('#deletePastBtn').onclick=async()=>{if(confirm(`「${t.name}」の大会ログを削除しますか？`))await cloud.deleteCompleted(t.id)};
 }
