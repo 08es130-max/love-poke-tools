@@ -237,7 +237,7 @@ function partyAnalysis(player){
     +(avgBst-480)*.075
     +(avgAttack-100)*.055
     +(avgBulk-165)*.035
-    +(avgSpeed-70)*.10
+    +(avgSpeed-70)*.13
     +fastCount*.45
     +(coverage-8)*.70
     -(Math.max(0,maxWeak-2))*2.0;
@@ -259,6 +259,25 @@ function matchupProbability(a,b){
 }
 function tournamentForecast(tournament){
   const rows=tournament.players.map(player=>({player,analysis:partyAnalysis(player)}));
+
+  // Speed is especially valuable in battle, so reward the fastest Pokemon in
+  // this tournament in addition to the party's average Speed. Equal Speed gets
+  // the same rank and the same bonus. Ranks 1-10 receive 3.0 down to 0.3.
+  const allMons=rows.flatMap(row=>row.analysis.mons.map(mon=>({row,mon})));
+  const uniqueSpeeds=[...new Set(allMons.map(x=>x.mon.speed))].sort((a,b)=>b-a);
+  const speedRankFor=speed=>uniqueSpeeds.indexOf(speed)+1;
+  rows.forEach(row=>{
+    const ranked=row.analysis.mons.map(mon=>{
+      const rank=speedRankFor(mon.speed);
+      const bonus=rank>=1&&rank<=10?(11-rank)*.30:0;
+      return {mon,rank,bonus};
+    });
+    row.analysis.speedRankBonus=ranked.reduce((sum,x)=>sum+x.bonus,0);
+    row.analysis.speedRanked=ranked.filter(x=>x.bonus>0);
+    row.analysis.baseScore+=row.analysis.speedRankBonus;
+    row.analysis.score=row.analysis.baseScore*row.analysis.usageCoefficient;
+  });
+
   if(rows.length<2)return rows.map(row=>({...row,probability:1,odds:1}));
   rows.forEach(row=>{
     const opponents=rows.filter(x=>x!==row);
@@ -278,7 +297,7 @@ function forecastHtml(tournament){
   if(rows.some(row=>!row.analysis.mons.length))return '<p class="note">使用ポケモンが登録されると予想を表示します。</p>';
   const usageMeta=window.POKEMON_USAGE_META;
   const usageText=usageMeta?` ／ 使用率補正：${escapeHtml(usageMeta.format)}（${escapeHtml(usageMeta.capturedAt)}取得）`:'';
-  return `<div class="forecast-note">最終進化後を想定。BST・火力・耐久・素早さ・タイプ一致攻撃範囲・弱点重複・参加パーティ同士の相性から算出した参考値です。${usageText}</div>
+  return `<div class="forecast-note">最終進化後を想定。BST・火力・耐久・素早さ・大会内素早さ上位10匹・タイプ一致攻撃範囲・弱点重複・参加パーティ同士の相性から算出した参考値です。${usageText}</div>
     <div class="forecast-list">${rows.map((row,index)=>{
       const a=row.analysis;
       const weakness=a.weakTypes.length?`弱点重複：${a.weakTypes.join('・')} ${a.maxWeak}匹`:'弱点重複：小';
@@ -286,7 +305,7 @@ function forecastHtml(tournament){
         <div class="forecast-rank">${index+1}番人気</div>
         <div class="forecast-main"><strong>${escapeHtml(row.player.name)}</strong><span>予想優勝率 ${(row.probability*100).toFixed(1)}%</span></div>
         <div class="forecast-odds">${row.odds.toFixed(1)}倍</div>
-        <div class="forecast-stats">戦力 ${a.score.toFixed(1)} ／ 平均BST ${a.avgBst.toFixed(0)} ／ 火力 ${a.avgAttack.toFixed(0)} ／ 耐久 ${a.avgBulk.toFixed(0)} ／ 平均S ${a.avgSpeed.toFixed(0)} ／ 高速S100+ ${a.fastCount}匹 ／ 一致弱点範囲 ${a.coverage}/18 ／ 使用率補正 ×${a.usageCoefficient.toFixed(3)} ／ ${escapeHtml(weakness)}</div>
+        <div class="forecast-stats">戦力 ${a.score.toFixed(1)} ／ 平均BST ${a.avgBst.toFixed(0)} ／ 火力 ${a.avgAttack.toFixed(0)} ／ 耐久 ${a.avgBulk.toFixed(0)} ／ 平均S ${a.avgSpeed.toFixed(0)} ／ 高速S100+ ${a.fastCount}匹 ／ 大会S上位加点 +${(a.speedRankBonus||0).toFixed(1)} ／ 一致弱点範囲 ${a.coverage}/18 ／ 使用率補正 ×${a.usageCoefficient.toFixed(3)} ／ ${escapeHtml(weakness)}</div>
       </article>`;
     }).join('')}</div>`;
 }
