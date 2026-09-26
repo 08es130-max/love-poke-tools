@@ -243,7 +243,7 @@ function partyAnalysis(player){
     return sum+raw+uncovered;
   },0);
   const coveredWeaknesses=weaknessRows.filter(x=>x.weak>=2&&x.answers>=x.weak).length;
-  const typeSynergyBonus=Math.min(1.5,coveredWeaknesses*.25);
+  const typeSynergyBonus=Math.min(2.4,coveredWeaknesses*.40);
   // Balanced party score. BST remains the broad baseline; peak attacking stat
   // and bulk add information that BST alone cannot express. STAB coverage is
   // intentionally lighter than before because learnable off-type moves are not
