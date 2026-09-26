@@ -223,12 +223,27 @@ function partyAnalysis(player){
   const fastCount=mons.filter(p=>p.speed>=100).length;
   const stabTypes=[...new Set(mons.flatMap(p=>p.types))];
   const coverage=ALL_TYPES.filter(def=>stabTypes.some(atk=>typeEffectiveness(atk,[def])>1)).length;
-  const weaknessRows=ALL_TYPES.map(atk=>({
-    type:atk,
-    count:mons.filter(mon=>typeEffectiveness(atk,mon.types)>1).length
-  })).sort((a,b)=>b.count-a.count);
-  const maxWeak=weaknessRows[0]?.count||0;
-  const weakTypes=weaknessRows.filter(x=>x.count===maxWeak&&x.count>=2).map(x=>x.type);
+  // Defensive type synergy across the whole party. A shared weakness is less
+  // serious when teammates can resist or nullify that attacking type.
+  const weaknessRows=ALL_TYPES.map(atk=>{
+    const effects=mons.map(mon=>typeEffectiveness(atk,mon.types));
+    const weak=effects.filter(x=>x>1).length;
+    const resist=effects.filter(x=>x>0&&x<1).length;
+    const immune=effects.filter(x=>x===0).length;
+    const answers=resist+immune;
+    return {type:atk,count:weak,weak,resist,immune,answers,netExposure:Math.max(0,weak-answers)};
+  }).sort((a,b)=>b.netExposure-a.netExposure||b.weak-a.weak);
+  const maxWeak=Math.max(0,...weaknessRows.map(x=>x.weak));
+  const weakTypes=weaknessRows.filter(x=>x.weak===maxWeak&&x.weak>=2).map(x=>x.type);
+  const exposedTypes=weaknessRows.filter(x=>x.netExposure>=2);
+  const typeSynergyPenalty=weaknessRows.reduce((sum,x)=>{
+    if(x.weak<2)return sum;
+    const raw=(x.weak-2)*.85;
+    const uncovered=x.netExposure>=2?(x.netExposure-1)*.65:0;
+    return sum+raw+uncovered;
+  },0);
+  const coveredWeaknesses=weaknessRows.filter(x=>x.weak>=2&&x.answers>=x.weak).length;
+  const typeSynergyBonus=Math.min(1.5,coveredWeaknesses*.25);
   // Balanced party score. BST remains the broad baseline; peak attacking stat
   // and bulk add information that BST alone cannot express. STAB coverage is
   // intentionally lighter than before because learnable off-type moves are not
@@ -240,12 +255,13 @@ function partyAnalysis(player){
     +(avgSpeed-70)*.13
     +fastCount*.45
     +(coverage-8)*.70
-    -(Math.max(0,maxWeak-2))*2.0;
+    +typeSynergyBonus
+    -typeSynergyPenalty;
   const usageRows=mons.map(usageCoefficientFor);
   const usageCoefficient=usageRows.reduce((s,x)=>s+x.coefficient,0)/usageRows.length;
   const usageAverage=usageRows.reduce((s,x)=>s+x.rate,0)/usageRows.length;
   const score=baseScore*usageCoefficient;
-  return {mons,score,baseScore,avgBst,avgAttack,avgBulk,avgSpeed,fastCount,coverage,maxWeak,weakTypes,usageCoefficient,usageAverage};
+  return {mons,score,baseScore,avgBst,avgAttack,avgBulk,avgSpeed,fastCount,coverage,maxWeak,weakTypes,weaknessRows,exposedTypes,typeSynergyPenalty,typeSynergyBonus,coveredWeaknesses,usageCoefficient,usageAverage};
 }
 function offensivePressure(a,b){
   if(!a.mons.length||!b.mons.length)return .5;
@@ -297,15 +313,16 @@ function forecastHtml(tournament){
   if(rows.some(row=>!row.analysis.mons.length))return '<p class="note">使用ポケモンが登録されると予想を表示します。</p>';
   const usageMeta=window.POKEMON_USAGE_META;
   const usageText=usageMeta?` ／ 使用率補正：${escapeHtml(usageMeta.format)}（${escapeHtml(usageMeta.capturedAt)}取得）`:'';
-  return `<div class="forecast-note">最終進化後を想定。BST・火力・耐久・素早さ・大会内素早さ上位10匹・タイプ一致攻撃範囲・弱点重複・参加パーティ同士の相性から算出した参考値です。${usageText}</div>
+  return `<div class="forecast-note">最終進化後を想定。BST・火力・耐久・素早さ・大会内素早さ上位10匹・タイプ一致攻撃範囲・パーティの弱点重複と耐性/無効によるタイプ補完・参加パーティ同士の相性から算出した参考値です。${usageText}</div>
     <div class="forecast-list">${rows.map((row,index)=>{
       const a=row.analysis;
-      const weakness=a.weakTypes.length?`弱点重複：${a.weakTypes.join('・')} ${a.maxWeak}匹`:'弱点重複：小';
+      const exposed=(a.exposedTypes||[]).slice(0,3).map(x=>`${x.type} 弱${x.weak}/受${x.answers}`).join('・');
+      const weakness=exposed?`要注意：${exposed}`:'タイプ補完：良好';
       return `<article class="forecast-card">
         <div class="forecast-rank">${index+1}番人気</div>
         <div class="forecast-main"><strong>${escapeHtml(row.player.name)}</strong><span>予想優勝率 ${(row.probability*100).toFixed(1)}%</span></div>
         <div class="forecast-odds">${row.odds.toFixed(1)}倍</div>
-        <div class="forecast-stats">戦力 ${a.score.toFixed(1)} ／ 平均BST ${a.avgBst.toFixed(0)} ／ 火力 ${a.avgAttack.toFixed(0)} ／ 耐久 ${a.avgBulk.toFixed(0)} ／ 平均S ${a.avgSpeed.toFixed(0)} ／ 高速S100+ ${a.fastCount}匹 ／ 大会S上位加点 +${(a.speedRankBonus||0).toFixed(1)} ／ 一致弱点範囲 ${a.coverage}/18 ／ 使用率補正 ×${a.usageCoefficient.toFixed(3)} ／ ${escapeHtml(weakness)}</div>
+        <div class="forecast-stats">戦力 ${a.score.toFixed(1)} ／ 平均BST ${a.avgBst.toFixed(0)} ／ 火力 ${a.avgAttack.toFixed(0)} ／ 耐久 ${a.avgBulk.toFixed(0)} ／ 平均S ${a.avgSpeed.toFixed(0)} ／ 高速S100+ ${a.fastCount}匹 ／ 大会S上位加点 +${(a.speedRankBonus||0).toFixed(1)} ／ タイプ補完 +${(a.typeSynergyBonus||0).toFixed(1)}/-${(a.typeSynergyPenalty||0).toFixed(1)} ／ 一致弱点範囲 ${a.coverage}/18 ／ 使用率補正 ×${a.usageCoefficient.toFixed(3)} ／ ${escapeHtml(weakness)}</div>
       </article>`;
     }).join('')}</div>`;
 }
