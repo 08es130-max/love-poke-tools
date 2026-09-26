@@ -165,13 +165,24 @@ function typeEffectiveness(attackType,defenderTypes){
   return defenderTypes.reduce((mult,type)=>mult*(TYPE_CHART[attackType]?.[type]??1),1);
 }
 function finalPokemonForAnalysis(p){
-  const list=window.getLovePokeFinalEvolutionList?.(p)||[];
-  const candidates=list.length?list:[p];
-  return candidates.reduce((best,item)=>{
+  // Tournament documents intentionally store a compact Pokemon snapshot
+  // (id/name/formKey). Restore the full Pokedex row before asking app.js for
+  // evolution data; otherwise p.evo is missing and ordinary evolution lines
+  // silently fall back to the unevolved Pokemon.
+  const full=window.POKEMON_DATA?.find(item=>
+    Number(item.id)===Number(p?.id) &&
+    String(item.formKey||'')===String(p?.formKey||'')
+  ) || window.POKEMON_DATA?.find(item=>Number(item.id)===Number(p?.id)) || p;
+  const list=window.getLovePokeFinalEvolutionList?.(full)||[];
+  if(!list.length){
+    console.warn('[LovePoke AI] final evolution could not be resolved',p);
+    return full;
+  }
+  return list.reduce((best,item)=>{
     const bst=window.POKEMON_STATS?.[String(item.id)]?.bst??0;
     const bestBst=window.POKEMON_STATS?.[String(best.id)]?.bst??0;
     return bst>bestBst?item:best;
-  },candidates[0]);
+  },list[0]);
 }
 function pokemonAnalysisProfile(p){
   const final=finalPokemonForAnalysis(p);
