@@ -220,6 +220,7 @@ function partyAnalysis(player){
   const avgAttack=mons.reduce((s,p)=>s+p.attack,0)/mons.length;
   const avgBulk=mons.reduce((s,p)=>s+p.bulk,0)/mons.length;
   const avgSpeed=mons.reduce((s,p)=>s+p.speed,0)/mons.length;
+  const fastCount=mons.filter(p=>p.speed>=100).length;
   const stabTypes=[...new Set(mons.flatMap(p=>p.types))];
   const coverage=ALL_TYPES.filter(def=>stabTypes.some(atk=>typeEffectiveness(atk,[def])>1)).length;
   const weaknessRows=ALL_TYPES.map(atk=>({
@@ -236,14 +237,15 @@ function partyAnalysis(player){
     +(avgBst-480)*.075
     +(avgAttack-100)*.055
     +(avgBulk-165)*.035
-    +(avgSpeed-70)*.055
+    +(avgSpeed-70)*.10
+    +fastCount*.45
     +(coverage-8)*.70
     -(Math.max(0,maxWeak-2))*2.0;
   const usageRows=mons.map(usageCoefficientFor);
   const usageCoefficient=usageRows.reduce((s,x)=>s+x.coefficient,0)/usageRows.length;
   const usageAverage=usageRows.reduce((s,x)=>s+x.rate,0)/usageRows.length;
   const score=baseScore*usageCoefficient;
-  return {mons,score,baseScore,avgBst,avgAttack,avgBulk,avgSpeed,coverage,maxWeak,weakTypes,usageCoefficient,usageAverage};
+  return {mons,score,baseScore,avgBst,avgAttack,avgBulk,avgSpeed,fastCount,coverage,maxWeak,weakTypes,usageCoefficient,usageAverage};
 }
 function offensivePressure(a,b){
   if(!a.mons.length||!b.mons.length)return .5;
@@ -284,7 +286,7 @@ function forecastHtml(tournament){
         <div class="forecast-rank">${index+1}番人気</div>
         <div class="forecast-main"><strong>${escapeHtml(row.player.name)}</strong><span>予想優勝率 ${(row.probability*100).toFixed(1)}%</span></div>
         <div class="forecast-odds">${row.odds.toFixed(1)}倍</div>
-        <div class="forecast-stats">戦力 ${a.score.toFixed(1)} ／ 平均BST ${a.avgBst.toFixed(0)} ／ 火力 ${a.avgAttack.toFixed(0)} ／ 耐久 ${a.avgBulk.toFixed(0)} ／ 平均S ${a.avgSpeed.toFixed(0)} ／ 一致弱点範囲 ${a.coverage}/18 ／ 使用率補正 ×${a.usageCoefficient.toFixed(3)} ／ ${escapeHtml(weakness)}</div>
+        <div class="forecast-stats">戦力 ${a.score.toFixed(1)} ／ 平均BST ${a.avgBst.toFixed(0)} ／ 火力 ${a.avgAttack.toFixed(0)} ／ 耐久 ${a.avgBulk.toFixed(0)} ／ 平均S ${a.avgSpeed.toFixed(0)} ／ 高速S100+ ${a.fastCount}匹 ／ 一致弱点範囲 ${a.coverage}/18 ／ 使用率補正 ×${a.usageCoefficient.toFixed(3)} ／ ${escapeHtml(weakness)}</div>
       </article>`;
     }).join('')}</div>`;
 }
