@@ -188,9 +188,20 @@ function pokemonAnalysisProfile(p){
   const final=finalPokemonForAnalysis(p);
   const key=final.formKey?`${final.id}-${final.formKey}`:String(final.id);
   const stat=window.POKEMON_STATS?.[String(final.id)]||{};
+  const attack=Math.max(Number(stat.attack)||0,Number(stat.spAttack)||0);
+  // Bulk proxy: HP plus the average of both defensive stats. This rewards
+  // genuinely bulky Pokemon without counting HP twice as a raw BST subtotal.
+  const bulk=(Number(stat.hp)||0)+((Number(stat.defense)||0)+(Number(stat.spDefense)||0))/2;
   return {
     source:p,final,
     bst:Number(stat.bst)||0,
+    hp:Number(stat.hp)||0,
+    attackPhysical:Number(stat.attack)||0,
+    defense:Number(stat.defense)||0,
+    spAttack:Number(stat.spAttack)||0,
+    spDefense:Number(stat.spDefense)||0,
+    attack,
+    bulk,
     speed:Number(stat.speed)||0,
     types:window.POKEMON_TYPES?.[key]||window.POKEMON_TYPES?.[String(final.id)]||[]
   };
@@ -206,6 +217,8 @@ function partyAnalysis(player){
   const mons=(player.pokemon||[]).map(pokemonAnalysisProfile);
   if(!mons.length)return {mons,score:0,baseScore:0,avgBst:0,avgSpeed:0,coverage:0,maxWeak:0,weakTypes:[],usageCoefficient:1,usageAverage:0};
   const avgBst=mons.reduce((s,p)=>s+p.bst,0)/mons.length;
+  const avgAttack=mons.reduce((s,p)=>s+p.attack,0)/mons.length;
+  const avgBulk=mons.reduce((s,p)=>s+p.bulk,0)/mons.length;
   const avgSpeed=mons.reduce((s,p)=>s+p.speed,0)/mons.length;
   const stabTypes=[...new Set(mons.flatMap(p=>p.types))];
   const coverage=ALL_TYPES.filter(def=>stabTypes.some(atk=>typeEffectiveness(atk,[def])>1)).length;
@@ -215,12 +228,22 @@ function partyAnalysis(player){
   })).sort((a,b)=>b.count-a.count);
   const maxWeak=weaknessRows[0]?.count||0;
   const weakTypes=weaknessRows.filter(x=>x.count===maxWeak&&x.count>=2).map(x=>x.type);
-  const baseScore=50+(avgBst-480)*.10+(avgSpeed-70)*.07+(coverage-8)*1.15-(Math.max(0,maxWeak-2))*2.2;
+  // Balanced party score. BST remains the broad baseline; peak attacking stat
+  // and bulk add information that BST alone cannot express. STAB coverage is
+  // intentionally lighter than before because learnable off-type moves are not
+  // modelled here.
+  const baseScore=50
+    +(avgBst-480)*.075
+    +(avgAttack-100)*.055
+    +(avgBulk-165)*.035
+    +(avgSpeed-70)*.055
+    +(coverage-8)*.70
+    -(Math.max(0,maxWeak-2))*2.0;
   const usageRows=mons.map(usageCoefficientFor);
   const usageCoefficient=usageRows.reduce((s,x)=>s+x.coefficient,0)/usageRows.length;
   const usageAverage=usageRows.reduce((s,x)=>s+x.rate,0)/usageRows.length;
   const score=baseScore*usageCoefficient;
-  return {mons,score,baseScore,avgBst,avgSpeed,coverage,maxWeak,weakTypes,usageCoefficient,usageAverage};
+  return {mons,score,baseScore,avgBst,avgAttack,avgBulk,avgSpeed,coverage,maxWeak,weakTypes,usageCoefficient,usageAverage};
 }
 function offensivePressure(a,b){
   if(!a.mons.length||!b.mons.length)return .5;
@@ -253,7 +276,7 @@ function forecastHtml(tournament){
   if(rows.some(row=>!row.analysis.mons.length))return '<p class="note">使用ポケモンが登録されると予想を表示します。</p>';
   const usageMeta=window.POKEMON_USAGE_META;
   const usageText=usageMeta?` ／ 使用率補正：${escapeHtml(usageMeta.format)}（${escapeHtml(usageMeta.capturedAt)}取得）`:'';
-  return `<div class="forecast-note">最終進化後を想定。BST・素早さ・タイプ一致攻撃範囲・弱点重複・参加パーティ同士の相性から算出した参考値です。${usageText}</div>
+  return `<div class="forecast-note">最終進化後を想定。BST・火力・耐久・素早さ・タイプ一致攻撃範囲・弱点重複・参加パーティ同士の相性から算出した参考値です。${usageText}</div>
     <div class="forecast-list">${rows.map((row,index)=>{
       const a=row.analysis;
       const weakness=a.weakTypes.length?`弱点重複：${a.weakTypes.join('・')} ${a.maxWeak}匹`:'弱点重複：小';
@@ -261,7 +284,7 @@ function forecastHtml(tournament){
         <div class="forecast-rank">${index+1}番人気</div>
         <div class="forecast-main"><strong>${escapeHtml(row.player.name)}</strong><span>予想優勝率 ${(row.probability*100).toFixed(1)}%</span></div>
         <div class="forecast-odds">${row.odds.toFixed(1)}倍</div>
-        <div class="forecast-stats">戦力 ${a.score.toFixed(1)} ／ 平均BST ${a.avgBst.toFixed(0)} ／ 平均S ${a.avgSpeed.toFixed(0)} ／ 一致弱点範囲 ${a.coverage}/18 ／ 使用率補正 ×${a.usageCoefficient.toFixed(3)} ／ ${escapeHtml(weakness)}</div>
+        <div class="forecast-stats">戦力 ${a.score.toFixed(1)} ／ 平均BST ${a.avgBst.toFixed(0)} ／ 火力 ${a.avgAttack.toFixed(0)} ／ 耐久 ${a.avgBulk.toFixed(0)} ／ 平均S ${a.avgSpeed.toFixed(0)} ／ 一致弱点範囲 ${a.coverage}/18 ／ 使用率補正 ×${a.usageCoefficient.toFixed(3)} ／ ${escapeHtml(weakness)}</div>
       </article>`;
     }).join('')}</div>`;
 }
