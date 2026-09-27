@@ -360,14 +360,18 @@ function currentGuidedStatRects(){
  const sels={hp:'.ghp',spAttack:'.gspa',attack:'.gatk',spDefense:'.gspd',defense:'.gdef',speed:'.gspe'};
  return Object.fromEntries(Object.entries(sels).map(([k,sel])=>{const r=guide.querySelector(sel).getBoundingClientRect();return[k,[(r.left-gr.left)/gr.width,(r.top-gr.top)/gr.height,r.width/gr.width,r.height/gr.height]]}));
 }
+function numericRect(k,r){
+ if(k==='hp')return[r[0]+r[2]*.08,r[1]+r[3]*.43,r[2]*.84,r[3]*.55];
+ return[r[0]+r[2]*.10,r[1]+r[3]*.45,r[2]*.80,r[3]*.52];
+}
 async function readGuidedStats(src,rects){
- const out={};for(const [k,r] of Object.entries(rects||{})){const n=await ocrGuidedNumber(src,r,k==='hp');if(n&&n>=10&&n<=999)out[k]=n}return out;
+ const out={};for(const [k,r] of Object.entries(rects||{})){const n=await ocrGuidedNumber(src,numericRect(k,r),k==='hp');if(n&&n>=10&&n<=999)out[k]=n}return out;
 }
 function detectNatureMarkers(src,rects){
  const sw=src.width||src.videoWidth,sh=src.height||src.videoHeight,keys=['attack','defense','spAttack','spDefense','speed'],scores=[];
- for(const k of keys){const r=rects?.[k];if(!r)continue;const x=Math.max(0,r[0]-.055),y=Math.max(0,r[1]-.055),w=Math.min(.11,1-x),h=Math.min(r[3]+.11,1-y),c=document.createElement('canvas');c.width=Math.max(20,Math.round(sw*w));c.height=Math.max(20,Math.round(sh*h));const g=c.getContext('2d');g.drawImage(src,sw*x,sh*y,sw*w,sh*h,0,0,c.width,c.height);const d=g.getImageData(0,0,c.width,c.height).data;let red=0,blue=0;for(let i=0;i<d.length;i+=4){const R=d[i],G=d[i+1],B=d[i+2];if(R>150&&R>G*1.35&&R>B*1.25)red++;if(B>145&&B>R*1.25&&B>G*1.05)blue++;}scores.push({k,red,blue})}
- const up=scores.sort((a,b)=>b.red-a.red)[0],down=[...scores].sort((a,b)=>b.blue-a.blue)[0];
- return{up:up&&up.red>8?up.k:'',down:down&&down.blue>8?down.k:''};
+ for(const k of keys){const r=rects?.[k];if(!r)continue;const c=document.createElement('canvas');c.width=Math.max(40,Math.round(sw*r[2]));c.height=Math.max(40,Math.round(sh*r[3]));const g=c.getContext('2d');g.drawImage(src,sw*r[0],sh*r[1],sw*r[2],sh*r[3],0,0,c.width,c.height);const d=g.getImageData(0,0,c.width,c.height).data;let red=0,blue=0;for(let i=0;i<d.length;i+=4){const R=d[i],G=d[i+1],B=d[i+2],mx=Math.max(R,G,B),mn=Math.min(R,G,B);if(mx-mn<45)continue;if(R>145&&R>G*1.28&&R>B*1.15)red++;if(B>135&&B>R*1.18&&B>G*1.03)blue++;}scores.push({k,red,blue})}
+ const up=[...scores].sort((a,b)=>b.red-a.red)[0],down=[...scores].sort((a,b)=>b.blue-a.blue)[0];
+ return{up:up&&up.red>6?up.k:'',down:down&&down.blue>6?down.k:''};
 }
 async function consumeGuidedImage(src,previewUrl,rects){
  const pv=$('#statPhotoPreview'),box=$('#statPhotoConfirm');pv.classList.remove('hidden');pv.innerHTML='<img src="'+previewUrl+'" alt="能力六角形"><p id="statPhotoOcrStatus" class="hint">6つの能力値を読み取っています…</p>';box.classList.remove('hidden');
