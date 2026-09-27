@@ -330,3 +330,34 @@ button,.nav-btn,.mini-btn,.column-reset,.lock-btn{touch-action:manipulation}
 .loveca-config-head,.loveca-deck-edit{display:grid;grid-template-columns:1fr auto;gap:7px;margin:6px 0}
 .loveca-deck-edit{margin-left:18px}.loveca-history-note{font-size:12px;color:#666;margin-top:5px;line-height:1.5}
 @media(max-width:560px){.loveca-vs-grid{grid-template-columns:1fr}.loveca-side{padding:10px}}
+
+
+/* ===== Pokemon type chart / speed comparison ===== */
+.guide-tool-nav{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:0 0 10px}
+.guide-tool-tab{border:1px solid #efd5df;background:#fff;color:#8c6473;border-radius:12px;padding:10px 5px;font-weight:900}
+.guide-tool-tab.active{background:#f05a8a;color:#fff;border-color:#f05a8a}
+.type-chart-wrap{overflow:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}
+.type-chart{border-collapse:separate;border-spacing:2px;min-width:650px;width:100%;font-size:11px;text-align:center}
+.type-chart th,.type-chart td{min-width:28px;height:30px;border-radius:5px}
+.type-chart th{background:#f6edf1;color:#694f59;font-weight:900;position:sticky}
+.type-chart thead th{top:0;z-index:2}.type-chart tbody th{left:0;z-index:1}
+.type-chart td{background:#fafafa;font-weight:900}
+.type-effect-super{background:#ffe1e8!important;color:#c52855}.type-effect-resist{background:#e6f2ff!important;color:#27669d}
+.type-effect-immune{background:#e8e8e8!important;color:#555}.type-effect-normal{color:#ccc}
+.speed-controls{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.speed-controls label{font-size:11px;color:#6e6268;font-weight:800}
+.speed-controls select,.speed-controls input[type=number],.speed-controls input[type=search]{width:100%;margin-top:4px;border:1px solid #ded3d8;border-radius:9px;padding:8px;background:#fff;font:inherit}
+.speed-check{align-self:end;min-height:38px;padding:7px 8px}.speed-search{grid-column:span 2}
+.speed-table-head,.speed-row{display:grid;grid-template-columns:48px minmax(130px,1fr) 76px 82px;align-items:center;gap:5px}
+.speed-table-head{padding:5px 10px;font-size:10px;color:#777;font-weight:900;text-align:center}
+.speed-table-head span:nth-child(2){text-align:left}
+.speed-row{width:100%;border:0;border-top:1px solid #f0e6ea;background:#fff;padding:9px 10px;text-align:center;color:#443b3f}
+.speed-row:active{background:#fff5f8}.speed-rank{font-size:12px;font-weight:900;color:#a23e61}
+.speed-name{text-align:left;display:flex;flex-direction:column;min-width:0}.speed-name strong{font-size:13px}.speed-name small{font-size:9px;color:#999}
+.speed-base{font-size:12px;font-weight:900;color:#655a60}.speed-value{font-size:16px;font-weight:1000;color:#d94176}
+@media(max-width:560px){
+ .speed-controls{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .speed-search{grid-column:1/-1}
+ .speed-table-head,.speed-row{grid-template-columns:38px minmax(100px,1fr) 62px 66px;padding-left:5px;padding-right:5px}
+ .speed-value{font-size:15px}
+}
