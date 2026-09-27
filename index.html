@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="LovePoke" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="apple-touch-icon" href="./icons/icon-192.png" />
-  <link rel="stylesheet" href="./styles.css?v=20260927-tools14" />
+  <link rel="stylesheet" href="./styles.css?v=20260927-tools15" />
   <link rel="stylesheet" href="./mascot.css" />
   <title>LovePoke Tools</title>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" defer></script>
@@ -17,7 +17,7 @@
 <body>
   <header class="app-header">
     <div>
-      <div class="header-meta"><span class="eyebrow">OFFLINE PWA</span><span class="app-version">Ver.0.9.3</span></div>
+      <div class="header-meta"><span class="eyebrow">OFFLINE PWA</span><span class="app-version">Ver.0.9.4</span></div>
       <h1 id="appTitle">ラブカ ハート計算</h1>
     </div>
     <button id="resetAllBtn" class="ghost-btn">リセット</button>
@@ -392,22 +392,31 @@
         <div id="guideBuildTool" class="guide-tool-pane hidden">
           <section class="panel"><div class="section-title-row"><h2>育成調整メモ</h2><span class="badge ok">端末に保存</span></div>
             <div class="stat-photo-tool">
-              <div class="section-title-row"><h3>写真から努力値を推定</h3><span class="badge soft">Lv.50 / IV31基準</span></div>
-              <p class="hint">Switchの「つよさをみる」能力画面をスマホで撮影してください。読み取り後に数値を訂正できます。</p>
-              <div class="stat-photo-source-actions"><button id="statPhotoCameraBtn" type="button" class="primary-btn">写真を撮る</button><button id="statPhotoLibraryBtn" type="button" class="ghost-btn">画像から選ぶ</button></div>
-              <input id="statPhotoCameraInput" type="file" accept="image/*" capture="environment" hidden>
+              <div class="section-title-row"><h3>写真から努力値を推定</h3><span class="badge soft">六角形専用</span></div>
+              <p class="hint">先にポケモンとLvを入力し、能力六角形がガイドに合うように撮影してください。</p>
+              <div class="stat-photo-setup"><label>ポケモン<input id="statPhotoPokemon" type="search" list="speedPokemonList" placeholder="例：ヨルノズク"></label><label>Lv<input id="statPhotoLevel" type="number" min="1" max="100" placeholder="例：50"></label></div>
+              <div class="stat-photo-source-actions"><button id="statPhotoCameraBtn" type="button" class="primary-btn">ガイド付きで撮る</button><button id="statPhotoLibraryBtn" type="button" class="ghost-btn">画像から選ぶ</button></div>
               <input id="statPhotoLibraryInput" type="file" accept="image/*" hidden>
+              <div id="statCameraOverlay" class="stat-camera-overlay hidden">
+                <video id="statCameraVideo" playsinline muted></video>
+                <div class="stat-camera-guide">
+                  <div class="guide-box ghp">HP</div><div class="guide-box gspa">C</div><div class="guide-box gatk">A</div>
+                  <div class="guide-hex">◇</div>
+                  <div class="guide-box gspd">D</div><div class="guide-box gdef">B</div><div class="guide-box gspe">S</div>
+                </div>
+                <p>6つの数値が枠に入るように合わせてください</p>
+                <div class="stat-camera-controls"><button id="statCameraCancel" type="button">閉じる</button><button id="statCameraShutter" type="button" class="primary-btn">● 撮影</button></div>
+              </div>
               <div id="statPhotoPreview" class="stat-photo-preview hidden"></div>
               <div id="statPhotoConfirm" class="stat-photo-confirm hidden">
                 <div class="stat-photo-grid">
-                  <label>推定ポケモン<input id="statPhotoPokemon" type="search" list="speedPokemonList" placeholder="画像・特性から候補を絞ります"></label><label>Lv<input id="statPhotoLevel" type="number" min="1" max="100" placeholder="画像から読取"></label>
                   <label>HP<input id="statPhotoHp" type="number"></label><label>こうげき<input id="statPhotoAtk" type="number"></label>
                   <label>ぼうぎょ<input id="statPhotoDef" type="number"></label><label>とくこう<input id="statPhotoSpa" type="number"></label>
                   <label>とくぼう<input id="statPhotoSpd" type="number"></label><label>すばやさ<input id="statPhotoSpe" type="number"></label>
-                  <label>読み取った特性<input id="statPhotoAbility" type="text" placeholder="例：いろめがね"></label><label>性格 ↑<select id="statPhotoNatureUp"><option value="">補正なし</option><option value="attack">こうげき</option><option value="defense">ぼうぎょ</option><option value="spAttack">とくこう</option><option value="spDefense">とくぼう</option><option value="speed">すばやさ</option></select></label>
+                  <label>性格 ↑<select id="statPhotoNatureUp"><option value="">補正なし</option><option value="attack">こうげき</option><option value="defense">ぼうぎょ</option><option value="spAttack">とくこう</option><option value="spDefense">とくぼう</option><option value="speed">すばやさ</option></select></label>
                   <label>性格 ↓<select id="statPhotoNatureDown"><option value="">補正なし</option><option value="attack">こうげき</option><option value="defense">ぼうぎょ</option><option value="spAttack">とくこう</option><option value="spDefense">とくぼう</option><option value="speed">すばやさ</option></select></label>
                 </div>
-                <div id="statPhotoPokemonCandidates" class="stat-photo-candidates"></div><button id="statPhotoIdentify" type="button" class="ghost-btn">ポケモン候補を再判定</button><button id="statPhotoCalculate" type="button" class="primary-btn">この内容で努力値を計算</button>
+                <button id="statPhotoCalculate" type="button" class="primary-btn">この内容で努力値を計算</button>
                 <div id="statPhotoResult"></div>
               </div>
             </div>
@@ -510,8 +519,8 @@
   <script src="./pokemon-sv-learnsets.js"></script>
   <script src="./firebase-config.js"></script>
   <script type="module" src="./app.js"></script>
-  <script type="module" src="./tournament.js?v=20260927-tools14"></script>
-  <script type="module" src="./pokemon-guide.js?v=20260927-tools14"></script>
+  <script type="module" src="./tournament.js?v=20260927-tools15"></script>
+  <script type="module" src="./pokemon-guide.js?v=20260927-tools15"></script>
   <script type="module" src="./loveca-records.js"></script>
   <script type="module" src="./mahjong.js"></script>
   <script src="./loveca-card-browser.js"></script>
