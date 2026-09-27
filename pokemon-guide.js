@@ -377,8 +377,16 @@ function possiblePhotoStatValues(base,k,lv){
 async function readGuidedStats(src,rects){
  const out={},p=photoPoke(),st=p&&window.POKEMON_STATS?.[String(p.id)],lv=Math.max(1,Math.min(100,Number($('#statPhotoLevel')?.value)||50));
  for(const [k,r] of Object.entries(rects||{})){
-  const candidates=await ocrGuidedNumber(src,numericRect(k,r),k==='hp');
-  if(!candidates?.length)continue;
+  const rois=[numericRect(k,r)];
+  if(k==='spDefense'){
+   rois.push([r[0]+r[2]*.10,r[1]+r[3]*.43,r[2]*.74,r[3]*.48]);
+   rois.push([r[0]+r[2]*.20,r[1]+r[3]*.54,r[2]*.62,r[3]*.36]);
+  }
+  const merged=[];
+  for(const roi of rois){const xs=await ocrGuidedNumber(src,roi,k==='hp');if(xs?.length)merged.push(...xs)}
+  if(!merged.length)continue;
+  const freq=new Map();for(const v of merged)freq.set(v,(freq.get(v)||0)+1);
+  const candidates=[...freq.entries()].sort((a,b)=>b[1]-a[1]).map(x=>x[0]);
   const possible=st?possiblePhotoStatValues(st[k],k,lv):null;
   const n=candidates.find(v=>!possible||possible.has(v));
   if(n&&n>=10&&n<=999)out[k]=n;
@@ -420,7 +428,7 @@ function renderStatPokemonChoices(){
 }
 $('#statPhotoPokemon')?.addEventListener('input',renderStatPokemonChoices);
 $('#statPhotoPokemon')?.addEventListener('focus',renderStatPokemonChoices);
-$('#statPhotoPokemonChoices')?.addEventListener('pointerdown',e=>{const b=e.target.closest('.stat-pokemon-choice');if(!b)return;e.preventDefault();$('#statPhotoPokemon').value=b.dataset.name;$('#statPhotoPokemonChoices').classList.add('hidden');$('#statPhotoPokemon').blur()});
+$('#statPhotoPokemonChoices')?.addEventListener('click',e=>{const b=e.target.closest('.stat-pokemon-choice');if(!b)return;e.preventDefault();e.stopPropagation();$('#statPhotoPokemon').value=b.dataset.name;$('#statPhotoPokemon').blur();requestAnimationFrame(()=>$('#statPhotoPokemonChoices')?.classList.add('hidden'))});
 document.addEventListener('pointerdown',e=>{if(!e.target.closest('.stat-pokemon-picker'))$('#statPhotoPokemonChoices')?.classList.add('hidden')});
 let statCameraStream=null;
 async function openStatCamera(){
