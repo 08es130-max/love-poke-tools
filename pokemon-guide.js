@@ -413,10 +413,13 @@ async function readGuidedStats(src,rects){
    if(valid.length)out[k]=valid[0];
    continue;
   }else if(k==='spDefense'){
-   // D sits close to the left edge/hex point; give its number more horizontal room.
-   rois.push({r:[r[0]+r[2]*.08,r[1]+r[3]*.46,r[2]*.78,r[3]*.48],w:7});
-   rois.push({r:[r[0]+r[2]*.03,r[1]+r[3]*.39,r[2]*.90,r[3]*.56],w:4});
-   rois.push({r:numericRect(k,r),w:2});
+   // D is the least stable OCR slot. Use several tight crops around the number first,
+   // then wider rescue crops. This helps preserve 3 vs 2 and still finds values such as 103.
+   rois.push({r:[r[0]+r[2]*.12,r[1]+r[3]*.50,r[2]*.72,r[3]*.42],w:10});
+   rois.push({r:[r[0]+r[2]*.08,r[1]+r[3]*.46,r[2]*.78,r[3]*.46],w:8});
+   rois.push({r:[r[0]+r[2]*.16,r[1]+r[3]*.54,r[2]*.66,r[3]*.36],w:7});
+   rois.push({r:[r[0]+r[2]*.03,r[1]+r[3]*.39,r[2]*.90,r[3]*.56],w:3});
+   rois.push({r:numericRect(k,r),w:5});
   }else{
    // Tight number crops are authoritative; wider crops only rescue difficult captures.
    rois.push({r:numericRect(k,r),w:6});
@@ -440,8 +443,10 @@ function detectNatureMarkers(src,rects){
  for(const k of keys){
   const r=rects?.[k];if(!r)continue;
   let rx=r[0],ry=r[1],rw=r[2],rh=r[3];
-  if(k==='spAttack'||k==='spDefense'){rx=r[0]+r[2]*.62;rw=r[2]*.38;ry=r[1]+r[3]*.12;rh=r[3]*.76}
-  else if(k==='attack'||k==='defense'){rx=r[0];rw=r[2]*.38;ry=r[1]+r[3]*.12;rh=r[3]*.76}
+  // C/D and A/B are vertically adjacent. Keep their marker ROIs inside each
+  // stat row so the neighbouring endpoint cannot be counted by both regions.
+  if(k==='spAttack'||k==='spDefense'){rx=r[0]+r[2]*.66;rw=r[2]*.32;ry=r[1]+r[3]*.24;rh=r[3]*.52}
+  else if(k==='attack'||k==='defense'){rx=r[0]+r[2]*.02;rw=r[2]*.32;ry=r[1]+r[3]*.24;rh=r[3]*.52}
   else {rx=r[0]+r[2]*.20;rw=r[2]*.60;ry=r[1];rh=r[3]*.42}
   const cc=document.createElement('canvas');cc.width=Math.max(36,Math.round(sw*rw));cc.height=Math.max(36,Math.round(sh*rh));
   const g=cc.getContext('2d');g.drawImage(src,sw*rx,sh*ry,sw*rw,sh*rh,0,0,cc.width,cc.height);
