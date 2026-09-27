@@ -9,9 +9,10 @@
   <meta name="apple-mobile-web-app-title" content="LovePoke" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="apple-touch-icon" href="./icons/icon-192.png" />
-  <link rel="stylesheet" href="./styles.css?v=20260927-tools4" />
+  <link rel="stylesheet" href="./styles.css?v=20260927-tools5" />
   <link rel="stylesheet" href="./mascot.css" />
   <title>LovePoke Tools</title>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" defer></script>
 </head>
 <body>
   <header class="app-header">
@@ -390,6 +391,25 @@
         </div>
         <div id="guideBuildTool" class="guide-tool-pane hidden">
           <section class="panel"><div class="section-title-row"><h2>育成調整メモ</h2><span class="badge ok">端末に保存</span></div>
+            <div class="stat-photo-tool">
+              <div class="section-title-row"><h3>写真から努力値を推定</h3><span class="badge soft">Lv.50 / IV31基準</span></div>
+              <p class="hint">Switchの「つよさをみる」能力画面をスマホで撮影してください。読み取り後に数値を訂正できます。</p>
+              <button id="statPhotoPickBtn" type="button" class="ghost-btn">能力画面を撮る・写真を選ぶ</button>
+              <input id="statPhotoInput" type="file" accept="image/*" capture="environment" hidden>
+              <div id="statPhotoPreview" class="stat-photo-preview hidden"></div>
+              <div id="statPhotoConfirm" class="stat-photo-confirm hidden">
+                <div class="stat-photo-grid">
+                  <label>ポケモン<input id="statPhotoPokemon" type="search" list="speedPokemonList"></label><label>Lv<input id="statPhotoLevel" type="number" min="1" max="100" value="50"></label>
+                  <label>HP<input id="statPhotoHp" type="number"></label><label>こうげき<input id="statPhotoAtk" type="number"></label>
+                  <label>ぼうぎょ<input id="statPhotoDef" type="number"></label><label>とくこう<input id="statPhotoSpa" type="number"></label>
+                  <label>とくぼう<input id="statPhotoSpd" type="number"></label><label>すばやさ<input id="statPhotoSpe" type="number"></label>
+                  <label>性格 ↑<select id="statPhotoNatureUp"><option value="">補正なし</option><option value="attack">こうげき</option><option value="defense">ぼうぎょ</option><option value="spAttack">とくこう</option><option value="spDefense">とくぼう</option><option value="speed">すばやさ</option></select></label>
+                  <label>性格 ↓<select id="statPhotoNatureDown"><option value="">補正なし</option><option value="attack">こうげき</option><option value="defense">ぼうぎょ</option><option value="spAttack">とくこう</option><option value="spDefense">とくぼう</option><option value="speed">すばやさ</option></select></label>
+                </div>
+                <button id="statPhotoCalculate" type="button" class="primary-btn">この内容で努力値を計算</button>
+                <div id="statPhotoResult"></div>
+              </div>
+            </div>
             <div class="build-memo-form"><label>ポケモン<input id="buildMemoPokemon" type="search" list="speedPokemonList" placeholder="例：カイリュー"></label><label>性格<input id="buildMemoNature" type="text" placeholder="例：ようき"></label><label>努力値<input id="buildMemoEv" type="text" placeholder="例：H4 A252 S252"></label><label>持ち物<input id="buildMemoItem" type="text" placeholder="例：こだわりスカーフ"></label><label class="build-memo-wide">調整意図・メモ<textarea id="buildMemoNote" rows="3" placeholder="例：最速。○○抜き、○○耐え"></textarea></label></div>
             <button id="saveBuildMemo" type="button" class="primary-btn">育成メモを保存</button>
             <div class="build-backup-actions"><button id="exportBuildMemos" type="button" class="ghost-btn">バックアップを保存</button><button id="importBuildMemos" type="button" class="ghost-btn">バックアップから復元</button><input id="importBuildMemosFile" type="file" accept="application/json,.json" hidden></div>
@@ -489,8 +509,8 @@
   <script src="./pokemon-sv-learnsets.js"></script>
   <script src="./firebase-config.js"></script>
   <script type="module" src="./app.js"></script>
-  <script type="module" src="./tournament.js?v=20260927-tools4"></script>
-  <script type="module" src="./pokemon-guide.js?v=20260927-tools4"></script>
+  <script type="module" src="./tournament.js?v=20260927-tools5"></script>
+  <script type="module" src="./pokemon-guide.js?v=20260927-tools5"></script>
   <script type="module" src="./loveca-records.js"></script>
   <script type="module" src="./mahjong.js"></script>
   <script src="./loveca-card-browser.js"></script>
