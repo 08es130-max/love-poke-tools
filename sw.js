@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'lovepoke-';
-const CACHE_NAME = `${CACHE_PREFIX}v20260927-27`;
+const CACHE_NAME = `${CACHE_PREFIX}v20260927-28`;
 
 const ASSETS = [
   './',
@@ -25,6 +25,7 @@ const ASSETS = [
   './pokemon-guide.js',
   './mahjong.js',
   './manifest.webmanifest',
+  './version.json',
   './icons/icon-192.png'
 ];
 
