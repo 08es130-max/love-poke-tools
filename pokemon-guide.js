@@ -323,6 +323,17 @@ function photoEvOpts(base,k,lv,val,iv){const a=[];for(let ev=0;ev<=252;ev+=4)if(
 function photoIv0Opts(base,k,lv,val){const a=[];for(let iv=0;iv<=31;iv++)if(photoStat(base,k,lv,iv,0)===val)a.push(iv);return a}
 function photoSpeedOpts(base,lv,val,maxEv){const a=[];for(let iv=0;iv<=31;iv++)for(let ev=0;ev<=Math.min(252,maxEv);ev+=4)if(photoStat(base,'speed',lv,iv,ev)===val)a.push({iv,ev});return a}
 function photoPoke(){const n=$('#statPhotoPokemon')?.value.trim();return (window.POKEMON_DATA||[]).find(p=>p.name===n)}
+const PHOTO_NATURE_NAMES={
+ 'attack|defense':'さみしがり','attack|spAttack':'いじっぱり','attack|spDefense':'やんちゃ','attack|speed':'ゆうかん',
+ 'defense|attack':'ずぶとい','defense|spAttack':'わんぱく','defense|spDefense':'のうてんき','defense|speed':'のんき',
+ 'spAttack|attack':'ひかえめ','spAttack|defense':'おっとり','spAttack|spDefense':'うっかりや','spAttack|speed':'れいせい',
+ 'spDefense|attack':'おだやか','spDefense|defense':'おとなしい','spDefense|spAttack':'しんちょう','spDefense|speed':'なまいき',
+ 'speed|attack':'おくびょう','speed|defense':'せっかち','speed|spAttack':'ようき','speed|spDefense':'むじゃき'
+};
+function photoNatureName(){
+ const up=$('#statPhotoNatureUp')?.value||'',down=$('#statPhotoNatureDown')?.value||'';
+ return up&&down&&up!==down?(PHOTO_NATURE_NAMES[up+'|'+down]||''):'';
+}
 function calculatePhotoEv(){
  const p=photoPoke(),root=$('#statPhotoResult');if(!root)return;if(!p){root.innerHTML='<p class="photo-warn">ポケモン名を確認してください。</p>';return}
  const st=window.POKEMON_STATS?.[String(p.id)],lv=Math.max(1,Math.min(100,Number($('#statPhotoLevel')?.value)||50));if(!st)return;
@@ -336,7 +347,7 @@ function calculatePhotoEv(){
  const rows=PHOTO_KEYS.map(k=>'<tr><th>'+PHOTO_SHORT[k]+'</th><td>'+v[k]+'</td><td>'+z[k].ev+'</td><td>'+z[k].iv+'</td><td>'+(z[k].kind==='unused'?'EV0としてIV推定':z[k].kind==='speed'?'S調整候補':z[k].kind==='bad'?'要確認':'IV31前提')+'</td></tr>').join('');
  const sx=z.speed.opts?.length?'<p class="hint">S候補：'+z.speed.opts.map(x=>'IV'+x.iv+'/EV'+x.ev).join('、')+'</p>':'';
  root.innerHTML='<div class="photo-ev-summary '+((bad||total!==508)?'warn':'')+'"><strong>推定EV '+total+'/508</strong><p>'+escapeHtml(msg)+'</p></div><div class="photo-result-scroll"><table><thead><tr><th></th><th>実数値</th><th>EV</th><th>IV</th><th>判定</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+sx+'<button id="applyPhotoEvToMemo" type="button" class="ghost-btn">育成メモへ反映</button>';
- $('#applyPhotoEvToMemo')?.addEventListener('click',()=>{$('#buildMemoPokemon').value=p.name;$('#buildMemoEv').value=PHOTO_KEYS.filter(k=>z[k].ev>0).map(k=>PHOTO_SHORT[k]+z[k].ev).join(' ');const det=PHOTO_KEYS.filter(k=>z[k].kind==='unused'||z[k].kind==='speed').map(k=>PHOTO_SHORT[k]+': IV'+z[k].iv+' / EV'+z[k].ev).join('、');$('#buildMemoNote').value=[det,msg].filter(Boolean).join('\n')});
+ $('#applyPhotoEvToMemo')?.addEventListener('click',()=>{$('#buildMemoPokemon').value=p.name;const natureName=photoNatureName();if(natureName)$('#buildMemoNature').value=natureName;$('#buildMemoEv').value=PHOTO_KEYS.filter(k=>z[k].ev>0).map(k=>PHOTO_SHORT[k]+z[k].ev).join(' ');const det=PHOTO_KEYS.filter(k=>z[k].kind==='unused'||z[k].kind==='speed').map(k=>PHOTO_SHORT[k]+': IV'+z[k].iv+' / EV'+z[k].ev).join('、');$('#buildMemoNote').value=[det,msg].filter(Boolean).join('\n')});
 }
 async function ocrGuidedNumber(src,rect,isHp=false){
  const sw=src.width||src.videoWidth,sh=src.height||src.videoHeight,[x,y,w,h]=rect,base=document.createElement('canvas');
