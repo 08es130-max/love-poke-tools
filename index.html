@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="LovePoke" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="apple-touch-icon" href="./icons/icon-192.png" />
-  <link rel="stylesheet" href="./styles.css?v=20260927-tools2" />
+  <link rel="stylesheet" href="./styles.css?v=20260927-tools3" />
   <link rel="stylesheet" href="./mascot.css" />
   <title>LovePoke Tools</title>
 </head>
@@ -391,7 +391,9 @@
         <div id="guideBuildTool" class="guide-tool-pane hidden">
           <section class="panel"><div class="section-title-row"><h2>育成調整メモ</h2><span class="badge ok">端末に保存</span></div>
             <div class="build-memo-form"><label>ポケモン<input id="buildMemoPokemon" type="search" list="speedPokemonList" placeholder="例：カイリュー"></label><label>性格<input id="buildMemoNature" type="text" placeholder="例：ようき"></label><label>努力値<input id="buildMemoEv" type="text" placeholder="例：H4 A252 S252"></label><label>持ち物<input id="buildMemoItem" type="text" placeholder="例：こだわりスカーフ"></label><label class="build-memo-wide">調整意図・メモ<textarea id="buildMemoNote" rows="3" placeholder="例：最速。○○抜き、○○耐え"></textarea></label></div>
-            <button id="saveBuildMemo" type="button" class="primary-btn">育成メモを保存</button><div id="buildMemoList"></div>
+            <button id="saveBuildMemo" type="button" class="primary-btn">育成メモを保存</button>
+            <div class="build-backup-actions"><button id="exportBuildMemos" type="button" class="ghost-btn">バックアップを保存</button><button id="importBuildMemos" type="button" class="ghost-btn">バックアップから復元</button><input id="importBuildMemosFile" type="file" accept="application/json,.json" hidden></div>
+            <p id="buildBackupStatus" class="hint">育成メモのバックアップは端末間の移行用です。大会データには共有されません。</p><div id="buildMemoList"></div>
           </section>
         </div>
       </div>
@@ -487,8 +489,8 @@
   <script src="./pokemon-sv-learnsets.js"></script>
   <script src="./firebase-config.js"></script>
   <script type="module" src="./app.js"></script>
-  <script type="module" src="./tournament.js?v=20260927-tools2"></script>
-  <script type="module" src="./pokemon-guide.js?v=20260927-tools2"></script>
+  <script type="module" src="./tournament.js?v=20260927-tools3"></script>
+  <script type="module" src="./pokemon-guide.js?v=20260927-tools3"></script>
   <script type="module" src="./loveca-records.js"></script>
   <script type="module" src="./mahjong.js"></script>
   <script src="./loveca-card-browser.js"></script>
