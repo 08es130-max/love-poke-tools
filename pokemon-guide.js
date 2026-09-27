@@ -344,10 +344,14 @@ async function ocrGuidedNumber(src,rect){
  const d=g.getImageData(0,0,c.width,c.height);for(let i=0;i<d.data.length;i+=4){const v=.299*d.data[i]+.587*d.data[i+1]+.114*d.data[i+2],q=v>155?255:0;d.data[i]=d.data[i+1]=d.data[i+2]=q}g.putImageData(d,0,0);
  const rec=await window.Tesseract.recognize(c,'eng',{tessedit_char_whitelist:'0123456789',tessedit_pageseg_mode:'7'}),m=String(rec.data?.text||'').match(/\d{1,3}/);return m?Number(m[0]):null;
 }
+const GUIDED_STAT_RECTS={
+ hp:[.38,.00,.24,.16],spAttack:[.00,.30,.24,.16],attack:[.76,.30,.24,.16],
+ spDefense:[.00,.60,.24,.16],defense:[.76,.60,.24,.16],speed:[.38,.82,.24,.16]
+};
 async function readGuidedStats(src){
- /* Exact regions corresponding to the on-camera guide. */
- const R={hp:[.38,.17,.24,.075],spAttack:[.02,.325,.24,.075],attack:[.74,.325,.24,.075],spDefense:[.02,.505,.24,.075],defense:[.74,.505,.24,.075],speed:[.38,.645,.24,.075]},out={};
- for(const [k,r] of Object.entries(R)){const n=await ocrGuidedNumber(src,r);if(n&&n>=10&&n<=999)out[k]=n}return out;
+ const out={};
+ for(const [k,r] of Object.entries(GUIDED_STAT_RECTS)){const n=await ocrGuidedNumber(src,r);if(n&&n>=10&&n<=999)out[k]=n}
+ return out;
 }
 async function consumeGuidedImage(src,previewUrl){
  const pv=$('#statPhotoPreview'),box=$('#statPhotoConfirm');pv.classList.remove('hidden');pv.innerHTML='<img src="'+previewUrl+'" alt="能力六角形"><p id="statPhotoOcrStatus" class="hint">6つの能力値を読み取っています…</p>';box.classList.remove('hidden');
@@ -362,7 +366,13 @@ async function openStatCamera(){
 function closeStatCamera(){statCameraStream?.getTracks().forEach(t=>t.stop());statCameraStream=null;$('#statCameraOverlay')?.classList.add('hidden')}
 $('#statPhotoCameraBtn')?.addEventListener('click',openStatCamera);
 $('#statCameraCancel')?.addEventListener('click',closeStatCamera);
-$('#statCameraShutter')?.addEventListener('click',async()=>{const v=$('#statCameraVideo'),c=document.createElement('canvas');c.width=v.videoWidth;c.height=v.videoHeight;c.getContext('2d').drawImage(v,0,0);closeStatCamera();await consumeGuidedImage(c,c.toDataURL('image/jpeg',.92))});
+$('#statCameraShutter')?.addEventListener('click',async()=>{
+ const v=$('#statCameraVideo'),guide=$('#statCameraOverlay .stat-camera-guide'),vr=v.getBoundingClientRect(),gr=guide.getBoundingClientRect();
+ const vw=v.videoWidth,vh=v.videoHeight,scale=Math.min(vr.width/vw,vr.height/vh),drawW=vw*scale,drawH=vh*scale,offX=vr.left+(vr.width-drawW)/2,offY=vr.top+(vr.height-drawH)/2;
+ const sx=Math.max(0,(gr.left-offX)/scale),sy=Math.max(0,(gr.top-offY)/scale),sw=Math.min(vw-sx,gr.width/scale),sh=Math.min(vh-sy,gr.height/scale);
+ const canvas=document.createElement('canvas');canvas.width=Math.round(sw);canvas.height=Math.round(sh);canvas.getContext('2d').drawImage(v,sx,sy,sw,sh,0,0,canvas.width,canvas.height);
+ closeStatCamera();await consumeGuidedImage(canvas,canvas.toDataURL('image/jpeg',.94));
+});
 $('#statPhotoCalculate')?.addEventListener('click',calculatePhotoEv);
 
 const BUILD_MEMO_KEY='lovePokeBuildMemosV1';
