@@ -369,14 +369,31 @@ async function readGuidedStats(src,rects){
 }
 function detectNatureMarkers(src,rects){
  const sw=src.width||src.videoWidth,sh=src.height||src.videoHeight,keys=['attack','defense','spAttack','spDefense','speed'],scores=[];
- for(const k of keys){const r=rects?.[k];if(!r)continue;const c=document.createElement('canvas');c.width=Math.max(40,Math.round(sw*r[2]));c.height=Math.max(40,Math.round(sh*r[3]));const g=c.getContext('2d');g.drawImage(src,sw*r[0],sh*r[1],sw*r[2],sh*r[3],0,0,c.width,c.height);const d=g.getImageData(0,0,c.width,c.height).data;let red=0,blue=0;for(let i=0;i<d.length;i+=4){const R=d[i],G=d[i+1],B=d[i+2],mx=Math.max(R,G,B),mn=Math.min(R,G,B);if(mx-mn<45)continue;if(R>145&&R>G*1.28&&R>B*1.15)red++;if(B>135&&B>R*1.18&&B>G*1.03)blue++;}scores.push({k,red,blue})}
- const up=[...scores].sort((a,b)=>b.red-a.red)[0],down=[...scores].sort((a,b)=>b.blue-a.blue)[0];
- return{up:up&&up.red>6?up.k:'',down:down&&down.blue>6?down.k:''};
+ for(const k of keys){
+  const r=rects?.[k];if(!r)continue;
+  const c=document.createElement('canvas');c.width=Math.max(40,Math.round(sw*r[2]));c.height=Math.max(40,Math.round(sh*r[3]));
+  const g=c.getContext('2d');g.drawImage(src,sw*r[0],sh*r[1],sw*r[2],sh*r[3],0,0,c.width,c.height);
+  const d=g.getImageData(0,0,c.width,c.height).data;let red=0,blue=0;
+  for(let i=0;i<d.length;i+=4){
+   const R=d[i],G=d[i+1],B=d[i+2];
+   // SV nature markers are tiny but bright/saturated. Ignore the dark blue status-screen background.
+   if(R>=175&&R-G>=55&&R-B>=35)red++;
+   if(B>=180&&B-R>=70&&B-G>=18&&G>=70)blue++;
+  }
+  scores.push({k,red,blue});
+ }
+ const reds=[...scores].sort((a,b)=>b.red-a.red),blues=[...scores].sort((a,b)=>b.blue-a.blue);
+ const up=reds[0]&&reds[0].red>=4&&reds[0].red>=(reds[1]?.red||0)*1.25?reds[0]:null;
+ let down=blues[0]&&blues[0].blue>=4&&blues[0].blue>=(blues[1]?.blue||0)*1.25?blues[0]:null;
+ if(up&&down&&up.k===down.k){
+  down=blues.find(x=>x.k!==up.k&&x.blue>=4&&x.blue>=(blues.filter(y=>y.k!==up.k)[1]?.blue||0)*1.25)||null;
+ }
+ return{up:up?.k||'',down:down?.k||''};
 }
 async function consumeGuidedImage(src,previewUrl,rects){
  const pv=$('#statPhotoPreview'),box=$('#statPhotoConfirm');pv.classList.remove('hidden');pv.innerHTML='<img src="'+previewUrl+'" alt="能力六角形"><p id="statPhotoOcrStatus" class="hint">6つの能力値を読み取っています…</p>';box.classList.remove('hidden');
  for(const k of PHOTO_KEYS)$('#'+PHOTO_IDS[k]).value='';
- try{const vals=await readGuidedStats(src,rects),nature=detectNatureMarkers(src,rects);for(const k of PHOTO_KEYS)if(vals[k])$('#'+PHOTO_IDS[k]).value=vals[k];if(nature.up)$('#statPhotoNatureUp').value=nature.up;if(nature.down)$('#statPhotoNatureDown').value=nature.down;const n=PHOTO_KEYS.filter(k=>vals[k]).length;$('#statPhotoOcrStatus').textContent='能力値 '+n+'/6 を取得しました。'+(nature.up||nature.down?' 性格補正も反映しました。':' 性格補正は確認してください。')}catch{$('#statPhotoOcrStatus').textContent='読み取りに失敗しました。空欄を入力してください。'}
+ try{const vals=await readGuidedStats(src,rects),nature=detectNatureMarkers(src,rects);for(const k of PHOTO_KEYS)if(vals[k])$('#'+PHOTO_IDS[k]).value=vals[k];$('#statPhotoNatureUp').value=nature.up||'';$('#statPhotoNatureDown').value=nature.down||'';const n=PHOTO_KEYS.filter(k=>vals[k]).length;$('#statPhotoOcrStatus').textContent='能力値 '+n+'/6 を取得しました。'+(nature.up||nature.down?' 性格補正も反映しました。':' 性格補正は確認してください。')}catch{$('#statPhotoOcrStatus').textContent='読み取りに失敗しました。空欄を入力してください。'}
 }
 function renderStatPokemonChoices(){
  const input=$('#statPhotoPokemon'),box=$('#statPhotoPokemonChoices');if(!input||!box)return;
