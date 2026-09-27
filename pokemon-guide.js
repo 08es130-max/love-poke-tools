@@ -317,7 +317,7 @@ window.addEventListener('lovePokeTournamentsUpdated',refreshPartyAnalysisSelect)
 const PHOTO_KEYS=['hp','attack','defense','spAttack','spDefense','speed'];
 const PHOTO_IDS={hp:'statPhotoHp',attack:'statPhotoAtk',defense:'statPhotoDef',spAttack:'statPhotoSpa',spDefense:'statPhotoSpd',speed:'statPhotoSpe'};
 const PHOTO_SHORT={hp:'H',attack:'A',defense:'B',spAttack:'C',spDefense:'D',speed:'S'};
-function photoNature(k){const u=$('#statPhotoNatureUp')?.value,d=$('#statPhotoNatureDown')?.value;return u===k?1.1:(d===k?.9:1)}
+function photoNature(k){const u=$('#statPhotoNatureUp')?.value,d=$('#statPhotoNatureDown')?.value;return u===k?1.1:(d===k?0.9:1)}
 function photoStat(base,k,lv,iv,ev){const q=Math.floor(((2*base+iv+Math.floor(ev/4))*lv)/100);return k==='hp'?q+lv+10:Math.floor((q+5)*photoNature(k))}
 function photoEvOpts(base,k,lv,val,iv){const a=[];for(let ev=0;ev<=252;ev+=4)if(photoStat(base,k,lv,iv,ev)===val)a.push(ev);return a}
 function photoIv0Opts(base,k,lv,val){const a=[];for(let iv=0;iv<=31;iv++)if(photoStat(base,k,lv,iv,0)===val)a.push(iv);return a}
