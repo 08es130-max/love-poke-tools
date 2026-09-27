@@ -84,9 +84,8 @@ function renderSuggestions(query=''){
   if(!root)return;
   const q=query.trim();
   const data=(window.POKEMON_DATA||[]).filter(p=>!p.formKey&&window.POKEMON_SV_LEARNSETS?.[p.id]);
-  const found=(q?data.filter(p=>p.name.includes(q)):data.slice(0,30))
-    .sort((a,b)=>(q?(b.name.startsWith(q)-a.name.startsWith(q)):0)||a.id-b.id)
-    .slice(0,30);
+  const found=(q?data.filter(p=>p.name.includes(q)):data)
+    .sort((a,b)=>(q?(b.name.startsWith(q)-a.name.startsWith(q)):0)||a.id-b.id);
   root.innerHTML=found.map(p=>`<button type="button" data-guide-result="${p.id}"><span>No.${String(p.id).padStart(4,'0')}</span><strong>${escapeHtml(p.name)}</strong></button>`).join('')||'<p class="note">該当するポケモンが見つかりません。</p>';
 }
 function activateGuide(){
