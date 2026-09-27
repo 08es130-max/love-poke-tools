@@ -352,7 +352,9 @@ async function ocrGuidedNumber(src,rect,isHp=false){
   const rec=await window.Tesseract.recognize(canvas,'eng',{tessedit_char_whitelist:isHp?'0123456789/':'0123456789',tessedit_pageseg_mode:'7'});
   const nums=String(rec.data?.text||'').match(/\d{2,3}/g)||[];for(const n of nums){const v=Number(n);if(v>=10&&v<=999)found.push(v)}
  }
- return found.length?(isHp?found[found.length-1]:found.sort((a,b)=>found.filter(x=>x===b).length-found.filter(x=>x===a).length)[0]):null;
+ if(!found.length)return null;
+ const freq=new Map();for(const v of found)freq.set(v,(freq.get(v)||0)+1);
+ return [...freq.entries()].sort((a,b)=>b[1]-a[1]).map(x=>x[0]);
 }
 function currentGuidedStatRects(){
  const guide=$('#statCameraOverlay .stat-camera-guide'),gr=guide?.getBoundingClientRect();
@@ -364,8 +366,24 @@ function numericRect(k,r){
  if(k==='hp')return[r[0]+r[2]*.12,r[1]+r[3]*.48,r[2]*.76,r[3]*.45];
  return[r[0]+r[2]*.16,r[1]+r[3]*.50,r[2]*.68,r[3]*.42];
 }
+function possiblePhotoStatValues(base,k,lv){
+ const vals=new Set(),natures=k==='hp'?[1]:[.9,1,1.1];
+ for(const nature of natures)for(let iv=0;iv<=31;iv++)for(let ev=0;ev<=252;ev+=4){
+  const q=Math.floor(((2*base+iv+Math.floor(ev/4))*lv)/100);
+  vals.add(k==='hp'?q+lv+10:Math.floor((q+5)*nature));
+ }
+ return vals;
+}
 async function readGuidedStats(src,rects){
- const out={};for(const [k,r] of Object.entries(rects||{})){const n=await ocrGuidedNumber(src,numericRect(k,r),k==='hp');if(n&&n>=10&&n<=999)out[k]=n}return out;
+ const out={},p=photoPoke(),st=p&&window.POKEMON_STATS?.[String(p.id)],lv=Math.max(1,Math.min(100,Number($('#statPhotoLevel')?.value)||50));
+ for(const [k,r] of Object.entries(rects||{})){
+  const candidates=await ocrGuidedNumber(src,numericRect(k,r),k==='hp');
+  if(!candidates?.length)continue;
+  const possible=st?possiblePhotoStatValues(st[k],k,lv):null;
+  const n=candidates.find(v=>!possible||possible.has(v));
+  if(n&&n>=10&&n<=999)out[k]=n;
+ }
+ return out;
 }
 function detectNatureMarkers(src,rects){
  const sw=src.width||src.videoWidth,sh=src.height||src.videoHeight,keys=['attack','defense','spAttack','spDefense','speed'],scores=[];
