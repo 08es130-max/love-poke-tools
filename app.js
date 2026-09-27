@@ -580,7 +580,7 @@ function setScreen(screen){
   $('#appTitle').textContent=love?'ラブカ ハート計算':poke?'ポケモン':'麻雀 戦歴';
   $('#resetAllBtn').style.display=love?'inline-block':'none';
   if(love){
-    const pane=document.querySelector('.love-tab.active')?.dataset.lovePane||'calculator';
+    const pane=document.querySelector('.love-tab.active[data-love-pane="calculator"],.love-tab.active[data-love-pane="record"],.love-tab.active[data-love-pane="stats"]')?.dataset.lovePane||'calculator';
     if(typeof window.showLoveCaPane==='function')window.showLoveCaPane(pane);
     else{
       document.querySelectorAll('.love-pane').forEach(x=>x.classList.toggle('hidden',x.id!==`love${pane[0].toUpperCase()}${pane.slice(1)}Pane`));
