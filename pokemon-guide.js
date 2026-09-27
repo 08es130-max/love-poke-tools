@@ -338,9 +338,52 @@ function calculatePhotoEv(){
  root.innerHTML='<div class="photo-ev-summary '+((bad||total!==508)?'warn':'')+'"><strong>推定EV '+total+'/508</strong><p>'+escapeHtml(msg)+'</p></div><div class="photo-result-scroll"><table><thead><tr><th></th><th>実数値</th><th>EV</th><th>IV</th><th>判定</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+sx+'<button id="applyPhotoEvToMemo" type="button" class="ghost-btn">育成メモへ反映</button>';
  $('#applyPhotoEvToMemo')?.addEventListener('click',()=>{$('#buildMemoPokemon').value=p.name;$('#buildMemoEv').value=PHOTO_KEYS.filter(k=>z[k].ev>0).map(k=>PHOTO_SHORT[k]+z[k].ev).join(' ');const det=PHOTO_KEYS.filter(k=>z[k].kind==='unused'||z[k].kind==='speed').map(k=>PHOTO_SHORT[k]+': IV'+z[k].iv+' / EV'+z[k].ev).join('、');$('#buildMemoNote').value=[det,msg].filter(Boolean).join('\n')});
 }
-function parsePhotoText(t){const x=String(t||'').replace(/[|｜]/g,' ').replace(/\s+/g,' ');const p=(window.POKEMON_DATA||[]).find(q=>x.includes(q.name));if(p)$('#statPhotoPokemon').value=p.name;const lv=x.match(/(?:Lv\.?|レベル)\s*([0-9]{1,3})/i);if(lv)$('#statPhotoLevel').value=lv[1];const ps={hp:/HP\s*([0-9]{2,3})/i,attack:/こうげき\s*([0-9]{2,3})/,defense:/ぼうぎょ\s*([0-9]{2,3})/,spAttack:/とくこう\s*([0-9]{2,3})/,spDefense:/とくぼう\s*([0-9]{2,3})/,speed:/すばやさ\s*([0-9]{2,3})/};for(const k of Object.keys(ps)){const m=x.match(ps[k]);if(m)$('#'+PHOTO_IDS[k]).value=m[1]}}
+function parsePhotoText(t){
+ const x=String(t||'').replace(/[|｜]/g,' ').replace(/\s+/g,' ');
+ const lv=x.match(/(?:Lv\.?|レベル)\s*([0-9]{1,3})/i);if(lv)$('#statPhotoLevel').value=lv[1];
+ const ps={hp:/HP\s*([0-9]{2,3})/i,attack:/こうげき\s*([0-9]{2,3})/,defense:/ぼうぎょ\s*([0-9]{2,3})/,spAttack:/とくこう\s*([0-9]{2,3})/,spDefense:/とくぼう\s*([0-9]{2,3})/,speed:/すばやさ\s*([0-9]{2,3})/};
+ for(const k of Object.keys(ps)){const m=x.match(ps[k]);if(m)$('#'+PHOTO_IDS[k]).value=m[1]}
+ const ab=x.match(/(?:とくせい|特性)\s*[:：]?\s*([^\s]{2,10})/);if(ab)$('#statPhotoAbility').value=ab[1].replace(/[・。]/g,'');
+}
+
+function photoCandidatePossible(p){
+ const st=window.POKEMON_STATS?.[String(p.id)],lv=Math.max(1,Math.min(100,Number($('#statPhotoLevel')?.value)||50));if(!st)return false;
+ const vals={};for(const k of PHOTO_KEYS){vals[k]=Number($('#'+PHOTO_IDS[k])?.value);if(!vals[k])return false}
+ let minEv=0;
+ for(const k of ['hp','attack','defense','spAttack','spDefense']){
+  const e=photoEvOpts(st[k],k,lv,vals[k],31);
+  if(e.length)minEv+=e[0];else if(!photoIv0Opts(st[k],k,lv,vals[k]).length)return false;
+ }
+ if(minEv>508)return false;
+ return photoSpeedOpts(st.speed,lv,vals.speed,508-minEv).length>0;
+}
+async function pokemonAbilityNames(id){
+ try{
+  const p=await fetch('https://pokeapi.co/api/v2/pokemon/'+id).then(r=>r.ok?r.json():Promise.reject());
+  const names=[];
+  for(const a of p.abilities||[]){const d=await fetch(a.ability.url).then(r=>r.ok?r.json():Promise.reject());const ja=(d.names||[]).find(n=>n.language?.name==='ja-Hrkt'||n.language?.name==='ja');if(ja?.name)names.push(ja.name)}
+  return names;
+ }catch{return []}
+}
+async function identifyPhotoPokemon(){
+ const root=$('#statPhotoPokemonCandidates');if(!root)return;
+ let list=(window.POKEMON_DATA||[]).filter(p=>p.sv&&photoCandidatePossible(p)).slice(0,30);
+ if(!list.length){root.innerHTML='<p class="photo-warn">能力値から候補を特定できません。読み取り値と性格補正を確認してください。</p>';return}
+ root.innerHTML='<p class="hint">能力値から'+list.length+'候補。特性を照合しています…</p>';
+ const ability=$('#statPhotoAbility')?.value.trim();
+ if(ability&&list.length<=30){
+  const checked=await Promise.all(list.map(async p=>({p,names:await pokemonAbilityNames(p.id)})));
+  const hit=checked.filter(x=>x.names.some(n=>n===ability||n.includes(ability)||ability.includes(n)));
+  if(hit.length)list=hit.map(x=>x.p);
+ }
+ root.innerHTML='<p class="hint">ニックネームは判定に使用していません。能力値'+(ability?'＋特性「'+escapeHtml(ability)+'」':'')+'で絞り込みました。</p><div class="photo-candidate-list">'+list.slice(0,8).map(p=>'<button type="button" class="photo-candidate" data-photo-pokemon="'+escapeHtml(p.name)+'"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/'+p.id+'.png" alt=""><span>'+escapeHtml(p.name)+'</span></button>').join('')+'</div>';
+ if(list.length===1)$('#statPhotoPokemon').value=list[0].name;
+}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-photo-pokemon]');if(!b)return;$('#statPhotoPokemon').value=b.dataset.photoPokemon;document.querySelectorAll('.photo-candidate').forEach(x=>x.classList.toggle('selected',x===b))});
+$('#statPhotoIdentify')?.addEventListener('click',identifyPhotoPokemon);
+
 $('#statPhotoPickBtn')?.addEventListener('click',()=>$('#statPhotoInput')?.click());
-$('#statPhotoInput')?.addEventListener('change',async e=>{const f=e.target.files?.[0];if(!f)return;const pv=$('#statPhotoPreview'),box=$('#statPhotoConfirm'),url=URL.createObjectURL(f);pv.classList.remove('hidden');pv.innerHTML='<img src="'+url+'" alt="能力画面"><p id="statPhotoOcrStatus" class="hint">写真を読み取っています…</p>';box.classList.remove('hidden');try{if(!window.Tesseract)throw new Error('ocr');const rec=await window.Tesseract.recognize(f,'jpn+eng',{logger:m=>{const s=$('#statPhotoOcrStatus');if(s&&m.status==='recognizing text')s.textContent='写真を読み取っています… '+Math.round((m.progress||0)*100)+'%'}});parsePhotoText(rec.data?.text||'');$('#statPhotoOcrStatus').textContent='読み取り完了。内容を確認・訂正してから計算してください。'}catch(err){$('#statPhotoOcrStatus').textContent='自動読み取りに失敗しました。下の欄を入力すれば計算できます。'}});
+$('#statPhotoInput')?.addEventListener('change',async e=>{const f=e.target.files?.[0];if(!f)return;const pv=$('#statPhotoPreview'),box=$('#statPhotoConfirm'),url=URL.createObjectURL(f);pv.classList.remove('hidden');pv.innerHTML='<img src="'+url+'" alt="能力画面"><p id="statPhotoOcrStatus" class="hint">写真を読み取っています…</p>';box.classList.remove('hidden');try{if(!window.Tesseract)throw new Error('ocr');const rec=await window.Tesseract.recognize(f,'jpn+eng',{logger:m=>{const s=$('#statPhotoOcrStatus');if(s&&m.status==='recognizing text')s.textContent='写真を読み取っています… '+Math.round((m.progress||0)*100)+'%'}});parsePhotoText(rec.data?.text||'');$('#statPhotoOcrStatus').textContent='読み取り完了。能力値・特性を確認しています…';await identifyPhotoPokemon();$('#statPhotoOcrStatus').textContent='読み取り完了。候補と数値を確認・訂正してから計算してください。'}catch(err){$('#statPhotoOcrStatus').textContent='自動読み取りに失敗しました。下の欄を入力すれば計算できます。'}});
 $('#statPhotoCalculate')?.addEventListener('click',calculatePhotoEv);
 
 const BUILD_MEMO_KEY='lovePokeBuildMemosV1';
