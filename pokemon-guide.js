@@ -361,8 +361,8 @@ function currentGuidedStatRects(){
  return Object.fromEntries(Object.entries(sels).map(([k,sel])=>{const r=guide.querySelector(sel).getBoundingClientRect();return[k,[(r.left-gr.left)/gr.width,(r.top-gr.top)/gr.height,r.width/gr.width,r.height/gr.height]]}));
 }
 function numericRect(k,r){
- if(k==='hp')return[r[0]+r[2]*.08,r[1]+r[3]*.43,r[2]*.84,r[3]*.55];
- return[r[0]+r[2]*.10,r[1]+r[3]*.45,r[2]*.80,r[3]*.52];
+ if(k==='hp')return[r[0]+r[2]*.12,r[1]+r[3]*.48,r[2]*.76,r[3]*.45];
+ return[r[0]+r[2]*.16,r[1]+r[3]*.50,r[2]*.68,r[3]*.42];
 }
 async function readGuidedStats(src,rects){
  const out={};for(const [k,r] of Object.entries(rects||{})){const n=await ocrGuidedNumber(src,numericRect(k,r),k==='hp');if(n&&n>=10&&n<=999)out[k]=n}return out;
