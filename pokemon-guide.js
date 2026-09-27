@@ -428,7 +428,10 @@ function detectNatureMarkers(src,rects){
  }
  const redRank=[...scores].sort((a,b)=>b.red-a.red);
  const up=redRank[0]?.red>=3?redRank[0]:null;
- const others=scores.filter(x=>x.k!==up?.k);
+ // Nature modifiers always come as a pair. No red/up marker means neutral nature,
+ // so do not search for a down marker at all.
+ if(!up)return{up:'',down:''};
+ const others=scores.filter(x=>x.k!==up.k);
  // Four neutral stats have a white endpoint dot. The down stat has the blue marker instead.
  // Prefer the one with the weakest white-dot evidence; blue pixels only break close calls.
  const downRank=[...others].sort((a,b)=>(a.white-b.white)||((b.blue)-(a.blue)));
