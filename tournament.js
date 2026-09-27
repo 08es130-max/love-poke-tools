@@ -43,6 +43,14 @@ function setCloudStatus(kind,title,text){
   $('#cloudStatusText').textContent=text;
 }
 
+window.getLovePokeSpeedTournaments=()=>[
+  ...(activeTournament?[{...activeTournament,_speedLabel:`開催中：${activeTournament.name||'大会'}`}]:[]),
+  ...completedTournaments.map(t=>({...t,_speedLabel:`${t.heldDate||''} ${t.name||'大会'}`.trim()}))
+];
+function notifySpeedTournamentUpdate(){
+  window.dispatchEvent(new CustomEvent('lovePokeTournamentsUpdated'));
+}
+
 function sourceParticipants(){
   return window.getLovePokeTournamentParticipants?.()||[];
 }
@@ -562,7 +570,7 @@ async function initializeCloud(){
       if(!incoming||!activeTournament||!pendingSave||(incoming.updatedAt||'')>=(activeTournament.updatedAt||''))activeTournament=incoming;
       renderActiveTournament();setCloudStatus('ok','同期中','他の端末で行われた変更も自動的に反映されます。');
     },error=>setCloudStatus('warn','同期エラー',error.message));
-    onSnapshot(historyRef,snapshot=>{completedTournaments=snapshot.docs.map(item=>item.data()).filter(data=>data?.kind!=='lovecaRecords').map(data=>normalizeTournament(data)).filter(Boolean).sort((a,b)=>(b.completedAt||'').localeCompare(a.completedAt||''));renderHistory()},error=>setCloudStatus('warn','履歴エラー',error.message));
+    onSnapshot(historyRef,snapshot=>{completedTournaments=snapshot.docs.map(item=>item.data()).filter(data=>data?.kind!=='lovecaRecords').map(data=>normalizeTournament(data)).filter(Boolean).sort((a,b)=>(b.completedAt||'').localeCompare(a.completedAt||''));renderHistory();notifySpeedTournamentUpdate()},error=>setCloudStatus('warn','履歴エラー',error.message));
   }catch(error){setCloudStatus('warn','接続エラー',`Firebaseへ接続できません：${error.message}`)}
 }
 
