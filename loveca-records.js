@@ -2,9 +2,9 @@ import {getFirebaseContext} from './firebase-client.js';
 const $=s=>document.querySelector(s),esc=(v='')=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),uid=()=>crypto.randomUUID?.()||Date.now()+'-'+Math.random().toString(16).slice(2);
 const today=()=>{const d=new Date(),p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())};
 let cloud,players=[],matches=[],winner='',editingId=null;
-function showPane(n='calculator'){const target=$('#love'+n[0].toUpperCase()+n.slice(1)+'Pane');if(!target)return;document.querySelectorAll('.love-tab').forEach(x=>x.classList.toggle('active',x.dataset.lovePane===n));document.querySelectorAll('.love-pane').forEach(x=>x.classList.toggle('hidden',x!==target));}
+function showPane(n='calculator'){const target=$('#love'+n[0].toUpperCase()+n.slice(1)+'Pane');if(!target)return;const nav=target.parentElement?.querySelector(':scope > nav.poke-subnav');nav?.querySelectorAll(':scope > .love-tab').forEach(x=>x.classList.toggle('active',x.dataset.lovePane===n));for(const pane of ['calculator','record','stats'])$('#love'+pane[0].toUpperCase()+pane.slice(1)+'Pane')?.classList.toggle('hidden',pane!==n);}
 window.showLoveCaPane=showPane;
-document.querySelectorAll('.love-tab').forEach(b=>b.onclick=()=>showPane(b.dataset.lovePane));
+document.querySelectorAll('.love-tab[data-love-pane="calculator"],.love-tab[data-love-pane="record"],.love-tab[data-love-pane="stats"]').forEach(b=>b.onclick=()=>showPane(b.dataset.lovePane));
 const status=(k,t,x)=>{$('#lovecaCloudBadge').className='badge '+k;$('#lovecaCloudBadge').textContent=t;$('#lovecaCloudText').textContent=x};
 const popt=(sel='')=>'<option value="">選択</option>'+players.map(p=>`<option value="${esc(p.id)}" ${p.id===sel?'selected':''}>${esc(p.name)}</option>`).join('');
 const dopt=(pid,sel='')=>'<option value="">選択</option>'+((players.find(p=>p.id===pid)?.decks)||[]).map(d=>`<option value="${esc(d.id)}" ${d.id===sel?'selected':''}>${esc(d.name)}</option>`).join('');
