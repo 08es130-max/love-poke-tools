@@ -234,7 +234,21 @@ function partyAnalysis(player){
   if(!mons.length)return {mons,score:0,baseScore:0,avgBst:0,avgSpeed:0,coverage:0,maxWeak:0,weakTypes:[],usageCoefficient:1,usageAverage:0};
   const avgBst=mons.reduce((s,p)=>s+p.bst,0)/mons.length;
   const avgAttack=mons.reduce((s,p)=>s+p.attack,0)/mons.length;
+  // Offense is role-aware: do not punish defensive/support Pokemon for low
+  // attacking stats. Instead, require enough credible attackers and reward
+  // higher offensive tiers among them.
+  const attack80Count=mons.filter(p=>p.attack>=80).length;
+  const attack100Count=mons.filter(p=>p.attack>=100).length;
+  const attack120Count=mons.filter(p=>p.attack>=120).length;
+  const attackerCountPenalty=attack80Count>=4?0:attack80Count===3?1.5:attack80Count===2?4:attack80Count===1?6:8;
+  const attackTierBonus=attack100Count*.45+attack120Count*.75;
   const avgBulk=mons.reduce((s,p)=>s+p.bulk,0)/mons.length;
+  // Reward Pokemon that can genuinely take hits on one side, with an extra
+  // bonus for those that clear the threshold on both defensive stats.
+  const defense90Count=mons.filter(p=>p.defense>=90).length;
+  const spDefense90Count=mons.filter(p=>p.spDefense>=90).length;
+  const dualDefense90Count=mons.filter(p=>p.defense>=90&&p.spDefense>=90).length;
+  const defenseTierBonus=(defense90Count+spDefense90Count)*.35+dualDefense90Count*.40;
   const avgSpeed=mons.reduce((s,p)=>s+p.speed,0)/mons.length;
   const fastCount=mons.filter(p=>p.speed>=100).length;
   const stabTypes=[...new Set(mons.flatMap(p=>p.types))];
@@ -254,22 +268,24 @@ function partyAnalysis(player){
   const exposedTypes=weaknessRows.filter(x=>x.netExposure>=2);
   const typeSynergyPenalty=weaknessRows.reduce((sum,x)=>{
     if(x.weak<2)return sum;
-    const raw=(x.weak-2)*.85;
-    const uncovered=x.netExposure>=2?(x.netExposure-1)*.65:0;
+    const raw=(x.weak-2)*1.25;
+    const uncovered=x.netExposure>=2?(x.netExposure-1)*1.25:0;
     return sum+raw+uncovered;
   },0);
   const coveredWeaknesses=weaknessRows.filter(x=>x.weak>=2&&x.answers>=x.weak).length;
-  const typeSynergyBonus=Math.min(2.4,coveredWeaknesses*.40);
+  const typeSynergyBonus=Math.min(10,coveredWeaknesses*1.50);
   // Balanced party score. BST remains the broad baseline; peak attacking stat
   // and bulk add information that BST alone cannot express. STAB coverage is
   // intentionally lighter than before because learnable off-type moves are not
   // modelled here.
   const baseScore=50
     +(avgBst-480)*.075
-    +(avgAttack-100)*.055
+    +attackTierBonus
+    -attackerCountPenalty
     +(avgBulk-165)*.035
-    +(avgSpeed-70)*.13
-    +fastCount*.45
+    +defenseTierBonus
+    +(avgSpeed-70)*.10
+    +fastCount*.75
     +(coverage-8)*.70
     +typeSynergyBonus
     -typeSynergyPenalty;
@@ -279,7 +295,7 @@ function partyAnalysis(player){
   const usageRankedCount=usageRows.filter(x=>x.rank>0).length;
   const usageBestRank=Math.min(...usageRows.filter(x=>x.rank>0).map(x=>x.rank),Infinity);
   const score=baseScore*usageCoefficient;
-  return {mons,score,baseScore,avgBst,avgAttack,avgBulk,avgSpeed,fastCount,coverage,maxWeak,weakTypes,weaknessRows,exposedTypes,typeSynergyPenalty,typeSynergyBonus,coveredWeaknesses,usageCoefficient,usageAverage,usageRankedCount,usageBestRank};
+  return {mons,score,baseScore,avgBst,avgAttack,attack80Count,attack100Count,attack120Count,attackerCountPenalty,attackTierBonus,avgBulk,defense90Count,spDefense90Count,dualDefense90Count,defenseTierBonus,avgSpeed,fastCount,coverage,maxWeak,weakTypes,weaknessRows,exposedTypes,typeSynergyPenalty,typeSynergyBonus,coveredWeaknesses,usageCoefficient,usageAverage,usageRankedCount,usageBestRank};
 }
 function offensivePressure(a,b){
   if(!a.mons.length||!b.mons.length)return .5;
@@ -340,7 +356,7 @@ function forecastHtml(tournament){
         <div class="forecast-rank">${index+1}番人気</div>
         <div class="forecast-main"><strong>${escapeHtml(row.player.name)}</strong><span>予想優勝率 ${(row.probability*100).toFixed(1)}%</span></div>
         <div class="forecast-odds">${row.odds.toFixed(1)}倍</div>
-        <div class="forecast-stats">戦力 ${a.score.toFixed(1)} ／ 平均BST ${a.avgBst.toFixed(0)} ／ 火力 ${a.avgAttack.toFixed(0)} ／ 耐久 ${a.avgBulk.toFixed(0)} ／ 平均S ${a.avgSpeed.toFixed(0)} ／ 高速S100+ ${a.fastCount}匹 ／ 大会S上位加点 +${(a.speedRankBonus||0).toFixed(1)} ／ タイプ補完 +${(a.typeSynergyBonus||0).toFixed(1)}/-${(a.typeSynergyPenalty||0).toFixed(1)} ／ 一致弱点範囲 ${a.coverage}/18 ／ 使用率補正 ×${a.usageCoefficient.toFixed(3)}（TOP150系統 ${a.usageRankedCount||0}匹） ／ ${escapeHtml(weakness)}</div>
+        <div class="forecast-stats">戦力 ${a.score.toFixed(1)} ／ 平均BST ${a.avgBst.toFixed(0)} ／ 火力A/C80+ ${a.attack80Count||0}匹・100+ ${a.attack100Count||0}匹・120+ ${a.attack120Count||0}匹（+${(a.attackTierBonus||0).toFixed(1)}/-${(a.attackerCountPenalty||0).toFixed(1)}） ／ 耐久 ${a.avgBulk.toFixed(0)}（B90+ ${a.defense90Count||0}・D90+ ${a.spDefense90Count||0}・両面 ${a.dualDefense90Count||0} / +${(a.defenseTierBonus||0).toFixed(1)}） ／ 平均S ${a.avgSpeed.toFixed(0)} ／ 高速S100+ ${a.fastCount}匹 ／ 大会S上位加点 +${(a.speedRankBonus||0).toFixed(1)} ／ タイプ補完 +${(a.typeSynergyBonus||0).toFixed(1)}/-${(a.typeSynergyPenalty||0).toFixed(1)} ／ 一致弱点範囲 ${a.coverage}/18 ／ 使用率補正 ×${a.usageCoefficient.toFixed(3)}（TOP150系統 ${a.usageRankedCount||0}匹） ／ ${escapeHtml(weakness)}</div>
       </article>`;
     }).join('')}</div>`;
 }
