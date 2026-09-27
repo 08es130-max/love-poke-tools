@@ -474,3 +474,6 @@ button,.nav-btn,.mini-btn,.column-reset,.lock-btn{touch-action:manipulation}
 .stat-camera-guide .gspd{left:12%;top:60.5%}
 .stat-camera-guide .gdef{left:71%;top:60.5%}
 .stat-camera-guide .gspe{left:41.5%;top:78%}
+
+/* v0.9.14: SVG owns the guide shape; disable legacy clipped CSS border */
+.stat-camera-guide .guide-hex{border:0!important;clip-path:none!important;box-sizing:content-box}
