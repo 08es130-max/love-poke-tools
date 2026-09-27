@@ -532,3 +532,10 @@ button,.nav-btn,.mini-btn,.column-reset,.lock-btn{touch-action:manipulation}
 .stat-camera-guide .gspd{left:8%;top:52%;width:31%;height:20%}
 .stat-camera-guide .gdef{left:61%;top:52%;width:31%;height:20%}
 .stat-camera-guide .gspe{left:34%;top:67%;width:32%;height:23%}
+/* v0.9.46 FINAL camera guide geometry.
+   Keep this block at EOF so legacy calibration rules cannot override it. */
+#statCameraOverlay .stat-camera-guide .gspd,
+#statCameraOverlay .stat-camera-guide .gdef{
+  top:80% !important;
+  height:20% !important;
+}
