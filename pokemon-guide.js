@@ -338,11 +338,21 @@ function calculatePhotoEv(){
  root.innerHTML='<div class="photo-ev-summary '+((bad||total!==508)?'warn':'')+'"><strong>推定EV '+total+'/508</strong><p>'+escapeHtml(msg)+'</p></div><div class="photo-result-scroll"><table><thead><tr><th></th><th>実数値</th><th>EV</th><th>IV</th><th>判定</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+sx+'<button id="applyPhotoEvToMemo" type="button" class="ghost-btn">育成メモへ反映</button>';
  $('#applyPhotoEvToMemo')?.addEventListener('click',()=>{$('#buildMemoPokemon').value=p.name;$('#buildMemoEv').value=PHOTO_KEYS.filter(k=>z[k].ev>0).map(k=>PHOTO_SHORT[k]+z[k].ev).join(' ');const det=PHOTO_KEYS.filter(k=>z[k].kind==='unused'||z[k].kind==='speed').map(k=>PHOTO_SHORT[k]+': IV'+z[k].iv+' / EV'+z[k].ev).join('、');$('#buildMemoNote').value=[det,msg].filter(Boolean).join('\n')});
 }
-async function ocrGuidedNumber(src,rect){
- const sw=src.width||src.videoWidth,sh=src.height||src.videoHeight,c=document.createElement('canvas'),[x,y,w,h]=rect;
- c.width=Math.round(sw*w*7);c.height=Math.round(sh*h*7);const g=c.getContext('2d');g.drawImage(src,sw*x,sh*y,sw*w,sh*h,0,0,c.width,c.height);
- const d=g.getImageData(0,0,c.width,c.height);for(let i=0;i<d.data.length;i+=4){const v=.299*d.data[i]+.587*d.data[i+1]+.114*d.data[i+2],q=v>155?255:0;d.data[i]=d.data[i+1]=d.data[i+2]=q}g.putImageData(d,0,0);
- const rec=await window.Tesseract.recognize(c,'eng',{tessedit_char_whitelist:'0123456789',tessedit_pageseg_mode:'7'}),m=String(rec.data?.text||'').match(/\d{1,3}/);return m?Number(m[0]):null;
+async function ocrGuidedNumber(src,rect,isHp=false){
+ const sw=src.width||src.videoWidth,sh=src.height||src.videoHeight,[x,y,w,h]=rect,base=document.createElement('canvas');
+ base.width=Math.max(120,Math.round(sw*w*8));base.height=Math.max(60,Math.round(sh*h*8));
+ const bg=base.getContext('2d');bg.imageSmoothingEnabled=false;bg.drawImage(src,sw*x,sh*y,sw*w,sh*h,0,0,base.width,base.height);
+ const variants=[base];
+ for(const threshold of [125,155,185]){
+  const c=document.createElement('canvas');c.width=base.width;c.height=base.height;const g=c.getContext('2d');g.drawImage(base,0,0);
+  const d=g.getImageData(0,0,c.width,c.height);for(let i=0;i<d.data.length;i+=4){const v=.299*d.data[i]+.587*d.data[i+1]+.114*d.data[i+2],q=v>threshold?255:0;d.data[i]=d.data[i+1]=d.data[i+2]=q}g.putImageData(d,0,0);variants.push(c);
+ }
+ const found=[];
+ for(const canvas of variants){
+  const rec=await window.Tesseract.recognize(canvas,'eng',{tessedit_char_whitelist:isHp?'0123456789/':'0123456789',tessedit_pageseg_mode:'7'});
+  const nums=String(rec.data?.text||'').match(/\d{2,3}/g)||[];for(const n of nums){const v=Number(n);if(v>=10&&v<=999)found.push(v)}
+ }
+ return found.length?(isHp?found[found.length-1]:found.sort((a,b)=>found.filter(x=>x===b).length-found.filter(x=>x===a).length)[0]):null;
 }
 function currentGuidedStatRects(){
  const guide=$('#statCameraOverlay .stat-camera-guide'),gr=guide?.getBoundingClientRect();
@@ -351,14 +361,18 @@ function currentGuidedStatRects(){
  return Object.fromEntries(Object.entries(sels).map(([k,sel])=>{const r=guide.querySelector(sel).getBoundingClientRect();return[k,[(r.left-gr.left)/gr.width,(r.top-gr.top)/gr.height,r.width/gr.width,r.height/gr.height]]}));
 }
 async function readGuidedStats(src,rects){
- const out={};
- for(const [k,r] of Object.entries(rects||{})){const rr=k==='hp'?[r[0]+r[2]*.57,r[1],r[2]*.43,r[3]]:r;const n=await ocrGuidedNumber(src,rr);if(n&&n>=10&&n<=999)out[k]=n}
- return out;
+ const out={};for(const [k,r] of Object.entries(rects||{})){const n=await ocrGuidedNumber(src,r,k==='hp');if(n&&n>=10&&n<=999)out[k]=n}return out;
+}
+function detectNatureMarkers(src,rects){
+ const sw=src.width||src.videoWidth,sh=src.height||src.videoHeight,keys=['attack','defense','spAttack','spDefense','speed'],scores=[];
+ for(const k of keys){const r=rects?.[k];if(!r)continue;const x=Math.max(0,r[0]-.055),y=Math.max(0,r[1]-.055),w=Math.min(.11,1-x),h=Math.min(r[3]+.11,1-y),c=document.createElement('canvas');c.width=Math.max(20,Math.round(sw*w));c.height=Math.max(20,Math.round(sh*h));const g=c.getContext('2d');g.drawImage(src,sw*x,sh*y,sw*w,sh*h,0,0,c.width,c.height);const d=g.getImageData(0,0,c.width,c.height).data;let red=0,blue=0;for(let i=0;i<d.length;i+=4){const R=d[i],G=d[i+1],B=d[i+2];if(R>150&&R>G*1.35&&R>B*1.25)red++;if(B>145&&B>R*1.25&&B>G*1.05)blue++;}scores.push({k,red,blue})}
+ const up=scores.sort((a,b)=>b.red-a.red)[0],down=[...scores].sort((a,b)=>b.blue-a.blue)[0];
+ return{up:up&&up.red>8?up.k:'',down:down&&down.blue>8?down.k:''};
 }
 async function consumeGuidedImage(src,previewUrl,rects){
  const pv=$('#statPhotoPreview'),box=$('#statPhotoConfirm');pv.classList.remove('hidden');pv.innerHTML='<img src="'+previewUrl+'" alt="能力六角形"><p id="statPhotoOcrStatus" class="hint">6つの能力値を読み取っています…</p>';box.classList.remove('hidden');
  for(const k of PHOTO_KEYS)$('#'+PHOTO_IDS[k]).value='';
- try{const vals=await readGuidedStats(src,rects);for(const k of PHOTO_KEYS)if(vals[k])$('#'+PHOTO_IDS[k]).value=vals[k];const n=PHOTO_KEYS.filter(k=>vals[k]).length;$('#statPhotoOcrStatus').textContent='能力値 '+n+'/6 を取得しました。'+(n===6?'内容を確認して計算できます。':'空欄だけ確認してください。')}catch{$('#statPhotoOcrStatus').textContent='読み取りに失敗しました。空欄を入力してください。'}
+ try{const vals=await readGuidedStats(src,rects),nature=detectNatureMarkers(src,rects);for(const k of PHOTO_KEYS)if(vals[k])$('#'+PHOTO_IDS[k]).value=vals[k];if(nature.up)$('#statPhotoNatureUp').value=nature.up;if(nature.down)$('#statPhotoNatureDown').value=nature.down;const n=PHOTO_KEYS.filter(k=>vals[k]).length;$('#statPhotoOcrStatus').textContent='能力値 '+n+'/6 を取得しました。'+(nature.up||nature.down?' 性格補正も反映しました。':' 性格補正は確認してください。')}catch{$('#statPhotoOcrStatus').textContent='読み取りに失敗しました。空欄を入力してください。'}
 }
 function renderStatPokemonChoices(){
  const input=$('#statPhotoPokemon'),box=$('#statPhotoPokemonChoices');if(!input||!box)return;
