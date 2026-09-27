@@ -390,10 +390,15 @@ async function readGuidedStats(src,rects){
  for(const [k,r] of Object.entries(rects||{})){
   const rois=[];
   if(k==='hp'){
-   // HP is current/max: prioritize the right-hand (maximum HP) number only.
-   rois.push({r:[r[0]+r[2]*.50,r[1]+r[3]*.48,r[2]*.43,r[3]*.45],w:6});
-   rois.push({r:[r[0]+r[2]*.44,r[1]+r[3]*.43,r[2]*.50,r[3]*.52],w:3});
-   rois.push({r:numericRect(k,r),w:1});
+   // Keep the whole HP value visible. OCR "current/max" together, then prefer
+   // the right-most number (maximum HP) instead of physically clipping digits.
+   rois.push({r:[r[0]+r[2]*.10,r[1]+r[3]*.43,r[2]*.82,r[3]*.52],w:7,hpPair:true});
+   rois.push({r:[r[0]+r[2]*.18,r[1]+r[3]*.48,r[2]*.72,r[3]*.45],w:4,hpPair:true});
+  }else if(k==='spDefense'){
+   // D sits close to the left edge/hex point; give its number more horizontal room.
+   rois.push({r:[r[0]+r[2]*.08,r[1]+r[3]*.46,r[2]*.78,r[3]*.48],w:7});
+   rois.push({r:[r[0]+r[2]*.03,r[1]+r[3]*.39,r[2]*.90,r[3]*.56],w:4});
+   rois.push({r:numericRect(k,r),w:2});
   }else{
    // Tight number crops are authoritative; wider crops only rescue difficult captures.
    rois.push({r:numericRect(k,r),w:6});
@@ -403,8 +408,10 @@ async function readGuidedStats(src,rects){
   }
   const possible=st?possiblePhotoStatValues(st[k],k,lv):null,score=new Map();
   for(const item of rois){
-   const xs=await ocrGuidedNumber(src,item.r,k==='hp');
+   let xs=await ocrGuidedNumber(src,item.r,k==='hp');
    if(!xs?.length)continue;
+   // HP OCR can return both sides of "161/161"; the last recognized value is max HP.
+   if(k==='hp'&&item.hpPair)xs=[xs[xs.length-1]];
    xs.forEach((v,rank)=>{if(!possible||possible.has(v))score.set(v,(score.get(v)||0)+item.w/Math.max(1,rank+1))});
   }
   const ranked=[...score.entries()].sort((a,b)=>b[1]-a[1]);
