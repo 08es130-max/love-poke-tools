@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="LovePoke" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="apple-touch-icon" href="./icons/icon-192.png" />
-  <link rel="stylesheet" href="./styles.css?v=20260927-speed3" />
+  <link rel="stylesheet" href="./styles.css?v=20260927-speed4" />
   <link rel="stylesheet" href="./mascot.css" />
   <title>LovePoke Tools</title>
 </head>
@@ -356,7 +356,7 @@
             <p class="hint">基準表はLv.50・最速順です。下の1体だけ条件を変えて、どの素早さラインに入るか確認できます。</p>
             <div class="speed-list-filters">
               <label>表示範囲<select id="speedTournamentFilter"><option value="all">全ポケモン</option></select></label>
-              <label class="switch-row speed-check"><span>SVで使用できるポケモンのみ</span><input id="speedSvOnly" type="checkbox" checked></label>
+              <label class="speed-sv-toggle"><input id="speedSvOnly" type="checkbox" checked><span>SVのみ</span></label>
               <label>表を検索<input id="speedSearch" type="search" placeholder="名前で絞り込み"></label>
             </div>
           </section>
@@ -377,8 +377,8 @@
           </section>
           <section class="panel speed-table-panel">
             <div class="speed-table-scroll">
-              <div class="speed-table-head"><span>順位</span><span>ポケモン</span><span>S</span><span>最速</span><span>準速</span><span>最速スカーフ</span><span>特性発動</span></div>
-              <div id="speedTable"></div>
+              <div class="speed-table-head"><span>順</span><span>ポケモン</span><span>S</span><span>最速</span><span>準速</span><span>スカ</span><span>特性</span></div>
+              <div class="speed-table-legend">スカ＝最速＋こだわりスカーフ　／　特性＝最速＋S上昇特性発動時</div><div id="speedTable"></div>
             </div>
           </section>
         </div>
@@ -475,8 +475,8 @@
   <script src="./pokemon-sv-learnsets.js"></script>
   <script src="./firebase-config.js"></script>
   <script type="module" src="./app.js"></script>
-  <script type="module" src="./tournament.js?v=20260927-speed3"></script>
-  <script type="module" src="./pokemon-guide.js?v=20260927-speed3"></script>
+  <script type="module" src="./tournament.js?v=20260927-speed4"></script>
+  <script type="module" src="./pokemon-guide.js?v=20260927-speed4"></script>
   <script type="module" src="./loveca-records.js"></script>
   <script type="module" src="./mahjong.js"></script>
   <script src="./loveca-card-browser.js"></script>
