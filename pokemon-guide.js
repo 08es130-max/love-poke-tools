@@ -388,21 +388,26 @@ function possiblePhotoStatValues(base,k,lv){
 async function readGuidedStats(src,rects){
  const out={},p=photoPoke(),st=p&&window.POKEMON_STATS?.[String(p.id)],lv=Math.max(1,Math.min(100,Number($('#statPhotoLevel')?.value)||50));
  for(const [k,r] of Object.entries(rects||{})){
-  const rois=[numericRect(k,r)];
+  const rois=[];
   if(k==='hp'){
-   rois.push([r[0]+r[2]*.06,r[1]+r[3]*.40,r[2]*.88,r[3]*.55]);
-   rois.push([r[0]+r[2]*.18,r[1]+r[3]*.52,r[2]*.70,r[3]*.40]);
+   // HP is current/max: prioritize the right-hand (maximum HP) number only.
+   rois.push({r:[r[0]+r[2]*.50,r[1]+r[3]*.48,r[2]*.43,r[3]*.45],w:6});
+   rois.push({r:[r[0]+r[2]*.44,r[1]+r[3]*.43,r[2]*.50,r[3]*.52],w:3});
+   rois.push({r:numericRect(k,r),w:1});
   }else{
-   rois.push([r[0]+r[2]*.08,r[1]+r[3]*.40,r[2]*.84,r[3]*.52]);
-   rois.push([r[0]+r[2]*.13,r[1]+r[3]*.46,r[2]*.74,r[3]*.46]);
-   rois.push([r[0]+r[2]*.20,r[1]+r[3]*.53,r[2]*.62,r[3]*.36]);
+   // Tight number crops are authoritative; wider crops only rescue difficult captures.
+   rois.push({r:numericRect(k,r),w:6});
+   rois.push({r:[r[0]+r[2]*.13,r[1]+r[3]*.46,r[2]*.74,r[3]*.46],w:3});
+   rois.push({r:[r[0]+r[2]*.20,r[1]+r[3]*.53,r[2]*.62,r[3]*.36],w:2});
+   rois.push({r:[r[0]+r[2]*.08,r[1]+r[3]*.40,r[2]*.84,r[3]*.52],w:1});
   }
-  const merged=[];
-  for(const roi of rois){const xs=await ocrGuidedNumber(src,roi,k==='hp');if(xs?.length)merged.push(...xs)}
-  if(!merged.length)continue;
-  const possible=st?possiblePhotoStatValues(st[k],k,lv):null,freq=new Map();
-  for(const v of merged)if(!possible||possible.has(v))freq.set(v,(freq.get(v)||0)+1);
-  const ranked=[...freq.entries()].sort((a,b)=>b[1]-a[1]);
+  const possible=st?possiblePhotoStatValues(st[k],k,lv):null,score=new Map();
+  for(const item of rois){
+   const xs=await ocrGuidedNumber(src,item.r,k==='hp');
+   if(!xs?.length)continue;
+   xs.forEach((v,rank)=>{if(!possible||possible.has(v))score.set(v,(score.get(v)||0)+item.w/Math.max(1,rank+1))});
+  }
+  const ranked=[...score.entries()].sort((a,b)=>b[1]-a[1]);
   if(ranked.length)out[k]=ranked[0][0];
  }
  return out;
