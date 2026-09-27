@@ -142,23 +142,31 @@ function rankMultiplier(rank){
   const r=Math.max(-6,Math.min(6,Number(rank)||0));
   return r>=0?(2+r)/2:2/(2-r);
 }
-function speedStat(base,level,iv,ev,nature){
+function speedStat(base,level=50,iv=31,ev=252,nature=1){
   const raw=Math.floor(((2*base+iv+Math.floor(ev/4))*level)/100)+5;
   return Math.floor(raw*nature);
 }
-function adjustedSpeed(base){
-  const level=Math.max(1,Math.min(100,Number($('#speedLevel')?.value)||50));
-  const iv=Math.max(0,Math.min(31,Number($('#speedIv')?.value)||0));
-  const ev=Math.max(0,Math.min(252,Number($('#speedEv')?.value)||0));
-  const nature=Number($('#speedNature')?.value)||1;
-  let value=speedStat(base,level,iv,ev,nature);
-  value=Math.floor(value*(Number($('#speedItem')?.value)||1));
-  const ability=$('#speedAbility')?.value||'1';
-  value=Math.floor(value*(ability==='quickfeet'?1.5:(Number(ability)||1)));
-  value=Math.floor(value*rankMultiplier($('#speedRank')?.value));
-  if($('#speedTailwind')?.checked)value*=2;
-  if($('#speedParalysis')?.checked&&ability!=='quickfeet')value=Math.floor(value*.5);
-  return Math.max(1,Math.floor(value));
+const SPEED_ABILITY_BY_NAME={
+  'フシギバナ':['ようりょくそ',2],'ラフレシア':['ようりょくそ',2],'ウツボット':['ようりょくそ',2],'ナッシー':['ようりょくそ',2],
+  'キレイハナ':['ようりょくそ',2],'ワタッコ':['ようりょくそ',2],'ダーテング':['ようりょくそ',2],'トロピウス':['ようりょくそ',2],
+  'リーフィア':['ようりょくそ',2],'エルフーン':['ようりょくそ',2],'ドレディア':['ようりょくそ',2],'マラカッチ':['ようりょくそ',2],
+  'メブキジカ':['ようりょくそ',2],'アマージョ':['ようりょくそ',2],'スコヴィラン':['ようりょくそ',2],
+  'キングドラ':['すいすい',2],'ハリーセン':['すいすい',2],'ルンパッパ':['すいすい',2],'フローゼル':['すいすい',2],
+  'ネオラント':['すいすい',2],'ガマゲロゲ':['すいすい',2],'ツンベアー':['すいすい',2],'イダイトウ':['すいすい',2],'ハリーマン':['すいすい',2],
+  'ドリュウズ':['すなかき',2],'ルガルガン':['すなかき',2],'ハカドッグ':['すなかき',2],'サンドパン':['すなかき',2],
+  'ツンベアー':['ゆきかき',2],'ハルクジラ':['ゆきかき',2],'アローラサンドパン':['ゆきかき',2],
+  'アローラライチュウ':['サーフテール',2],
+  'サワムラー':['かるわざ',2],'フワライド':['かるわざ',2],'レパルダス':['かるわざ',2],'ルチャブル':['かるわざ',2],
+  'ジュナイパー':['かるわざ',2],'オオニューラ':['かるわざ',2],
+  'ハバタクカミ':['こだいかっせい',1.5],'トドロクツキ':['こだいかっせい',1.5],'テツノツツミ':['クォークチャージ',1.5],
+  'テツノブジン':['クォークチャージ',1.5],'テツノドクガ':['クォークチャージ',1.5]
+};
+function benchmarkFor(p){
+  const base=Number(window.POKEMON_STATS?.[String(p.id)]?.speed)||0;
+  const fastest=speedStat(base,50,31,252,1.1);
+  const neutral=speedStat(base,50,31,252,1);
+  const ability=SPEED_ABILITY_BY_NAME[p.name]||null;
+  return {p,base,fastest,neutral,scarf:Math.floor(fastest*1.5),ability,abilityValue:ability?Math.floor(fastest*ability[1]):null};
 }
 function tournamentPokemonIds(){
   const value=$('#speedTournamentFilter')?.value||'all';
@@ -177,38 +185,68 @@ function tournamentPokemonIds(){
   }
   return new Set(ids.filter(Number.isFinite));
 }
-function speedPokemonRows(){
-  const allowed=tournamentPokemonIds();
-  const q=($('#speedSearch')?.value||'').trim();
-  const seen=new Set();
+function benchmarkRows(){
+  const allowed=tournamentPokemonIds(),q=($('#speedSearch')?.value||'').trim(),seen=new Set();
   return (window.POKEMON_DATA||[]).filter(p=>{
-    if(p.formKey||seen.has(Number(p.id)))return false;
-    seen.add(Number(p.id));
+    if(p.formKey||seen.has(Number(p.id)))return false;seen.add(Number(p.id));
     if(allowed&&!allowed.has(Number(p.id)))return false;
     if($('#speedSvOnly')?.checked&&!p.sv)return false;
     if(q&&!p.name.includes(q))return false;
     return !!window.POKEMON_STATS?.[String(p.id)];
-  }).map(p=>{
-    const s=Number(window.POKEMON_STATS[String(p.id)]?.speed)||0;
-    return {p,base:s,value:adjustedSpeed(s)};
-  }).sort((a,b)=>b.value-a.value||b.base-a.base||a.p.id-b.p.id);
+  }).map(benchmarkFor).sort((a,b)=>b.fastest-a.fastest||b.base-a.base||a.p.id-b.p.id);
+}
+function targetPokemon(){
+  const name=($('#speedTargetSearch')?.value||'').trim();
+  return (window.POKEMON_DATA||[]).find(p=>!p.formKey&&p.name===name)||null;
+}
+function targetSpeed(){
+  const p=targetPokemon();if(!p)return null;
+  const base=Number(window.POKEMON_STATS?.[String(p.id)]?.speed)||0;
+  const iv=Math.max(0,Math.min(31,Number($('#speedIv')?.value)||0));
+  const ev=Math.max(0,Math.min(252,Number($('#speedEv')?.value)||0));
+  const nature=Number($('#speedNature')?.value)||1;
+  let value=speedStat(base,50,iv,ev,nature);
+  value=Math.floor(value*(Number($('#speedItem')?.value)||1));
+  const ability=$('#speedAbility')?.value||'1';
+  value=Math.floor(value*(ability==='quickfeet'?1.5:(Number(ability)||1)));
+  value=Math.floor(value*rankMultiplier($('#speedRank')?.value));
+  if($('#speedTailwind')?.checked)value*=2;
+  if($('#speedParalysis')?.checked&&ability!=='quickfeet')value=Math.floor(value*.5);
+  return {p,base,value:Math.max(1,Math.floor(value))};
 }
 function renderSpeedTable(){
   const root=$('#speedTable');if(!root)return;
-  const rows=speedPokemonRows();
+  const rows=benchmarkRows(),target=targetSpeed();
   $('#speedResultCount').textContent=`${rows.length}体`;
   let last=null,rank=0;
   root.innerHTML=rows.map((row,index)=>{
-    if(row.value!==last){rank=index+1;last=row.value}
-    return `<button type="button" class="speed-row" data-poke-guide-id="${row.p.id}"><span class="speed-rank">${rank}</span><span class="speed-name"><strong>${escapeHtml(row.p.name)}</strong><small>No.${String(row.p.id).padStart(4,'0')}</small></span><span class="speed-base">S${row.base}</span><span class="speed-value">${row.value}</span></button>`;
+    if(row.fastest!==last){rank=index+1;last=row.fastest}
+    const near=target&&Math.abs(row.fastest-target.value)<=1;
+    return `<button type="button" class="speed-row benchmark-row ${near?'target-line-near':''}" data-poke-guide-id="${row.p.id}"><span class="speed-rank">${rank}</span><span class="speed-name"><strong>${escapeHtml(row.p.name)}</strong><small>No.${String(row.p.id).padStart(4,'0')}</small></span><span class="speed-base">S${row.base}</span><span>${row.fastest}</span><span>${row.neutral}</span><span>${row.scarf}</span><span class="speed-ability-value">${row.ability?`${row.abilityValue}<small>${row.ability[0]}</small>`:'—'}</span></button>`;
   }).join('')||'<p class="note">条件に該当するポケモンがいません。</p>';
+  renderTargetResult(rows,target);
+}
+function renderTargetResult(rows,target){
+  const root=$('#speedTargetResult');if(!root)return;
+  if(!target){root.innerHTML='ポケモンを選ぶと、ここに実数値と位置を表示します。';return}
+  const allLines=rows.flatMap(r=>[
+    {value:r.fastest,label:`${r.p.name} 最速`},{value:r.neutral,label:`${r.p.name} 準速`},
+    {value:r.scarf,label:`${r.p.name} 最速スカーフ`},...(r.ability?[{value:r.abilityValue,label:`${r.p.name} ${r.ability[0]}発動`}]:[])
+  ]).sort((a,b)=>b.value-a.value);
+  const faster=allLines.filter(x=>x.value>target.value).sort((a,b)=>a.value-b.value)[0];
+  const slower=allLines.filter(x=>x.value<target.value).sort((a,b)=>b.value-a.value)[0];
+  const equal=allLines.filter(x=>x.value===target.value).slice(0,3);
+  root.innerHTML=`<div class="speed-target-main"><strong>${escapeHtml(target.p.name)}</strong><span>S${target.base}</span><b>実数値 ${target.value}</b></div>
+    ${equal.length?`<div class="speed-line-equal">同速：${equal.map(x=>escapeHtml(x.label)).join(' / ')}</div>`:''}
+    <div class="speed-line-around"><span>ひとつ上：${faster?`${escapeHtml(faster.label)} (${faster.value})`:'なし'}</span><span>ひとつ下：${slower?`${escapeHtml(slower.label)} (${slower.value})`:'なし'}</span></div>`;
 }
 function refreshTournamentFilter(){
   const select=$('#speedTournamentFilter');if(!select)return;
-  const current=select.value;
-  const tournaments=window.getLovePokeSpeedTournaments?.()||[];
+  const current=select.value,tournaments=window.getLovePokeSpeedTournaments?.()||[];
   select.innerHTML='<option value="all">全ポケモン</option>'+tournaments.map(t=>`<option value="${escapeHtml(t.id)}">${escapeHtml(t._speedLabel||t.name||'大会')}</option>`).join('');
   if([...select.options].some(o=>o.value===current))select.value=current;
+  const list=$('#speedPokemonList');
+  if(list)list.innerHTML=(window.POKEMON_DATA||[]).filter(p=>!p.formKey&&p.sv).map(p=>`<option value="${escapeHtml(p.name)}"></option>`).join('');
   renderSpeedTable();
 }
 function showGuideTool(tool='dex'){
@@ -220,9 +258,11 @@ function showGuideTool(tool='dex'){
   if(tool==='speed'){refreshTournamentFilter();renderSpeedTable()}
 }
 document.querySelectorAll('.guide-tool-tab').forEach(b=>b.addEventListener('click',()=>showGuideTool(b.dataset.guideTool)));
-['speedTournamentFilter','speedLevel','speedIv','speedEv','speedNature','speedItem','speedAbility','speedRank','speedTailwind','speedParalysis','speedSvOnly','speedSearch'].forEach(id=>{
-  document.getElementById(id)?.addEventListener(id==='speedSearch'?'input':'change',renderSpeedTable);
+['speedTournamentFilter','speedIv','speedEv','speedNature','speedItem','speedAbility','speedRank','speedTailwind','speedParalysis','speedSvOnly'].forEach(id=>{
+  document.getElementById(id)?.addEventListener('change',renderSpeedTable);
 });
+$('#speedSearch')?.addEventListener('input',renderSpeedTable);
+$('#speedTargetSearch')?.addEventListener('input',renderSpeedTable);
 window.addEventListener('lovePokeTournamentsUpdated',refreshTournamentFilter);
 renderTypeChart();
 refreshTournamentFilter();
