@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="LovePoke" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="apple-touch-icon" href="./icons/icon-192.png" />
-  <link rel="stylesheet" href="./styles.css?v=20260927-speed5" />
+  <link rel="stylesheet" href="./styles.css?v=20260927-tools1" />
   <link rel="stylesheet" href="./mascot.css" />
   <title>LovePoke Tools</title>
 </head>
@@ -327,7 +327,7 @@
         <nav class="guide-tool-nav" aria-label="育成ツール">
           <button type="button" class="guide-tool-tab active" data-guide-tool="dex">図鑑・技</button>
           <button type="button" class="guide-tool-tab" data-guide-tool="types">タイプ相性</button>
-          <button type="button" class="guide-tool-tab" data-guide-tool="speed">すばやさ比較</button>
+          <button type="button" class="guide-tool-tab" data-guide-tool="speed">すばやさ比較</button><button type="button" class="guide-tool-tab" data-guide-tool="party">パーティ分析</button><button type="button" class="guide-tool-tab" data-guide-tool="build">育成メモ</button>
         </nav>
         <div id="guideDexTool" class="guide-tool-pane">
           <section class="panel">
@@ -380,6 +380,18 @@
               <div class="speed-table-head"><span>順</span><span>ポケモン</span><span>S</span><span>最速</span><span>準速</span><span>スカ</span><span>特性</span></div>
               <div class="speed-table-legend">スカ＝最速＋こだわりスカーフ　／　特性＝最速＋S上昇特性発動時</div><div id="speedTable"></div>
             </div>
+          </section>
+        </div>
+        <div id="guidePartyTool" class="guide-tool-pane hidden">
+          <section class="panel"><div class="section-title-row"><h2>パーティ分析</h2><span class="badge soft">弱点・耐性 / 攻撃範囲</span></div>
+            <label class="block-label">分析するパーティ<select id="partyAnalysisSelect"><option value="">大会・プレイヤーを選択</option></select></label>
+            <div id="partyAnalysisResult"><p class="note">大会とプレイヤーを選ぶと6体をまとめて分析します。</p></div>
+          </section>
+        </div>
+        <div id="guideBuildTool" class="guide-tool-pane hidden">
+          <section class="panel"><div class="section-title-row"><h2>育成調整メモ</h2><span class="badge ok">端末に保存</span></div>
+            <div class="build-memo-form"><label>ポケモン<input id="buildMemoPokemon" type="search" list="speedPokemonList" placeholder="例：カイリュー"></label><label>性格<input id="buildMemoNature" type="text" placeholder="例：ようき"></label><label>努力値<input id="buildMemoEv" type="text" placeholder="例：H4 A252 S252"></label><label>持ち物<input id="buildMemoItem" type="text" placeholder="例：こだわりスカーフ"></label><label class="build-memo-wide">調整意図・メモ<textarea id="buildMemoNote" rows="3" placeholder="例：最速。○○抜き、○○耐え"></textarea></label></div>
+            <button id="saveBuildMemo" type="button" class="primary-btn">育成メモを保存</button><div id="buildMemoList"></div>
           </section>
         </div>
       </div>
@@ -475,8 +487,8 @@
   <script src="./pokemon-sv-learnsets.js"></script>
   <script src="./firebase-config.js"></script>
   <script type="module" src="./app.js"></script>
-  <script type="module" src="./tournament.js?v=20260927-speed5"></script>
-  <script type="module" src="./pokemon-guide.js?v=20260927-speed5"></script>
+  <script type="module" src="./tournament.js?v=20260927-tools1"></script>
+  <script type="module" src="./pokemon-guide.js?v=20260927-tools1"></script>
   <script type="module" src="./loveca-records.js"></script>
   <script type="module" src="./mahjong.js"></script>
   <script src="./loveca-card-browser.js"></script>
