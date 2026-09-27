@@ -325,4 +325,25 @@ $('#saveBuildMemo')?.addEventListener('click',()=>{
  localStorage.setItem(BUILD_MEMO_KEY,JSON.stringify(rows.slice(0,100)));renderBuildMemos();
 });
 document.addEventListener('click',e=>{const b=e.target.closest('[data-build-delete]');if(!b)return;const rows=loadBuildMemos();rows.splice(Number(b.dataset.buildDelete),1);localStorage.setItem(BUILD_MEMO_KEY,JSON.stringify(rows));renderBuildMemos()});
+
+function setBuildBackupStatus(message){const el=$('#buildBackupStatus');if(el)el.textContent=message}
+$('#exportBuildMemos')?.addEventListener('click',()=>{
+ const payload={app:'love-poke-tools',kind:'build-memos',version:1,exportedAt:new Date().toISOString(),memos:loadBuildMemos()};
+ const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+ const d=new Date(),stamp=`${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+ a.href=url;a.download=`love-poke-build-memos-${stamp}.json`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ setBuildBackupStatus(`バックアップを保存しました（${payload.memos.length}件）。`);
+});
+$('#importBuildMemos')?.addEventListener('click',()=>$('#importBuildMemosFile')?.click());
+$('#importBuildMemosFile')?.addEventListener('change',async e=>{
+ const file=e.target.files?.[0];if(!file)return;
+ try{
+  const data=JSON.parse(await file.text());
+  if(data?.app!=='love-poke-tools'||data?.kind!=='build-memos'||!Array.isArray(data.memos))throw new Error('育成メモのバックアップではありません');
+  const clean=data.memos.slice(0,100).filter(m=>m&&typeof m.pokemon==='string').map(m=>({pokemon:m.pokemon,nature:String(m.nature||''),ev:String(m.ev||''),item:String(m.item||''),note:String(m.note||''),savedAt:String(m.savedAt||'')}));
+  if(!confirm(`現在の育成メモをバックアップの${clean.length}件で置き換えます。よろしいですか？`))return;
+  localStorage.setItem(BUILD_MEMO_KEY,JSON.stringify(clean));renderBuildMemos();setBuildBackupStatus(`バックアップから${clean.length}件を復元しました。`);
+ }catch(err){setBuildBackupStatus(`復元できませんでした：${err.message}`)}
+ finally{e.target.value=''}
+});
 refreshPartyAnalysisSelect();renderBuildMemos();
