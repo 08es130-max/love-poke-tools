@@ -259,10 +259,10 @@ function refreshTournamentFilter(){
 function showGuideTool(tool='dex'){
   document.querySelectorAll('.guide-tool-tab').forEach(b=>b.classList.toggle('active',b.dataset.guideTool===tool));
   document.querySelectorAll('.guide-tool-pane').forEach(p=>p.classList.add('hidden'));
-  const id={dex:'guideDexTool',types:'guideTypesTool',speed:'guideSpeedTool'}[tool];
+  const id={dex:'guideDexTool',types:'guideTypesTool',speed:'guideSpeedTool',party:'guidePartyTool',build:'guideBuildTool'}[tool];
   if(id)document.getElementById(id)?.classList.remove('hidden');
   if(tool==='types')renderTypeChart();
-  if(tool==='speed'){refreshTournamentFilter();renderSpeedTable()}
+  if(tool==='speed'){refreshTournamentFilter();renderSpeedTable()} if(tool==='party')refreshPartyAnalysisSelect(); if(tool==='build')renderBuildMemos()
 }
 document.querySelectorAll('.guide-tool-tab').forEach(b=>b.addEventListener('click',()=>showGuideTool(b.dataset.guideTool)));
 ['speedTournamentFilter','speedIv','speedEv','speedNature','speedItem','speedAbility','speedRank','speedTailwind','speedParalysis','speedSvOnly'].forEach(id=>{
@@ -273,3 +273,56 @@ $('#speedTargetSearch')?.addEventListener('input',renderSpeedTable);
 window.addEventListener('lovePokeTournamentsUpdated',refreshTournamentFilter);
 renderTypeChart();
 refreshTournamentFilter();
+
+
+/* ===== Party analysis / build memo ===== */
+const PARTY_TYPE_JA={Normal:'無',Fire:'炎',Water:'水',Electric:'電',Grass:'草',Ice:'氷',Fighting:'闘',Poison:'毒',Ground:'地',Flying:'飛',Psychic:'超',Bug:'虫',Rock:'岩',Ghost:'霊',Dragon:'竜',Dark:'悪',Steel:'鋼',Fairy:'妖'};
+function analysisFinal(p){
+  const full=(window.POKEMON_DATA||[]).find(x=>Number(x.id)===Number(p.id)&&String(x.formKey||'')===String(p.formKey||''))||(window.POKEMON_DATA||[]).find(x=>Number(x.id)===Number(p.id))||p;
+  const finals=window.getLovePokeFinalEvolutionList?.(full)||[];
+  if(!finals.length)return full;
+  return finals.reduce((a,b)=>(window.POKEMON_STATS?.[String(b.id)]?.bst||0)>(window.POKEMON_STATS?.[String(a.id)]?.bst||0)?b:a,finals[0]);
+}
+function partyTypeRows(player){
+  const mons=(player.pokemon||[]).map(analysisFinal).map(p=>({p,types:window.POKEMON_TYPES?.[String(p.id)]||[]}));
+  return TYPE_ORDER.map(atk=>{
+    const effects=mons.map(m=>TYPE_CHART[atk]?m.types.reduce((v,t)=>v*(TYPE_CHART[atk]?.[t]??1),1):1);
+    return {type:atk,weak:effects.filter(v=>v>1).length,resist:effects.filter(v=>v>0&&v<1).length,immune:effects.filter(v=>v===0).length};
+  });
+}
+function partyCoverage(player){
+  const mons=(player.pokemon||[]).map(analysisFinal).map(p=>({p,types:window.POKEMON_TYPES?.[String(p.id)]||[]}));
+  return TYPE_ORDER.map(def=>{
+    const hitters=mons.filter(m=>m.types.some(atk=>(TYPE_CHART[atk]?.[def]??1)>1));
+    return {def,hitters};
+  });
+}
+function renderPartyAnalysis(){
+  const root=$('#partyAnalysisResult'),sel=$('#partyAnalysisSelect');if(!root||!sel)return;
+  const [tid,pid]=(sel.value||'').split('::'),t=(window.getLovePokeSpeedTournaments?.()||[]).find(x=>String(x.id)===tid),player=t?.players?.find(p=>String(p.playerId||p.id)===pid);
+  if(!player){root.innerHTML='<p class="note">大会とプレイヤーを選ぶと6体をまとめて分析します。</p>';return}
+  const typeRows=partyTypeRows(player),coverage=partyCoverage(player),mons=(player.pokemon||[]).map(analysisFinal);
+  root.innerHTML=`<div class="party-analysis-title"><strong>${escapeHtml(player.displayName||player.name||'PLAYER')}</strong><span>${mons.map(x=>escapeHtml(x.name)).join('・')}</span></div>
+    <h3>弱点・耐性</h3><div class="party-type-grid">${typeRows.map(x=>`<div class="${x.weak>=3?'party-danger':''}"><b>${PARTY_TYPE_JA[x.type]}</b><span>弱 ${x.weak}</span><span>耐 ${x.resist}</span><span>無 ${x.immune}</span></div>`).join('')}</div>
+    <h3>攻撃範囲（タイプ一致）</h3><div class="coverage-grid">${coverage.map(x=>`<div class="${x.hitters.length?'covered':'uncovered'}"><b>${PARTY_TYPE_JA[x.def]}</b><span>${x.hitters.length?`抜群 ${x.hitters.length}体`:'抜群なし'}</span><small>${x.hitters.map(h=>escapeHtml(h.p.name)).join('・')}</small></div>`).join('')}</div>`;
+}
+function refreshPartyAnalysisSelect(){
+  const sel=$('#partyAnalysisSelect');if(!sel)return;const current=sel.value,ts=window.getLovePokeSpeedTournaments?.()||[];
+  sel.innerHTML='<option value="">大会・プレイヤーを選択</option>'+ts.flatMap(t=>(t.players||[]).map(p=>`<option value="${escapeHtml(t.id)}::${escapeHtml(p.playerId||p.id)}">${escapeHtml(t._speedLabel||t.name)} / ${escapeHtml(p.displayName||p.name)}</option>`)).join('');
+  if([...sel.options].some(o=>o.value===current))sel.value=current;renderPartyAnalysis();
+}
+$('#partyAnalysisSelect')?.addEventListener('change',renderPartyAnalysis);
+window.addEventListener('lovePokeTournamentsUpdated',refreshPartyAnalysisSelect);
+const BUILD_MEMO_KEY='lovePokeBuildMemosV1';
+function loadBuildMemos(){try{return JSON.parse(localStorage.getItem(BUILD_MEMO_KEY)||'[]')}catch{return []}}
+function renderBuildMemos(){
+ const root=$('#buildMemoList');if(!root)return;const rows=loadBuildMemos();
+ root.innerHTML=rows.length?rows.map((m,i)=>`<article class="build-memo-card"><div><strong>${escapeHtml(m.pokemon)}</strong><span>${escapeHtml(m.nature||'—')} / ${escapeHtml(m.ev||'—')} / ${escapeHtml(m.item||'—')}</span></div><p>${escapeHtml(m.note||'')}</p><button type="button" data-build-delete="${i}" class="ghost-btn">削除</button></article>`).join(''):'<p class="note">保存した育成メモはまだありません。</p>';
+}
+$('#saveBuildMemo')?.addEventListener('click',()=>{
+ const pokemon=$('#buildMemoPokemon')?.value.trim();if(!pokemon)return;
+ const rows=loadBuildMemos();rows.unshift({pokemon,nature:$('#buildMemoNature')?.value.trim()||'',ev:$('#buildMemoEv')?.value.trim()||'',item:$('#buildMemoItem')?.value.trim()||'',note:$('#buildMemoNote')?.value.trim()||'',savedAt:new Date().toISOString()});
+ localStorage.setItem(BUILD_MEMO_KEY,JSON.stringify(rows.slice(0,100)));renderBuildMemos();
+});
+document.addEventListener('click',e=>{const b=e.target.closest('[data-build-delete]');if(!b)return;const rows=loadBuildMemos();rows.splice(Number(b.dataset.buildDelete),1);localStorage.setItem(BUILD_MEMO_KEY,JSON.stringify(rows));renderBuildMemos()});
+refreshPartyAnalysisSelect();renderBuildMemos();
