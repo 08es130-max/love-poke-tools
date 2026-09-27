@@ -579,6 +579,14 @@ function setScreen(screen){
   $('#navMahjong').classList.toggle('active',screen==='mahjong');
   $('#appTitle').textContent=love?'ラブカ ハート計算':poke?'ポケモン':'麻雀 戦歴';
   $('#resetAllBtn').style.display=love?'inline-block':'none';
+  if(love){
+    const activeLoveTab=document.querySelector('.love-tab.active')||document.querySelector('.love-tab[data-love-pane="calculator"]');
+    if(activeLoveTab){
+      const pane=activeLoveTab.dataset.lovePane;
+      document.querySelectorAll('.love-pane').forEach(x=>x.classList.add('hidden'));
+      document.querySelector(`#love${pane[0].toUpperCase()}${pane.slice(1)}Pane`)?.classList.remove('hidden');
+    }
+  }
 }
 $('#navLove').onclick=()=>setScreen('love');
 $('#navPoke').onclick=()=>setScreen('poke');
