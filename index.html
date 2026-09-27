@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="LovePoke" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="apple-touch-icon" href="./icons/icon-192.png" />
-  <link rel="stylesheet" href="./styles.css?v=20260927-speed1" />
+  <link rel="stylesheet" href="./styles.css?v=20260927-speed2" />
   <link rel="stylesheet" href="./mascot.css" />
   <title>LovePoke Tools</title>
 </head>
@@ -365,6 +365,7 @@
               <label>ランク補正<select id="speedRank"><option value="-6">-6</option><option value="-5">-5</option><option value="-4">-4</option><option value="-3">-3</option><option value="-2">-2</option><option value="-1">-1</option><option value="0" selected>±0</option><option value="1">+1</option><option value="2">+2</option><option value="3">+3</option><option value="4">+4</option><option value="5">+5</option><option value="6">+6</option></select></label>
               <label class="switch-row speed-check"><span>おいかぜ ×2</span><input id="speedTailwind" type="checkbox"></label>
               <label class="switch-row speed-check"><span>まひ ×0.5</span><input id="speedParalysis" type="checkbox"></label>
+              <label class="switch-row speed-check"><span>SVで使用できるポケモンのみ</span><input id="speedSvOnly" type="checkbox" checked></label>
               <label class="speed-search">ポケモン検索<input id="speedSearch" type="search" placeholder="名前で絞り込み"></label>
             </div>
           </section>
@@ -466,8 +467,8 @@
   <script src="./pokemon-sv-learnsets.js"></script>
   <script src="./firebase-config.js"></script>
   <script type="module" src="./app.js"></script>
-  <script type="module" src="./tournament.js?v=20260927-speed1"></script>
-  <script type="module" src="./pokemon-guide.js?v=20260927-speed1"></script>
+  <script type="module" src="./tournament.js?v=20260927-speed2"></script>
+  <script type="module" src="./pokemon-guide.js?v=20260927-speed2"></script>
   <script type="module" src="./loveca-records.js"></script>
   <script type="module" src="./mahjong.js"></script>
   <script src="./loveca-card-browser.js"></script>
