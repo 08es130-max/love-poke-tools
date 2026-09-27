@@ -486,3 +486,12 @@ button,.nav-btn,.mini-btn,.column-reset,.lock-btn{touch-action:manipulation}
 .stat-camera-guide .gspd{left:13.5%;top:59%}
 .stat-camera-guide .gdef{left:69.5%;top:59%}
 .stat-camera-guide .gspe{left:41.5%;top:76%}
+
+/* v0.9.16: measured portrait SV geometry */
+.stat-camera-guide .guide-hex{left:31%;top:22%;width:38%;height:58%}
+.stat-camera-guide .ghp{left:35%;top:16%;width:30%;height:9%}
+.stat-camera-guide .gspa{left:13%;top:35.5%;width:18%}
+.stat-camera-guide .gatk{left:69%;top:35.5%;width:18%}
+.stat-camera-guide .gspd{left:13%;top:58.5%;width:18%}
+.stat-camera-guide .gdef{left:69%;top:58.5%;width:18%}
+.stat-camera-guide .gspe{left:41%;top:76%;width:18%}
