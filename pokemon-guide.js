@@ -386,20 +386,23 @@ $('#statPhotoIdentify')?.addEventListener('click',identifyPhotoPokemon);
 async function rotatedPhotoCanvas(file,deg){
  const bmp=await createImageBitmap(file),swap=Math.abs(deg)%180===90,c=document.createElement('canvas');c.width=swap?bmp.height:bmp.width;c.height=swap?bmp.width:bmp.height;const g=c.getContext('2d');g.translate(c.width/2,c.height/2);g.rotate(deg*Math.PI/180);g.drawImage(bmp,-bmp.width/2,-bmp.height/2);bmp.close();return c;
 }
-function cropPhotoRegion(src,x,y,w,h,scale=4){
- const c=document.createElement('canvas'),sw=src.width||src.naturalWidth,sh=src.height||src.naturalHeight;c.width=Math.max(1,Math.round(sw*w*scale));c.height=Math.max(1,Math.round(sh*h*scale));const g=c.getContext('2d');g.imageSmoothingEnabled=false;g.drawImage(src,sw*x,sh*y,sw*w,sh*h,0,0,c.width,c.height);const d=g.getImageData(0,0,c.width,c.height);for(let i=0;i<d.data.length;i+=4){const v=.299*d.data[i]+.587*d.data[i+1]+.114*d.data[i+2],q=v>150?255:0;d.data[i]=d.data[i+1]=d.data[i+2]=q}g.putImageData(d,0,0);return c;
+function detectSvBlueArea(src){
+ const sw=src.width||src.naturalWidth,sh=src.height||src.naturalHeight,g=document.createElement('canvas').getContext('2d');g.canvas.width=Math.min(700,sw);g.canvas.height=Math.round(sh*g.canvas.width/sw);g.drawImage(src,0,0,g.canvas.width,g.canvas.height);const d=g.getImageData(0,0,g.canvas.width,g.canvas.height).data;let minX=g.canvas.width,minY=g.canvas.height,maxX=0,maxY=0,n=0;
+ for(let y=0;y<g.canvas.height;y+=2)for(let x=0;x<g.canvas.width;x+=2){const i=(y*g.canvas.width+x)*4,R=d[i],G=d[i+1],B=d[i+2];if(B>65&&B>R*1.25&&B>G*1.08&&G>35){minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y);n++}}
+ if(n<500||maxX-minX<g.canvas.width*.2||maxY-minY<g.canvas.height*.2)return {x:0,y:0,w:1,h:1};
+ return {x:minX/g.canvas.width,y:minY/g.canvas.height,w:(maxX-minX)/g.canvas.width,h:(maxY-minY)/g.canvas.height};
 }
-async function ocrDigitsRegion(src,rect){
- const crop=cropPhotoRegion(src,...rect),rec=await window.Tesseract.recognize(crop,'eng',{tessedit_char_whitelist:'0123456789',preserve_interword_spaces:'1'});const nums=String(rec.data?.text||'').match(/\d{1,3}/g)||[];return nums.map(Number).filter(n=>n>0&&n<=999);
+function cropPhotoRegion(src,area,x,y,w,h,scale=5){
+ const sw=src.width||src.naturalWidth,sh=src.height||src.naturalHeight,sx=(area.x+x*area.w)*sw,sy=(area.y+y*area.h)*sh,sww=w*area.w*sw,shh=h*area.h*sh,c=document.createElement('canvas');c.width=Math.max(1,Math.round(sww*scale));c.height=Math.max(1,Math.round(shh*scale));const g=c.getContext('2d');g.imageSmoothingEnabled=true;g.drawImage(src,sx,sy,sww,shh,0,0,c.width,c.height);const d=g.getImageData(0,0,c.width,c.height);for(let i=0;i<d.data.length;i+=4){const v=.299*d.data[i]+.587*d.data[i+1]+.114*d.data[i+2],q=v>175?255:0;d.data[i]=d.data[i+1]=d.data[i+2]=q}g.putImageData(d,0,0);return c;
+}
+async function ocrDigitsRegion(src,area,rect){
+ const crop=cropPhotoRegion(src,area,...rect),rec=await window.Tesseract.recognize(crop,'eng',{tessedit_char_whitelist:'0123456789',tessedit_pageseg_mode:'7'}),m=String(rec.data?.text||'').match(/\d{1,3}/);return m?Number(m[0]):null;
 }
 async function readSvFixedStats(src){
- /* SV status hex-chart, normalized after landscape rotation. Generous regions tolerate handheld framing. */
- const regions={
-  hp:[.39,.10,.25,.15],attack:[.61,.24,.18,.18],defense:[.61,.55,.18,.18],
-  spAttack:[.22,.24,.20,.18],spDefense:[.22,.55,.20,.18],speed:[.41,.67,.22,.18],
-  level:[.02,.02,.28,.18]
- },out={};
- for(const [k,r] of Object.entries(regions)){const ns=await ocrDigitsRegion(src,r);if(ns.length)out[k]=k==='level'?ns.find(n=>n<=100):ns[ns.length-1]}
+ const area=detectSvBlueArea(src);
+ /* Coordinates are relative to the detected blue status panel, not the whole photo. */
+ const regions={hp:[.53,.10,.18,.10],attack:[.64,.22,.14,.11],defense:[.79,.22,.14,.11],spAttack:[.48,.50,.14,.11],spDefense:[.57,.50,.14,.11],speed:[.69,.38,.14,.11]},out={};
+ for(const [k,rect] of Object.entries(regions)){const n=await ocrDigitsRegion(src,area,rect);if(n&&n>=10&&n<=999)out[k]=n}
  return out;
 }
 async function handleStatPhotoFile(f){
@@ -414,8 +417,7 @@ async function handleStatPhotoFile(f){
    if(score.hits>=7)break;
   }
   parsePhotoText(best?.text||'',true);
-  const landscape=best?.deg?await rotatedPhotoCanvas(f,best.deg):await rotatedPhotoCanvas(f,90),fixed=await readSvFixedStats(landscape);
-  if(fixed.level&&!$('#statPhotoLevel').value)$('#statPhotoLevel').value=fixed.level;
+  const landscape=await rotatedPhotoCanvas(f,best?.deg||270),fixed=await readSvFixedStats(landscape);
   for(const k of PHOTO_KEYS)if(fixed[k]&&!$('#'+PHOTO_IDS[k]).value)$('#'+PHOTO_IDS[k]).value=fixed[k];
   const lv=$('#statPhotoLevel')?.value,filled=PHOTO_KEYS.filter(k=>$('#'+PHOTO_IDS[k])?.value).length,s=$('#statPhotoOcrStatus');
   if(s)s.textContent='読み取り完了。Lv '+(lv||'未取得')+' / 能力値 '+filled+'/6 を取得しました。'+(filled<6?'空欄だけ確認してください。':'内容を確認して計算できます。');
