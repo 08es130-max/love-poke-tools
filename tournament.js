@@ -401,9 +401,24 @@ function matchHtml(tournament,match){
       <span>vs</span>
       <button type="button" data-match="${match.id}" data-winner="${b.id}" class="winner-btn ${match.winner===b.id?'selected':''}">${escapeHtml(b.name)} 勝利</button>
     </div>
+    <button type="button" class="match-prep-btn" data-prep-match="${match.id}">対戦準備</button>
     ${match.winner?`<button type="button" class="clear-result" data-clear-match="${match.id}">結果を取消</button>`:''}
   </div>`;
 }
+function prepSideHtml(player){
+  const analysis=partyAnalysis(player);
+  return `<div class="prep-side"><h4>${escapeHtml(player.name)}</h4>${analysis.mons.map(m=>`<div class="prep-mon"><button class="poke-guide-link inline" data-poke-guide-id="${m.final.id}">${escapeHtml(m.final.name)}</button><span>${m.types.map(t=>TYPE_SHORT[t]||t).join('/')}</span><span>S${m.speed}</span></div>`).join('')}<div class="prep-summary">弱点集中：${analysis.weaknessRows.filter(x=>x.weak>=2).slice(0,4).map(x=>`${TYPE_SHORT[x.type]||x.type} ${x.weak}体`).join(' / ')||'目立った集中なし'}<br>STAB抜群範囲：${analysis.coverage}/18</div></div>`;
+}
+function openMatchPrep(matchId){
+  const match=activeTournament?.matches?.find(m=>m.id===matchId);if(!match)return;
+  const a=playerById(activeTournament,match.a),b=playerById(activeTournament,match.b);
+  const existing=document.getElementById('matchPrepOverlay');if(existing)existing.remove();
+  const wrap=document.createElement('div');wrap.id='matchPrepOverlay';wrap.className='prep-overlay';
+  wrap.innerHTML=`<div class="prep-dialog"><div class="dialog-head"><h3>対戦準備</h3><button type="button" data-close-prep class="ghost-btn">閉じる</button></div><p class="hint">公開情報を整理した確認画面です。ダメージ計算は行いません。</p><div class="prep-grid">${prepSideHtml(a)}${prepSideHtml(b)}</div></div>`;
+  document.body.appendChild(wrap);
+}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-prep-match]');if(b)openMatchPrep(b.dataset.prepMatch);if(e.target.closest('[data-close-prep]')||e.target.id==='matchPrepOverlay')document.getElementById('matchPrepOverlay')?.remove()});
+
 function renderActiveTournament(){
   const setup=$('#tournamentSetupPanel'),area=$('#activeTournamentArea');
   if(!activeTournament){setup.classList.remove('hidden');area.innerHTML='';return}
