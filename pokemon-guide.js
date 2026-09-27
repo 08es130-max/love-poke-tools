@@ -508,7 +508,22 @@ async function openStatCamera(){
  document.activeElement?.blur();
  await new Promise(r=>setTimeout(r,80));
  const poke=$('#statPhotoPokemon')?.value.trim(),lv=Number($('#statPhotoLevel')?.value);if(!poke||!lv||lv<1||lv>100){alert('先にポケモンとLvを入力してください。');return}
- try{statCameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}},audio:false});const v=$('#statCameraVideo');v.srcObject=statCameraStream;await v.play();$('#statCameraOverlay').classList.remove('hidden')}catch{alert('カメラを開けませんでした。カメラ権限を確認してください。')}
+ try{
+  statCameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}},audio:false});
+  const v=$('#statCameraVideo'),track=statCameraStream.getVideoTracks()[0];
+  // Ask supported iPhone/browser cameras to lock into continuous AF immediately.
+  try{
+   const caps=track?.getCapabilities?.()||{},advanced={};
+   if(Array.isArray(caps.focusMode)&&caps.focusMode.includes('continuous'))advanced.focusMode='continuous';
+   if(Object.keys(advanced).length)await track.applyConstraints({advanced:[advanced]});
+  }catch{}
+  v.srcObject=statCameraStream;await v.play();
+  // Pre-warm the live camera before revealing it. iPhone normally needs a short
+  // moment to settle exposure/focus; doing that here makes the first visible frame
+  // much closer to the sharp state used for OCR.
+  await new Promise(r=>setTimeout(r,900));
+  $('#statCameraOverlay').classList.remove('hidden');
+ }catch{alert('カメラを開けませんでした。カメラ権限を確認してください。')}
 }
 function closeStatCamera(){statCameraStream?.getTracks().forEach(t=>t.stop());statCameraStream=null;$('#statCameraOverlay')?.classList.add('hidden')}
 $('#statPhotoCameraBtn')?.addEventListener('click',openStatCamera);
