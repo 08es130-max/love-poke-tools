@@ -449,7 +449,7 @@ button,.nav-btn,.mini-btn,.column-reset,.lock-btn{touch-action:manipulation}
 .stat-camera-overlay>p{z-index:4}.stat-camera-controls{z-index:4}
 
 /* v0.9.39: give the lower B/D stat values more vertical breathing room */
-.stat-camera-guide .gspd,.stat-camera-guide .gdef{height:23%;top:65%}
+.stat-camera-guide .gspd,.stat-camera-guide .gdef{height:23%;top:72%}
 
 /* v0.9.9 */
 #statPhotoPokemon,#statPhotoLevel{font-size:16px!important}
