@@ -412,11 +412,6 @@ async function readGuidedStats(src,rects){
    const valid=(xs||[]).filter(v=>!possible||possible.has(v));
    if(valid.length)out[k]=valid[0];
    continue;
-  }else if(k==='spDefense'){
-   // D only: target the numeric baseline itself; do not widen into the label/hexagon.
-   rois.push({r:[r[0]+r[2]*.14,r[1]+r[3]*.52,r[2]*.60,r[3]*.34],w:10});
-   rois.push({r:[r[0]+r[2]*.10,r[1]+r[3]*.48,r[2]*.66,r[3]*.40],w:7});
-   rois.push({r:numericRect(k,r),w:5});
   }else{
    // Tight number crops are authoritative; wider crops only rescue difficult captures.
    rois.push({r:numericRect(k,r),w:6});
@@ -428,7 +423,7 @@ async function readGuidedStats(src,rects){
   for(const item of rois){
    let xs=await ocrGuidedNumber(src,item.r,k==='hp');
    if(!xs?.length)continue;
-   xs.forEach((v,rank)=>{if(k==='spDefense'||!possible||possible.has(v))score.set(v,(score.get(v)||0)+item.w/Math.max(1,rank+1))});
+   xs.forEach((v,rank)=>{if(!possible||possible.has(v))score.set(v,(score.get(v)||0)+item.w/Math.max(1,rank+1))});
   }
   const ranked=[...score.entries()].sort((a,b)=>b[1]-a[1]);
   if(ranked.length)out[k]=ranked[0][0];
@@ -461,18 +456,14 @@ function detectNatureMarkers(src,rects){
  // so do not search for a down marker at all.
  if(!up)return{up:'',down:''};
  const others=scores.filter(x=>x.k!==up.k);
- // First trust a clearly isolated blue/down marker. In SV this is more specific than
- // absence of a white neutral dot. White-dot elimination is only the fallback.
+ // Down nature is accepted only when a blue marker is directly detected.
+ // Never infer a down stat from missing/weak white dots.
  const blueRank=[...others].sort((a,b)=>b.blue-a.blue);
  const blue1=blueRank[0],blue2=blueRank[1];
- if(blue1&&blue1.blue>=3&&blue1.blue>=Math.max(3,(blue2?.blue||0)*1.30)){
+ if(blue1&&blue1.blue>=2&&blue1.blue>=Math.max(2,(blue2?.blue||0)*1.18)){
   return{up:up.k,down:blue1.k};
  }
- // If blue is weak/ambiguous, four neutral stats should have a white endpoint dot.
- // Choose the non-up stat with the weakest white-dot evidence.
- const downRank=[...others].sort((a,b)=>(a.white-b.white)||((b.blue)-(a.blue)));
- const down=downRank[0]||null;
- return{up:up.k,down:down?.k||''};
+ return{up:up.k,down:''};
 }
 async function consumeGuidedImage(src,previewUrl,rects){
  const pv=$('#statPhotoPreview'),box=$('#statPhotoConfirm');pv.classList.remove('hidden');pv.innerHTML='<img src="'+previewUrl+'" alt="能力六角形"><p id="statPhotoOcrStatus" class="hint">6つの能力値を読み取っています…</p>';box.classList.remove('hidden');
