@@ -390,8 +390,10 @@ async function readGuidedStats(src,rects){
  for(const [k,r] of Object.entries(rects||{})){
   const rois=[numericRect(k,r)];
   if(k==='spDefense'){
-   rois.push([r[0]+r[2]*.10,r[1]+r[3]*.43,r[2]*.74,r[3]*.48]);
-   rois.push([r[0]+r[2]*.20,r[1]+r[3]*.54,r[2]*.62,r[3]*.36]);
+   rois.push([r[0]+r[2]*.08,r[1]+r[3]*.40,r[2]*.82,r[3]*.52]);
+   rois.push([r[0]+r[2]*.14,r[1]+r[3]*.47,r[2]*.72,r[3]*.43]);
+   rois.push([r[0]+r[2]*.20,r[1]+r[3]*.53,r[2]*.62,r[3]*.35]);
+   rois.push([r[0]+r[2]*.10,r[1]+r[3]*.57,r[2]*.78,r[3]*.30]);
   }
   const merged=[];
   for(const roi of rois){const xs=await ocrGuidedNumber(src,roi,k==='hp');if(xs?.length)merged.push(...xs)}
@@ -408,21 +410,25 @@ function detectNatureMarkers(src,rects){
  const sw=src.width||src.videoWidth,sh=src.height||src.videoHeight,keys=['attack','defense','spAttack','spDefense','speed'],scores=[];
  for(const k of keys){
   const r=rects?.[k];if(!r)continue;
-  const c=document.createElement('canvas');c.width=Math.max(40,Math.round(sw*r[2]));c.height=Math.max(40,Math.round(sh*r[3]));
-  const g=c.getContext('2d');g.drawImage(src,sw*r[0],sh*r[1],sw*r[2],sh*r[3],0,0,c.width,c.height);
-  const d=g.getImageData(0,0,c.width,c.height).data;let red=0,blue=0;
+  // SV's nature arrow sits on the hexagon-facing edge of each label/value region.
+  let rx=r[0],ry=r[1],rw=r[2],rh=r[3];
+  if(k==='spAttack'||k==='spDefense'){rx=r[0]+r[2]*.68;rw=r[2]*.32;ry=r[1]+r[3]*.18;rh=r[3]*.64}
+  else if(k==='attack'||k==='defense'){rx=r[0];rw=r[2]*.32;ry=r[1]+r[3]*.18;rh=r[3]*.64}
+  else if(k==='speed'){rx=r[0]+r[2]*.25;rw=r[2]*.50;ry=r[1];rh=r[3]*.38}
+  const cc=document.createElement('canvas');cc.width=Math.max(30,Math.round(sw*rw));cc.height=Math.max(30,Math.round(sh*rh));
+  const g=cc.getContext('2d');g.drawImage(src,sw*rx,sh*ry,sw*rw,sh*rh,0,0,cc.width,cc.height);
+  const d=g.getImageData(0,0,cc.width,cc.height).data;let red=0,blue=0;
   for(let i=0;i<d.length;i+=4){
    const R=d[i],G=d[i+1],B=d[i+2];
-   // Measured from SV capture: down marker is vivid royal blue (~10,80,235);
-   // up marker is magenta/red (~185,60,120), not pure red.
-   if(R>=155&&R-G>=65&&R-B>=35&&B>=55)red++;
-   if(B>=175&&B-R>=100&&B-G>=80&&R<=100)blue++;
+   if(R>=145&&R-G>=55&&R-B>=25&&B>=50)red++;
+   if(B>=165&&B-R>=75&&B-G>=55&&R<=120)blue++;
   }
   scores.push({k,red,blue});
  }
  const redRank=[...scores].sort((a,b)=>b.red-a.red),blueRank=[...scores].sort((a,b)=>b.blue-a.blue);
- const up=redRank[0]?.red>=3?redRank[0]:null;
- const down=blueRank.find(x=>x.k!==up?.k&&x.blue>=3)||null;
+ const strong=(rank,color)=>rank[0]&&rank[0][color]>=3&&rank[0][color]>=Math.max(3,(rank[1]?.[color]||0)*1.35);
+ const up=strong(redRank,'red')?redRank[0]:null;
+ const down=strong(blueRank,'blue')&&blueRank[0].k!==up?.k?blueRank[0]:blueRank.find((x,i)=>i<2&&x.k!==up?.k&&x.blue>=3&&x.blue>=Math.max(3,(blueRank[2]?.blue||0)*1.35));
  return{up:up?.k||'',down:down?.k||''};
 }
 async function consumeGuidedImage(src,previewUrl,rects){
