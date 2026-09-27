@@ -413,13 +413,10 @@ async function readGuidedStats(src,rects){
    if(valid.length)out[k]=valid[0];
    continue;
   }else if(k==='spDefense'){
-   // D is the least stable OCR slot. Use several tight crops around the number first,
-   // then wider rescue crops. This helps preserve 3 vs 2 and still finds values such as 103.
-   rois.push({r:[r[0]+r[2]*.12,r[1]+r[3]*.50,r[2]*.72,r[3]*.42],w:10});
-   rois.push({r:[r[0]+r[2]*.08,r[1]+r[3]*.46,r[2]*.78,r[3]*.46],w:8});
-   rois.push({r:[r[0]+r[2]*.16,r[1]+r[3]*.54,r[2]*.66,r[3]*.36],w:7});
-   rois.push({r:[r[0]+r[2]*.03,r[1]+r[3]*.39,r[2]*.90,r[3]*.56],w:3});
-   rois.push({r:numericRect(k,r),w:5});
+   // D sits close to the left edge/hex point; give its number more horizontal room.
+   rois.push({r:[r[0]+r[2]*.08,r[1]+r[3]*.46,r[2]*.78,r[3]*.48],w:7});
+   rois.push({r:[r[0]+r[2]*.03,r[1]+r[3]*.39,r[2]*.90,r[3]*.56],w:4});
+   rois.push({r:numericRect(k,r),w:2});
   }else{
    // Tight number crops are authoritative; wider crops only rescue difficult captures.
    rois.push({r:numericRect(k,r),w:6});
@@ -443,24 +440,19 @@ function detectNatureMarkers(src,rects){
  for(const k of keys){
   const r=rects?.[k];if(!r)continue;
   let rx=r[0],ry=r[1],rw=r[2],rh=r[3];
-  // C/D and A/B are vertically adjacent. Keep their marker ROIs inside each
-  // stat row so the neighbouring endpoint cannot be counted by both regions.
-  if(k==='spAttack'||k==='spDefense'){rx=r[0]+r[2]*.66;rw=r[2]*.32;ry=r[1]+r[3]*.24;rh=r[3]*.52}
-  else if(k==='attack'||k==='defense'){rx=r[0]+r[2]*.02;rw=r[2]*.32;ry=r[1]+r[3]*.24;rh=r[3]*.52}
+  if(k==='spAttack'||k==='spDefense'){rx=r[0]+r[2]*.62;rw=r[2]*.38;ry=r[1]+r[3]*.12;rh=r[3]*.76}
+  else if(k==='attack'||k==='defense'){rx=r[0];rw=r[2]*.38;ry=r[1]+r[3]*.12;rh=r[3]*.76}
   else {rx=r[0]+r[2]*.20;rw=r[2]*.60;ry=r[1];rh=r[3]*.42}
   const cc=document.createElement('canvas');cc.width=Math.max(36,Math.round(sw*rw));cc.height=Math.max(36,Math.round(sh*rh));
   const g=cc.getContext('2d');g.drawImage(src,sw*rx,sh*ry,sw*rw,sh*rh,0,0,cc.width,cc.height);
-  const d=g.getImageData(0,0,cc.width,cc.height).data;let red=0,blue=0,blueCore=0,white=0;
+  const d=g.getImageData(0,0,cc.width,cc.height).data;let red=0,blue=0,white=0;
   for(let i=0;i<d.length;i+=4){
    const R=d[i],G=d[i+1],B=d[i+2];
    if(R>=145&&R-G>=55&&R-B>=25&&B>=50)red++;
    if(B>=160&&B-R>=65&&B-G>=45&&R<=130)blue++;
-   // The down marker is a small, strongly saturated blue diamond. The filled
-   // radar polygon is more cyan, so keep a stricter score that excludes it.
-   if(B>=155&&B-R>=80&&B-G>=70&&R<=100&&G<=155)blueCore++;
    if(R>=185&&G>=185&&B>=175&&Math.max(R,G,B)-Math.min(R,G,B)<=38)white++;
   }
-  scores.push({k,red,blue,blueCore,white});
+  scores.push({k,red,blue,white});
  }
  const redRank=[...scores].sort((a,b)=>b.red-a.red);
  const up=redRank[0]?.red>=3?redRank[0]:null;
@@ -468,17 +460,11 @@ function detectNatureMarkers(src,rects){
  // so do not search for a down marker at all.
  if(!up)return{up:'',down:''};
  const others=scores.filter(x=>x.k!==up.k);
- // Prefer the compact saturated-blue diamond, not the cyan radar fill.
- // This keeps nearby C/D (SpA/SpD) regions from stealing each other's down marker.
- const coreRank=[...others].sort((a,b)=>b.blueCore-a.blueCore);
- const core1=coreRank[0],core2=coreRank[1];
- if(core1&&core1.blueCore>=2&&core1.blueCore>=Math.max(2,(core2?.blueCore||0)*1.35)){
-  return{up:up.k,down:core1.k};
- }
- // If strict blue is weak, use the broader blue score only when it is very isolated.
+ // First trust a clearly isolated blue/down marker. In SV this is more specific than
+ // absence of a white neutral dot. White-dot elimination is only the fallback.
  const blueRank=[...others].sort((a,b)=>b.blue-a.blue);
  const blue1=blueRank[0],blue2=blueRank[1];
- if(blue1&&blue1.blue>=4&&blue1.blue>=Math.max(4,(blue2?.blue||0)*1.65)){
+ if(blue1&&blue1.blue>=3&&blue1.blue>=Math.max(3,(blue2?.blue||0)*1.30)){
   return{up:up.k,down:blue1.k};
  }
  // If blue is weak/ambiguous, four neutral stats should have a white endpoint dot.
@@ -508,22 +494,7 @@ async function openStatCamera(){
  document.activeElement?.blur();
  await new Promise(r=>setTimeout(r,80));
  const poke=$('#statPhotoPokemon')?.value.trim(),lv=Number($('#statPhotoLevel')?.value);if(!poke||!lv||lv<1||lv>100){alert('先にポケモンとLvを入力してください。');return}
- try{
-  statCameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}},audio:false});
-  const v=$('#statCameraVideo'),track=statCameraStream.getVideoTracks()[0];
-  // Ask supported iPhone/browser cameras to lock into continuous AF immediately.
-  try{
-   const caps=track?.getCapabilities?.()||{},advanced={};
-   if(Array.isArray(caps.focusMode)&&caps.focusMode.includes('continuous'))advanced.focusMode='continuous';
-   if(Object.keys(advanced).length)await track.applyConstraints({advanced:[advanced]});
-  }catch{}
-  v.srcObject=statCameraStream;await v.play();
-  // Pre-warm the live camera before revealing it. iPhone normally needs a short
-  // moment to settle exposure/focus; doing that here makes the first visible frame
-  // much closer to the sharp state used for OCR.
-  await new Promise(r=>setTimeout(r,900));
-  $('#statCameraOverlay').classList.remove('hidden');
- }catch{alert('カメラを開けませんでした。カメラ権限を確認してください。')}
+ try{statCameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}},audio:false});const v=$('#statCameraVideo');v.srcObject=statCameraStream;await v.play();$('#statCameraOverlay').classList.remove('hidden')}catch{alert('カメラを開けませんでした。カメラ権限を確認してください。')}
 }
 function closeStatCamera(){statCameraStream?.getTracks().forEach(t=>t.stop());statCameraStream=null;$('#statCameraOverlay')?.classList.add('hidden')}
 $('#statPhotoCameraBtn')?.addEventListener('click',openStatCamera);
