@@ -376,18 +376,16 @@ function detectNatureMarkers(src,rects){
   const d=g.getImageData(0,0,c.width,c.height).data;let red=0,blue=0;
   for(let i=0;i<d.length;i+=4){
    const R=d[i],G=d[i+1],B=d[i+2];
-   // SV nature markers are tiny but bright/saturated. Ignore the dark blue status-screen background.
-   if(R>=175&&R-G>=55&&R-B>=35)red++;
-   if(B>=180&&B-R>=70&&B-G>=18&&G>=70)blue++;
+   // Measured from SV capture: down marker is vivid royal blue (~10,80,235);
+   // up marker is magenta/red (~185,60,120), not pure red.
+   if(R>=155&&R-G>=65&&R-B>=35&&B>=55)red++;
+   if(B>=175&&B-R>=100&&B-G>=80&&R<=100)blue++;
   }
   scores.push({k,red,blue});
  }
- const reds=[...scores].sort((a,b)=>b.red-a.red),blues=[...scores].sort((a,b)=>b.blue-a.blue);
- const up=reds[0]&&reds[0].red>=4&&reds[0].red>=(reds[1]?.red||0)*1.25?reds[0]:null;
- let down=blues[0]&&blues[0].blue>=4&&blues[0].blue>=(blues[1]?.blue||0)*1.25?blues[0]:null;
- if(up&&down&&up.k===down.k){
-  down=blues.find(x=>x.k!==up.k&&x.blue>=4&&x.blue>=(blues.filter(y=>y.k!==up.k)[1]?.blue||0)*1.25)||null;
- }
+ const redRank=[...scores].sort((a,b)=>b.red-a.red),blueRank=[...scores].sort((a,b)=>b.blue-a.blue);
+ const up=redRank[0]?.red>=3?redRank[0]:null;
+ const down=blueRank.find(x=>x.k!==up?.k&&x.blue>=3)||null;
  return{up:up?.k||'',down:down?.k||''};
 }
 async function consumeGuidedImage(src,previewUrl,rects){
