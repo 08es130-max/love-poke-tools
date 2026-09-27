@@ -346,7 +346,7 @@ async function ocrGuidedNumber(src,rect){
 }
 async function readGuidedStats(src){
  /* Exact regions corresponding to the on-camera guide. */
- const R={hp:[.41,.20,.18,.09],spAttack:[.18,.38,.18,.09],attack:[.64,.38,.18,.09],spDefense:[.18,.62,.18,.09],defense:[.64,.62,.18,.09],speed:[.41,.77,.18,.09]},out={};
+ const R={hp:[.40,.10,.20,.14],spAttack:[.14,.34,.20,.14],attack:[.66,.34,.20,.14],spDefense:[.14,.62,.20,.14],defense:[.66,.62,.20,.14],speed:[.40,.82,.20,.14]},out={};
  for(const [k,r] of Object.entries(R)){const n=await ocrGuidedNumber(src,r);if(n&&n>=10&&n<=999)out[k]=n}return out;
 }
 async function consumeGuidedImage(src,previewUrl){
@@ -356,6 +356,7 @@ async function consumeGuidedImage(src,previewUrl){
 }
 let statCameraStream=null;
 async function openStatCamera(){
+ if(matchMedia('(orientation: portrait)').matches){alert('能力値を正確に合わせるため、iPhoneを横向きにしてから撮影してください。');}
  const poke=$('#statPhotoPokemon')?.value.trim(),lv=Number($('#statPhotoLevel')?.value);if(!poke||!lv||lv<1||lv>100){alert('先にポケモンとLvを入力してください。');return}
  try{statCameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}},audio:false});const v=$('#statCameraVideo');v.srcObject=statCameraStream;await v.play();$('#statCameraOverlay').classList.remove('hidden')}catch{alert('カメラを開けませんでした。カメラ権限を確認してください。')}
 }
