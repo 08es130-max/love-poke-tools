@@ -363,8 +363,6 @@ function closeStatCamera(){statCameraStream?.getTracks().forEach(t=>t.stop());st
 $('#statPhotoCameraBtn')?.addEventListener('click',openStatCamera);
 $('#statCameraCancel')?.addEventListener('click',closeStatCamera);
 $('#statCameraShutter')?.addEventListener('click',async()=>{const v=$('#statCameraVideo'),c=document.createElement('canvas');c.width=v.videoWidth;c.height=v.videoHeight;c.getContext('2d').drawImage(v,0,0);closeStatCamera();await consumeGuidedImage(c,c.toDataURL('image/jpeg',.92))});
-$('#statPhotoLibraryBtn')?.addEventListener('click',()=>$('#statPhotoLibraryInput')?.click());
-$('#statPhotoLibraryInput')?.addEventListener('change',async e=>{const f=e.target.files?.[0];if(!f)return;const img=new Image(),url=URL.createObjectURL(f);await new Promise((res,rej)=>{img.onload=res;img.onerror=rej;img.src=url});await consumeGuidedImage(img,url);e.target.value=''});
 $('#statPhotoCalculate')?.addEventListener('click',calculatePhotoEv);
 
 const BUILD_MEMO_KEY='lovePokeBuildMemosV1';
