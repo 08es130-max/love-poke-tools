@@ -445,14 +445,17 @@ function detectNatureMarkers(src,rects){
   else {rx=r[0]+r[2]*.20;rw=r[2]*.60;ry=r[1];rh=r[3]*.42}
   const cc=document.createElement('canvas');cc.width=Math.max(36,Math.round(sw*rw));cc.height=Math.max(36,Math.round(sh*rh));
   const g=cc.getContext('2d');g.drawImage(src,sw*rx,sh*ry,sw*rw,sh*rh,0,0,cc.width,cc.height);
-  const d=g.getImageData(0,0,cc.width,cc.height).data;let red=0,blue=0,white=0;
+  const d=g.getImageData(0,0,cc.width,cc.height).data;let red=0,blue=0,blueCore=0,white=0;
   for(let i=0;i<d.length;i+=4){
    const R=d[i],G=d[i+1],B=d[i+2];
    if(R>=145&&R-G>=55&&R-B>=25&&B>=50)red++;
    if(B>=160&&B-R>=65&&B-G>=45&&R<=130)blue++;
+   // The down marker is a small, strongly saturated blue diamond. The filled
+   // radar polygon is more cyan, so keep a stricter score that excludes it.
+   if(B>=155&&B-R>=80&&B-G>=70&&R<=100&&G<=155)blueCore++;
    if(R>=185&&G>=185&&B>=175&&Math.max(R,G,B)-Math.min(R,G,B)<=38)white++;
   }
-  scores.push({k,red,blue,white});
+  scores.push({k,red,blue,blueCore,white});
  }
  const redRank=[...scores].sort((a,b)=>b.red-a.red);
  const up=redRank[0]?.red>=3?redRank[0]:null;
@@ -460,11 +463,17 @@ function detectNatureMarkers(src,rects){
  // so do not search for a down marker at all.
  if(!up)return{up:'',down:''};
  const others=scores.filter(x=>x.k!==up.k);
- // First trust a clearly isolated blue/down marker. In SV this is more specific than
- // absence of a white neutral dot. White-dot elimination is only the fallback.
+ // Prefer the compact saturated-blue diamond, not the cyan radar fill.
+ // This keeps nearby C/D (SpA/SpD) regions from stealing each other's down marker.
+ const coreRank=[...others].sort((a,b)=>b.blueCore-a.blueCore);
+ const core1=coreRank[0],core2=coreRank[1];
+ if(core1&&core1.blueCore>=2&&core1.blueCore>=Math.max(2,(core2?.blueCore||0)*1.35)){
+  return{up:up.k,down:core1.k};
+ }
+ // If strict blue is weak, use the broader blue score only when it is very isolated.
  const blueRank=[...others].sort((a,b)=>b.blue-a.blue);
  const blue1=blueRank[0],blue2=blueRank[1];
- if(blue1&&blue1.blue>=3&&blue1.blue>=Math.max(3,(blue2?.blue||0)*1.30)){
+ if(blue1&&blue1.blue>=4&&blue1.blue>=Math.max(4,(blue2?.blue||0)*1.65)){
   return{up:up.k,down:blue1.k};
  }
  // If blue is weak/ambiguous, four neutral stats should have a white endpoint dot.
