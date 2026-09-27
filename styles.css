@@ -447,3 +447,12 @@ button,.nav-btn,.mini-btn,.column-reset,.lock-btn{touch-action:manipulation}
 .stat-camera-guide .ghp{left:38%;top:0}.stat-camera-guide .gspa{left:0;top:30%}.stat-camera-guide .gatk{left:76%;top:30%}.stat-camera-guide .gspd{left:0;top:60%}.stat-camera-guide .gdef{left:76%;top:60%}.stat-camera-guide .gspe{left:38%;top:82%}
 .stat-camera-guide .guide-hex{position:absolute;left:30%;top:20%;width:40%;height:60%;font-size:0;opacity:.7;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);border:3px solid #fff;box-sizing:border-box}
 .stat-camera-overlay>p{z-index:4}.stat-camera-controls{z-index:4}
+
+/* v0.9.9 */
+#statPhotoPokemon,#statPhotoLevel{font-size:16px!important}
+.stat-pokemon-input-wrap{position:relative}.stat-pokemon-choices{position:absolute;z-index:50;left:0;right:0;top:100%;max-height:210px;overflow:auto;background:#fff;border:1px solid #ddd;border-radius:10px;box-shadow:0 8px 24px #0002}.stat-pokemon-choice{display:block;width:100%;padding:10px 12px;border:0;border-bottom:1px solid #eee;background:#fff;text-align:left;font-size:16px}.stat-pokemon-choice:last-child{border-bottom:0}
+.stat-camera-guide{top:49%;width:min(96vw,540px);height:min(46vh,440px)}
+.stat-camera-guide .guide-box{width:26%;height:17%}
+.stat-camera-guide .ghp{left:37%;top:0}.stat-camera-guide .gspa{left:0;top:31%}.stat-camera-guide .gatk{left:74%;top:31%}.stat-camera-guide .gspd{left:0;top:61%}.stat-camera-guide .gdef{left:74%;top:61%}.stat-camera-guide .gspe{left:37%;top:83%}
+.stat-camera-guide .guide-hex{position:absolute;left:29%;top:19%;width:42%;height:64%;overflow:visible;opacity:.88}
+.stat-camera-guide .guide-hex polygon,.stat-camera-guide .guide-hex line{fill:none;stroke:#fff;stroke-width:3;vector-effect:non-scaling-stroke;filter:drop-shadow(0 1px 2px #0008)}
