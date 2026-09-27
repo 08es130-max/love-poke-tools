@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="LovePoke" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="apple-touch-icon" href="./icons/icon-192.png" />
-  <link rel="stylesheet" href="./styles.css?v=20260927-speed2" />
+  <link rel="stylesheet" href="./styles.css?v=20260927-speed3" />
   <link rel="stylesheet" href="./mascot.css" />
   <title>LovePoke Tools</title>
 </head>
@@ -352,26 +352,34 @@
         </div>
         <div id="guideSpeedTool" class="guide-tool-pane hidden">
           <section class="panel speed-control-panel">
-            <div class="section-title-row"><h2>すばやさ比較</h2><span id="speedResultCount" class="badge soft">—</span></div>
-            <p class="hint">実数値はSVの能力値計算式で算出します。大会を選ぶと、その大会で使用されたポケモンだけに絞り込めます。</p>
-            <div class="speed-controls">
+            <div class="section-title-row"><h2>すばやさライン比較</h2><span id="speedResultCount" class="badge soft">—</span></div>
+            <p class="hint">基準表はLv.50・最速順です。下の1体だけ条件を変えて、どの素早さラインに入るか確認できます。</p>
+            <div class="speed-list-filters">
               <label>表示範囲<select id="speedTournamentFilter"><option value="all">全ポケモン</option></select></label>
-              <label>レベル<input id="speedLevel" type="number" min="1" max="100" value="50"></label>
+              <label class="switch-row speed-check"><span>SVで使用できるポケモンのみ</span><input id="speedSvOnly" type="checkbox" checked></label>
+              <label>表を検索<input id="speedSearch" type="search" placeholder="名前で絞り込み"></label>
+            </div>
+          </section>
+          <section class="panel speed-target-panel">
+            <h3>調べたいポケモン</h3>
+            <div class="speed-controls speed-target-controls">
+              <label class="speed-search">ポケモン<input id="speedTargetSearch" type="search" list="speedPokemonList" placeholder="例：カイリュー"><datalist id="speedPokemonList"></datalist></label>
               <label>個体値<input id="speedIv" type="number" min="0" max="31" value="31"></label>
               <label>努力値<input id="speedEv" type="number" min="0" max="252" step="4" value="252"></label>
               <label>性格<select id="speedNature"><option value="1.1">上昇補正（1.1倍）</option><option value="1" selected>補正なし</option><option value="0.9">下降補正（0.9倍）</option></select></label>
               <label>持ち物<select id="speedItem"><option value="1">なし</option><option value="1.5">こだわりスカーフ ×1.5</option><option value="0.5">くろいてっきゅう ×0.5</option><option value="0.5">パワー系アイテム ×0.5</option></select></label>
-              <label>特性<select id="speedAbility"><option value="1">補正なし</option><option value="2">すいすい/ようりょくそ/すなかき/ゆきかき/かるわざ ×2</option><option value="quickfeet">はやあし ×1.5</option><option value="1.5">古代活性/クォークチャージ(S上昇) ×1.5</option><option value="0.5">スロースタート ×0.5</option></select></label>
+              <label>特性<select id="speedAbility"><option value="1">補正なし</option><option value="2">S ×2</option><option value="1.5">S ×1.5</option><option value="quickfeet">はやあし ×1.5</option><option value="0.5">スロースタート ×0.5</option></select></label>
               <label>ランク補正<select id="speedRank"><option value="-6">-6</option><option value="-5">-5</option><option value="-4">-4</option><option value="-3">-3</option><option value="-2">-2</option><option value="-1">-1</option><option value="0" selected>±0</option><option value="1">+1</option><option value="2">+2</option><option value="3">+3</option><option value="4">+4</option><option value="5">+5</option><option value="6">+6</option></select></label>
               <label class="switch-row speed-check"><span>おいかぜ ×2</span><input id="speedTailwind" type="checkbox"></label>
               <label class="switch-row speed-check"><span>まひ ×0.5</span><input id="speedParalysis" type="checkbox"></label>
-              <label class="switch-row speed-check"><span>SVで使用できるポケモンのみ</span><input id="speedSvOnly" type="checkbox" checked></label>
-              <label class="speed-search">ポケモン検索<input id="speedSearch" type="search" placeholder="名前で絞り込み"></label>
             </div>
+            <div id="speedTargetResult" class="speed-target-result">ポケモンを選ぶと、ここに実数値と位置を表示します。</div>
           </section>
           <section class="panel speed-table-panel">
-            <div class="speed-table-head"><span>順位</span><span>ポケモン</span><span>S種族値</span><span>実数値</span></div>
-            <div id="speedTable"></div>
+            <div class="speed-table-scroll">
+              <div class="speed-table-head"><span>順位</span><span>ポケモン</span><span>S</span><span>最速</span><span>準速</span><span>最速スカーフ</span><span>特性発動</span></div>
+              <div id="speedTable"></div>
+            </div>
           </section>
         </div>
       </div>
@@ -467,8 +475,8 @@
   <script src="./pokemon-sv-learnsets.js"></script>
   <script src="./firebase-config.js"></script>
   <script type="module" src="./app.js"></script>
-  <script type="module" src="./tournament.js?v=20260927-speed2"></script>
-  <script type="module" src="./pokemon-guide.js?v=20260927-speed2"></script>
+  <script type="module" src="./tournament.js?v=20260927-speed3"></script>
+  <script type="module" src="./pokemon-guide.js?v=20260927-speed3"></script>
   <script type="module" src="./loveca-records.js"></script>
   <script type="module" src="./mahjong.js"></script>
   <script src="./loveca-card-browser.js"></script>
