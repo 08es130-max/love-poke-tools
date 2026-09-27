@@ -400,3 +400,11 @@ button,.nav-btn,.mini-btn,.column-reset,.lock-btn{touch-action:manipulation}
  .speed-control-panel{padding-left:11px!important;padding-right:11px!important}
  .speed-table-panel{padding-left:7px!important;padding-right:7px!important}
 }
+
+/* ===== Equal-speed groups ===== */
+.benchmark-row.speed-tie{background:#fff8fb}
+.benchmark-row.speed-tie-start{border-top:2px solid #e89ab5!important}
+.benchmark-row.speed-tie-end{border-bottom:2px solid #e89ab5!important}
+.speed-tie-badge{display:inline-block!important;width:max-content;margin:1px 0 0;padding:1px 4px;border-radius:999px;background:#f7dce6;color:#a23e61!important;font-size:6px!important;font-weight:900;line-height:1.25}
+.benchmark-row.speed-tie-target{background:#ffe8f0!important;box-shadow:inset 3px 0 0 #ef4f83}
+.benchmark-row.speed-tie-target .speed-rank,.benchmark-row.speed-tie-target>span:nth-child(4){color:#c92f63;font-weight:1000}
