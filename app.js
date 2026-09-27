@@ -990,6 +990,20 @@ function buildManualPokemonInputs(){
 buildManualPokemonInputs();
 
 
+const APP_RELEASE='0.9.10';
+async function ensureLatestRelease(){
+  try{
+    const res=await fetch('./version.json?t='+Date.now(),{cache:'no-store'});
+    if(!res.ok)return;
+    const remote=await res.json();
+    if(remote.version&&remote.version!==APP_RELEASE){
+      const regs=await navigator.serviceWorker?.getRegistrations?.()||[];
+      await Promise.all(regs.map(reg=>reg.update().catch(()=>{})));
+      const url=new URL(location.href);url.searchParams.set('_release',remote.version);location.replace(url.href);
+    }
+  }catch{}
+}
+window.addEventListener('pageshow',()=>ensureLatestRelease());
 if('serviceWorker' in navigator){
   let reloadingForUpdate=false;
   navigator.serviceWorker.addEventListener('controllerchange',()=>{
