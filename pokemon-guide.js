@@ -382,8 +382,14 @@ async function identifyPhotoPokemon(){
 document.addEventListener('click',e=>{const b=e.target.closest('[data-photo-pokemon]');if(!b)return;$('#statPhotoPokemon').value=b.dataset.photoPokemon;document.querySelectorAll('.photo-candidate').forEach(x=>x.classList.toggle('selected',x===b))});
 $('#statPhotoIdentify')?.addEventListener('click',identifyPhotoPokemon);
 
-$('#statPhotoPickBtn')?.addEventListener('click',()=>$('#statPhotoInput')?.click());
-$('#statPhotoInput')?.addEventListener('change',async e=>{const f=e.target.files?.[0];if(!f)return;const pv=$('#statPhotoPreview'),box=$('#statPhotoConfirm'),url=URL.createObjectURL(f);pv.classList.remove('hidden');pv.innerHTML='<img src="'+url+'" alt="能力画面"><p id="statPhotoOcrStatus" class="hint">写真を読み取っています…</p>';box.classList.remove('hidden');try{if(!window.Tesseract)throw new Error('ocr');const rec=await window.Tesseract.recognize(f,'jpn+eng',{logger:m=>{const s=$('#statPhotoOcrStatus');if(s&&m.status==='recognizing text')s.textContent='写真を読み取っています… '+Math.round((m.progress||0)*100)+'%'}});parsePhotoText(rec.data?.text||'');$('#statPhotoOcrStatus').textContent='読み取り完了。能力値・特性を確認しています…';await identifyPhotoPokemon();$('#statPhotoOcrStatus').textContent='読み取り完了。候補と数値を確認・訂正してから計算してください。'}catch(err){$('#statPhotoOcrStatus').textContent='自動読み取りに失敗しました。下の欄を入力すれば計算できます。'}});
+async function handleStatPhotoFile(f){
+ if(!f)return;const pv=$('#statPhotoPreview'),box=$('#statPhotoConfirm'),url=URL.createObjectURL(f);pv.classList.remove('hidden');pv.innerHTML='<img src="'+url+'" alt="能力画面"><p id="statPhotoOcrStatus" class="hint">写真を読み取っています…</p>';box.classList.remove('hidden');
+ try{if(!window.Tesseract)throw new Error('ocr');const rec=await window.Tesseract.recognize(f,'jpn+eng',{logger:m=>{const s=$('#statPhotoOcrStatus');if(s&&m.status==='recognizing text')s.textContent='写真を読み取っています… '+Math.round((m.progress||0)*100)+'%'}});parsePhotoText(rec.data?.text||'');$('#statPhotoOcrStatus').textContent='読み取り完了。能力値・特性を確認しています…';await identifyPhotoPokemon();$('#statPhotoOcrStatus').textContent='読み取り完了。候補と数値を確認・訂正してから計算してください。'}catch(err){$('#statPhotoOcrStatus').textContent='自動読み取りに失敗しました。下の欄を入力すれば計算できます。'}
+}
+$('#statPhotoCameraBtn')?.addEventListener('click',()=>$('#statPhotoCameraInput')?.click());
+$('#statPhotoLibraryBtn')?.addEventListener('click',()=>$('#statPhotoLibraryInput')?.click());
+$('#statPhotoCameraInput')?.addEventListener('change',async e=>{await handleStatPhotoFile(e.target.files?.[0]);e.target.value=''});
+$('#statPhotoLibraryInput')?.addEventListener('change',async e=>{await handleStatPhotoFile(e.target.files?.[0]);e.target.value=''});
 $('#statPhotoCalculate')?.addEventListener('click',calculatePhotoEv);
 
 const BUILD_MEMO_KEY='lovePokeBuildMemosV1';
