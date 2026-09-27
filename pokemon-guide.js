@@ -331,7 +331,7 @@ $('#exportBuildMemos')?.addEventListener('click',()=>{
  const payload={app:'love-poke-tools',kind:'build-memos',version:1,exportedAt:new Date().toISOString(),memos:loadBuildMemos()};
  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
  const d=new Date(),stamp=`${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
- a.href=url;a.download=`love-poke-build-memos-${stamp}.json`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ a.href=url;a.download=`ラブカポケモン_育成メモバックアップ_${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}.json`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
  setBuildBackupStatus(`バックアップを保存しました（${payload.memos.length}件）。`);
 });
 $('#importBuildMemos')?.addEventListener('click',()=>$('#importBuildMemosFile')?.click());
