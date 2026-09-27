@@ -372,3 +372,31 @@ button,.nav-btn,.mini-btn,.column-reset,.lock-btn{touch-action:manipulation}
 .speed-table-scroll .speed-table-head,.benchmark-row{grid-template-columns:45px minmax(130px,1fr) 60px 70px 70px 100px 120px}
 .benchmark-row.target-line-near{background:#fff4f8}.speed-ability-value{display:flex;flex-direction:column;font-weight:900}.speed-ability-value small{font-size:8px;color:#8b7780}
 @media(max-width:560px){.speed-list-filters{grid-template-columns:1fr 1fr}.speed-list-filters label:last-child{grid-column:1/-1}.speed-line-around{grid-template-columns:1fr}.speed-target-controls{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+
+/* ===== Mobile speed layout compact fix ===== */
+.speed-sv-toggle{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:center!important;gap:7px!important;min-height:38px!important;padding:7px 10px!important;border:1px solid #eadde3!important;border-radius:10px!important;background:#faf7f8!important;white-space:nowrap!important}
+.speed-sv-toggle input{width:18px!important;height:18px!important;margin:0!important;flex:0 0 auto!important}
+.speed-sv-toggle span{font-size:11px!important;font-weight:900!important;line-height:1!important}
+.speed-table-legend{font-size:9px;color:#887a80;line-height:1.4;padding:0 2px 5px}
+.speed-table-scroll{overflow-x:hidden!important;width:100%}
+.speed-table-scroll .speed-table-head,.speed-table-scroll .benchmark-row{min-width:0!important;width:100%!important}
+.speed-table-scroll .speed-table-head,.benchmark-row{grid-template-columns:28px minmax(76px,1fr) 32px 38px 38px 42px 48px!important;gap:1px!important}
+.speed-table-head{padding:5px 2px!important;font-size:9px!important}
+.benchmark-row{padding:7px 2px!important;font-size:10px!important}
+.benchmark-row .speed-rank{font-size:10px!important}
+.benchmark-row .speed-name strong{font-size:10px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.benchmark-row .speed-name small{font-size:7px!important}
+.benchmark-row .speed-base{font-size:9px!important}
+.benchmark-row>span:not(.speed-name){text-align:center;white-space:nowrap}
+.benchmark-row .speed-ability-value{font-size:9px!important;line-height:1.05}
+.benchmark-row .speed-ability-value small{font-size:6px!important;white-space:normal;line-height:1.05}
+@media(max-width:560px){
+ .speed-list-filters{grid-template-columns:minmax(0,1fr) 88px!important;gap:7px!important;align-items:end!important}
+ .speed-list-filters>label:first-child{grid-column:1!important}
+ .speed-list-filters>.speed-sv-toggle{grid-column:2!important}
+ .speed-list-filters>label:last-child{grid-column:1/-1!important}
+ .speed-list-filters select,.speed-list-filters input[type=search]{min-height:38px!important;padding:7px 9px!important}
+ .speed-control-panel{padding-left:11px!important;padding-right:11px!important}
+ .speed-table-panel{padding-left:7px!important;padding-right:7px!important}
+}
