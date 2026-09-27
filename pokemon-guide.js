@@ -358,8 +358,21 @@ async function consumeGuidedImage(src,previewUrl){
  for(const k of PHOTO_KEYS)$('#'+PHOTO_IDS[k]).value='';
  try{const vals=await readGuidedStats(src);for(const k of PHOTO_KEYS)if(vals[k])$('#'+PHOTO_IDS[k]).value=vals[k];const n=PHOTO_KEYS.filter(k=>vals[k]).length;$('#statPhotoOcrStatus').textContent='能力値 '+n+'/6 を取得しました。'+(n===6?'内容を確認して計算できます。':'空欄だけ確認してください。')}catch{$('#statPhotoOcrStatus').textContent='読み取りに失敗しました。空欄を入力してください。'}
 }
+function renderStatPokemonChoices(){
+ const input=$('#statPhotoPokemon'),box=$('#statPhotoPokemonChoices');if(!input||!box)return;
+ const q=input.value.trim();if(!q){box.classList.add('hidden');box.innerHTML='';return}
+ const rows=(window.POKEMON_DATA||[]).filter(p=>p.sv!==false&&p.name.includes(q)).slice(0,12);
+ box.innerHTML=rows.map(p=>'<button type="button" class="stat-pokemon-choice" data-name="'+p.name+'">'+p.name+'</button>').join('');
+ box.classList.toggle('hidden',!rows.length);
+}
+$('#statPhotoPokemon')?.addEventListener('input',renderStatPokemonChoices);
+$('#statPhotoPokemon')?.addEventListener('focus',renderStatPokemonChoices);
+$('#statPhotoPokemonChoices')?.addEventListener('pointerdown',e=>{const b=e.target.closest('.stat-pokemon-choice');if(!b)return;e.preventDefault();$('#statPhotoPokemon').value=b.dataset.name;$('#statPhotoPokemonChoices').classList.add('hidden');$('#statPhotoPokemon').blur()});
+document.addEventListener('pointerdown',e=>{if(!e.target.closest('.stat-pokemon-picker'))$('#statPhotoPokemonChoices')?.classList.add('hidden')});
 let statCameraStream=null;
 async function openStatCamera(){
+ document.activeElement?.blur();
+ await new Promise(r=>setTimeout(r,80));
  const poke=$('#statPhotoPokemon')?.value.trim(),lv=Number($('#statPhotoLevel')?.value);if(!poke||!lv||lv<1||lv>100){alert('先にポケモンとLvを入力してください。');return}
  try{statCameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}},audio:false});const v=$('#statCameraVideo');v.srcObject=statCameraStream;await v.play();$('#statCameraOverlay').classList.remove('hidden')}catch{alert('カメラを開けませんでした。カメラ権限を確認してください。')}
 }
