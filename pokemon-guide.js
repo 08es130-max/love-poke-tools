@@ -153,10 +153,11 @@ function adjustedSpeed(base){
   const nature=Number($('#speedNature')?.value)||1;
   let value=speedStat(base,level,iv,ev,nature);
   value=Math.floor(value*(Number($('#speedItem')?.value)||1));
-  value=Math.floor(value*(Number($('#speedAbility')?.value)||1));
+  const ability=$('#speedAbility')?.value||'1';
+  value=Math.floor(value*(ability==='quickfeet'?1.5:(Number(ability)||1)));
   value=Math.floor(value*rankMultiplier($('#speedRank')?.value));
   if($('#speedTailwind')?.checked)value*=2;
-  if($('#speedParalysis')?.checked)value=Math.floor(value*.5);
+  if($('#speedParalysis')?.checked&&ability!=='quickfeet')value=Math.floor(value*.5);
   return Math.max(1,Math.floor(value));
 }
 function tournamentPokemonIds(){
@@ -164,7 +165,17 @@ function tournamentPokemonIds(){
   if(value==='all')return null;
   const tournament=(window.getLovePokeSpeedTournaments?.()||[]).find(t=>String(t.id)===value);
   if(!tournament)return new Set();
-  return new Set((tournament.players||[]).flatMap(p=>p.pokemon||[]).map(p=>Number(p.id)).filter(Number.isFinite));
+  const ids=[];
+  for(const snapshot of (tournament.players||[]).flatMap(p=>p.pokemon||[])){
+    const full=(window.POKEMON_DATA||[]).find(p=>Number(p.id)===Number(snapshot.id)&&String(p.formKey||'')===String(snapshot.formKey||''))||
+      (window.POKEMON_DATA||[]).find(p=>Number(p.id)===Number(snapshot.id))||snapshot;
+    const finals=window.getLovePokeFinalEvolutionList?.(full)||[];
+    if(finals.length){
+      const best=finals.reduce((a,b)=>(window.POKEMON_STATS?.[String(b.id)]?.bst||0)>(window.POKEMON_STATS?.[String(a.id)]?.bst||0)?b:a,finals[0]);
+      ids.push(Number(best.id));
+    }else ids.push(Number(snapshot.id));
+  }
+  return new Set(ids.filter(Number.isFinite));
 }
 function speedPokemonRows(){
   const allowed=tournamentPokemonIds();
