@@ -344,19 +344,21 @@ async function ocrGuidedNumber(src,rect){
  const d=g.getImageData(0,0,c.width,c.height);for(let i=0;i<d.data.length;i+=4){const v=.299*d.data[i]+.587*d.data[i+1]+.114*d.data[i+2],q=v>155?255:0;d.data[i]=d.data[i+1]=d.data[i+2]=q}g.putImageData(d,0,0);
  const rec=await window.Tesseract.recognize(c,'eng',{tessedit_char_whitelist:'0123456789',tessedit_pageseg_mode:'7'}),m=String(rec.data?.text||'').match(/\d{1,3}/);return m?Number(m[0]):null;
 }
-const GUIDED_STAT_RECTS={
- hp:[.38,.00,.24,.16],spAttack:[.00,.30,.24,.16],attack:[.76,.30,.24,.16],
- spDefense:[.00,.60,.24,.16],defense:[.76,.60,.24,.16],speed:[.38,.82,.24,.16]
-};
-async function readGuidedStats(src){
+function currentGuidedStatRects(){
+ const guide=$('#statCameraOverlay .stat-camera-guide'),gr=guide?.getBoundingClientRect();
+ if(!guide||!gr?.width||!gr?.height)return null;
+ const sels={hp:'.ghp',spAttack:'.gspa',attack:'.gatk',spDefense:'.gspd',defense:'.gdef',speed:'.gspe'};
+ return Object.fromEntries(Object.entries(sels).map(([k,sel])=>{const r=guide.querySelector(sel).getBoundingClientRect();return[k,[(r.left-gr.left)/gr.width,(r.top-gr.top)/gr.height,r.width/gr.width,r.height/gr.height]]}));
+}
+async function readGuidedStats(src,rects){
  const out={};
- for(const [k,r] of Object.entries(GUIDED_STAT_RECTS)){const n=await ocrGuidedNumber(src,r);if(n&&n>=10&&n<=999)out[k]=n}
+ for(const [k,r] of Object.entries(rects||{})){const n=await ocrGuidedNumber(src,r);if(n&&n>=10&&n<=999)out[k]=n}
  return out;
 }
-async function consumeGuidedImage(src,previewUrl){
+async function consumeGuidedImage(src,previewUrl,rects){
  const pv=$('#statPhotoPreview'),box=$('#statPhotoConfirm');pv.classList.remove('hidden');pv.innerHTML='<img src="'+previewUrl+'" alt="能力六角形"><p id="statPhotoOcrStatus" class="hint">6つの能力値を読み取っています…</p>';box.classList.remove('hidden');
  for(const k of PHOTO_KEYS)$('#'+PHOTO_IDS[k]).value='';
- try{const vals=await readGuidedStats(src);for(const k of PHOTO_KEYS)if(vals[k])$('#'+PHOTO_IDS[k]).value=vals[k];const n=PHOTO_KEYS.filter(k=>vals[k]).length;$('#statPhotoOcrStatus').textContent='能力値 '+n+'/6 を取得しました。'+(n===6?'内容を確認して計算できます。':'空欄だけ確認してください。')}catch{$('#statPhotoOcrStatus').textContent='読み取りに失敗しました。空欄を入力してください。'}
+ try{const vals=await readGuidedStats(src,rects);for(const k of PHOTO_KEYS)if(vals[k])$('#'+PHOTO_IDS[k]).value=vals[k];const n=PHOTO_KEYS.filter(k=>vals[k]).length;$('#statPhotoOcrStatus').textContent='能力値 '+n+'/6 を取得しました。'+(n===6?'内容を確認して計算できます。':'空欄だけ確認してください。')}catch{$('#statPhotoOcrStatus').textContent='読み取りに失敗しました。空欄を入力してください。'}
 }
 function renderStatPokemonChoices(){
  const input=$('#statPhotoPokemon'),box=$('#statPhotoPokemonChoices');if(!input||!box)return;
@@ -384,7 +386,7 @@ $('#statCameraShutter')?.addEventListener('click',async()=>{
  const vw=v.videoWidth,vh=v.videoHeight,scale=Math.min(vr.width/vw,vr.height/vh),drawW=vw*scale,drawH=vh*scale,offX=vr.left+(vr.width-drawW)/2,offY=vr.top+(vr.height-drawH)/2;
  const sx=Math.max(0,(gr.left-offX)/scale),sy=Math.max(0,(gr.top-offY)/scale),sw=Math.min(vw-sx,gr.width/scale),sh=Math.min(vh-sy,gr.height/scale);
  const canvas=document.createElement('canvas');canvas.width=Math.round(sw);canvas.height=Math.round(sh);canvas.getContext('2d').drawImage(v,sx,sy,sw,sh,0,0,canvas.width,canvas.height);
- closeStatCamera();await consumeGuidedImage(canvas,canvas.toDataURL('image/jpeg',.94));
+ const rects=currentGuidedStatRects();closeStatCamera();await consumeGuidedImage(canvas,canvas.toDataURL('image/jpeg',.94),rects);
 });
 $('#statPhotoCalculate')?.addEventListener('click',calculatePhotoEv);
 
