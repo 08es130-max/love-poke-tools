@@ -413,10 +413,12 @@ async function readGuidedStats(src,rects){
    if(valid.length)out[k]=valid[0];
    continue;
   }else if(k==='spDefense'){
-   // D sits close to the left edge/hex point; give its number more horizontal room.
-   rois.push({r:[r[0]+r[2]*.08,r[1]+r[3]*.46,r[2]*.78,r[3]*.48],w:7});
-   rois.push({r:[r[0]+r[2]*.03,r[1]+r[3]*.39,r[2]*.90,r[3]*.56],w:4});
-   rois.push({r:numericRect(k,r),w:2});
+   // D only: its displayed number sits lower/left than the generic crop.
+   // Keep the other five stat OCR paths untouched.
+   rois.push({r:[r[0]+r[2]*.02,r[1]+r[3]*.52,r[2]*.72,r[3]*.40],w:10});
+   rois.push({r:[r[0],r[1]+r[3]*.46,r[2]*.78,r[3]*.46],w:7});
+   rois.push({r:[r[0]+r[2]*.08,r[1]+r[3]*.50,r[2]*.68,r[3]*.38],w:5});
+   rois.push({r:numericRect(k,r),w:1});
   }else{
    // Tight number crops are authoritative; wider crops only rescue difficult captures.
    rois.push({r:numericRect(k,r),w:6});
@@ -440,7 +442,8 @@ function detectNatureMarkers(src,rects){
  for(const k of keys){
   const r=rects?.[k];if(!r)continue;
   let rx=r[0],ry=r[1],rw=r[2],rh=r[3];
-  if(k==='spAttack'||k==='spDefense'){rx=r[0]+r[2]*.62;rw=r[2]*.38;ry=r[1]+r[3]*.12;rh=r[3]*.76}
+  if(k==='spAttack'){rx=r[0]+r[2]*.68;rw=r[2]*.30;ry=r[1]+r[3]*.20;rh=r[3]*.58}
+  else if(k==='spDefense'){rx=r[0]+r[2]*.68;rw=r[2]*.30;ry=r[1]+r[3]*.20;rh=r[3]*.58}
   else if(k==='attack'||k==='defense'){rx=r[0];rw=r[2]*.38;ry=r[1]+r[3]*.12;rh=r[3]*.76}
   else {rx=r[0]+r[2]*.20;rw=r[2]*.60;ry=r[1];rh=r[3]*.42}
   const cc=document.createElement('canvas');cc.width=Math.max(36,Math.round(sw*rw));cc.height=Math.max(36,Math.round(sh*rh));
