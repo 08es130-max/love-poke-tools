@@ -389,20 +389,21 @@ async function readGuidedStats(src,rects){
  const out={},p=photoPoke(),st=p&&window.POKEMON_STATS?.[String(p.id)],lv=Math.max(1,Math.min(100,Number($('#statPhotoLevel')?.value)||50));
  for(const [k,r] of Object.entries(rects||{})){
   const rois=[numericRect(k,r)];
-  if(k==='spDefense'){
-   rois.push([r[0]+r[2]*.08,r[1]+r[3]*.40,r[2]*.82,r[3]*.52]);
-   rois.push([r[0]+r[2]*.14,r[1]+r[3]*.47,r[2]*.72,r[3]*.43]);
-   rois.push([r[0]+r[2]*.20,r[1]+r[3]*.53,r[2]*.62,r[3]*.35]);
-   rois.push([r[0]+r[2]*.10,r[1]+r[3]*.57,r[2]*.78,r[3]*.30]);
+  if(k==='hp'){
+   rois.push([r[0]+r[2]*.06,r[1]+r[3]*.40,r[2]*.88,r[3]*.55]);
+   rois.push([r[0]+r[2]*.18,r[1]+r[3]*.52,r[2]*.70,r[3]*.40]);
+  }else{
+   rois.push([r[0]+r[2]*.08,r[1]+r[3]*.40,r[2]*.84,r[3]*.52]);
+   rois.push([r[0]+r[2]*.13,r[1]+r[3]*.46,r[2]*.74,r[3]*.46]);
+   rois.push([r[0]+r[2]*.20,r[1]+r[3]*.53,r[2]*.62,r[3]*.36]);
   }
   const merged=[];
   for(const roi of rois){const xs=await ocrGuidedNumber(src,roi,k==='hp');if(xs?.length)merged.push(...xs)}
   if(!merged.length)continue;
-  const freq=new Map();for(const v of merged)freq.set(v,(freq.get(v)||0)+1);
-  const candidates=[...freq.entries()].sort((a,b)=>b[1]-a[1]).map(x=>x[0]);
-  const possible=st?possiblePhotoStatValues(st[k],k,lv):null;
-  const n=candidates.find(v=>!possible||possible.has(v));
-  if(n&&n>=10&&n<=999)out[k]=n;
+  const possible=st?possiblePhotoStatValues(st[k],k,lv):null,freq=new Map();
+  for(const v of merged)if(!possible||possible.has(v))freq.set(v,(freq.get(v)||0)+1);
+  const ranked=[...freq.entries()].sort((a,b)=>b[1]-a[1]);
+  if(ranked.length)out[k]=ranked[0][0];
  }
  return out;
 }
@@ -410,25 +411,32 @@ function detectNatureMarkers(src,rects){
  const sw=src.width||src.videoWidth,sh=src.height||src.videoHeight,keys=['attack','defense','spAttack','spDefense','speed'],scores=[];
  for(const k of keys){
   const r=rects?.[k];if(!r)continue;
-  // SV's nature arrow sits on the hexagon-facing edge of each label/value region.
   let rx=r[0],ry=r[1],rw=r[2],rh=r[3];
-  if(k==='spAttack'||k==='spDefense'){rx=r[0]+r[2]*.68;rw=r[2]*.32;ry=r[1]+r[3]*.18;rh=r[3]*.64}
-  else if(k==='attack'||k==='defense'){rx=r[0];rw=r[2]*.32;ry=r[1]+r[3]*.18;rh=r[3]*.64}
-  else if(k==='speed'){rx=r[0]+r[2]*.25;rw=r[2]*.50;ry=r[1];rh=r[3]*.38}
-  const cc=document.createElement('canvas');cc.width=Math.max(30,Math.round(sw*rw));cc.height=Math.max(30,Math.round(sh*rh));
+  if(k==='spAttack'||k==='spDefense'){rx=r[0]+r[2]*.62;rw=r[2]*.38;ry=r[1]+r[3]*.12;rh=r[3]*.76}
+  else if(k==='attack'||k==='defense'){rx=r[0];rw=r[2]*.38;ry=r[1]+r[3]*.12;rh=r[3]*.76}
+  else {rx=r[0]+r[2]*.20;rw=r[2]*.60;ry=r[1];rh=r[3]*.42}
+  const cc=document.createElement('canvas');cc.width=Math.max(36,Math.round(sw*rw));cc.height=Math.max(36,Math.round(sh*rh));
   const g=cc.getContext('2d');g.drawImage(src,sw*rx,sh*ry,sw*rw,sh*rh,0,0,cc.width,cc.height);
-  const d=g.getImageData(0,0,cc.width,cc.height).data;let red=0,blue=0;
+  const d=g.getImageData(0,0,cc.width,cc.height).data;let red=0,blue=0,white=0;
   for(let i=0;i<d.length;i+=4){
    const R=d[i],G=d[i+1],B=d[i+2];
    if(R>=145&&R-G>=55&&R-B>=25&&B>=50)red++;
-   if(B>=165&&B-R>=75&&B-G>=55&&R<=120)blue++;
+   if(B>=160&&B-R>=65&&B-G>=45&&R<=130)blue++;
+   if(R>=185&&G>=185&&B>=175&&Math.max(R,G,B)-Math.min(R,G,B)<=38)white++;
   }
-  scores.push({k,red,blue});
+  scores.push({k,red,blue,white});
  }
- const redRank=[...scores].sort((a,b)=>b.red-a.red),blueRank=[...scores].sort((a,b)=>b.blue-a.blue);
- const strong=(rank,color)=>rank[0]&&rank[0][color]>=3&&rank[0][color]>=Math.max(3,(rank[1]?.[color]||0)*1.35);
- const up=strong(redRank,'red')?redRank[0]:null;
- const down=strong(blueRank,'blue')&&blueRank[0].k!==up?.k?blueRank[0]:blueRank.find((x,i)=>i<2&&x.k!==up?.k&&x.blue>=3&&x.blue>=Math.max(3,(blueRank[2]?.blue||0)*1.35));
+ const redRank=[...scores].sort((a,b)=>b.red-a.red);
+ const up=redRank[0]?.red>=3?redRank[0]:null;
+ const others=scores.filter(x=>x.k!==up?.k);
+ // Four neutral stats have a white endpoint dot. The down stat has the blue marker instead.
+ // Prefer the one with the weakest white-dot evidence; blue pixels only break close calls.
+ const downRank=[...others].sort((a,b)=>(a.white-b.white)||((b.blue)-(a.blue)));
+ let down=downRank[0]||null;
+ if(down&&downRank[1]&&Math.abs(down.white-downRank[1].white)<=2){
+  const blueRank=[...others].sort((a,b)=>b.blue-a.blue);
+  if(blueRank[0]?.blue>=3)down=blueRank[0];
+ }
  return{up:up?.k||'',down:down?.k||''};
 }
 async function consumeGuidedImage(src,previewUrl,rects){
