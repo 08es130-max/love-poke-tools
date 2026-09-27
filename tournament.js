@@ -351,7 +351,7 @@ function forecastHtml(tournament){
     <div class="forecast-list">${rows.map((row,index)=>{
       const a=row.analysis;
       const typeKanji={NORMAL:'無',FIRE:'炎',WATER:'水',ELECTRIC:'電',GRASS:'草',ICE:'氷',FIGHTING:'闘',POISON:'毒',GROUND:'地',FLYING:'飛',PSYCHIC:'超',BUG:'虫',ROCK:'岩',GHOST:'霊',DRAGON:'竜',DARK:'悪',STEEL:'鋼',FAIRY:'妖'};
-      const exposed=(a.exposedTypes||[]).slice(0,3).map(x=>`${typeKanji[x.type]||x.type} 弱${x.weak}/受${x.answers}`).join('・');
+      const exposed=(a.exposedTypes||[]).slice(0,3).map(x=>`${typeKanji[String(x.type).toUpperCase()]||x.type} 弱${x.weak}/受${x.answers}`).join('・');
       const weakness=exposed?`要注意：${exposed}`:'タイプ補完：良好';
       return `<article class="forecast-card">
         <div class="forecast-rank">${index+1}番人気</div>
