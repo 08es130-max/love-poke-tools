@@ -456,3 +456,12 @@ button,.nav-btn,.mini-btn,.column-reset,.lock-btn{touch-action:manipulation}
 .stat-camera-guide .ghp{left:37%;top:0}.stat-camera-guide .gspa{left:0;top:31%}.stat-camera-guide .gatk{left:74%;top:31%}.stat-camera-guide .gspd{left:0;top:61%}.stat-camera-guide .gdef{left:74%;top:61%}.stat-camera-guide .gspe{left:37%;top:83%}
 .stat-camera-guide .guide-hex{position:absolute;left:29%;top:19%;width:42%;height:64%;overflow:visible;opacity:.88}
 .stat-camera-guide .guide-hex polygon,.stat-camera-guide .guide-hex line{fill:none;stroke:#fff;stroke-width:3;vector-effect:non-scaling-stroke;filter:drop-shadow(0 1px 2px #0008)}
+
+/* v0.9.11: calibrate stat-number boxes to the SV hex screen */
+.stat-camera-guide .guide-box{width:20%;height:11%;align-items:center;padding-top:0}
+.stat-camera-guide .ghp{left:40%;top:20%}
+.stat-camera-guide .gspa{left:9%;top:34%}
+.stat-camera-guide .gatk{left:71%;top:34%}
+.stat-camera-guide .gspd{left:9%;top:58%}
+.stat-camera-guide .gdef{left:71%;top:58%}
+.stat-camera-guide .gspe{left:40%;top:72%}
