@@ -30,6 +30,12 @@
 
   <main>
     <div id="loveScreen">
+    <nav class="poke-subnav" aria-label="ラブカ機能">
+      <button type="button" class="love-tab active" data-love-pane="calculator">計算</button>
+      <button type="button" class="love-tab" data-love-pane="record">対戦記録</button>
+      <button type="button" class="love-tab" data-love-pane="stats">戦歴</button>
+    </nav>
+    <div id="loveCalculatorPane" class="love-pane">
     <section class="panel deck-bar">
       <div>
         <div class="label">使用デッキ</div>
@@ -127,6 +133,52 @@
       <h2>メモ</h2>
       <p>初版では「1枚のエール＝1種類のハート」、例外として「無色×2」を別カテゴリで扱います。データはこの端末内に保存されます。</p>
     </section>
+    </div>
+
+    <div id="loveRecordPane" class="love-pane hidden">
+      <section class="panel cloud-status-panel">
+        <div class="section-title-row"><h2>ラブカ 対戦記録</h2><span id="lovecaCloudBadge" class="badge">接続中</span></div>
+        <p id="lovecaCloudText" class="note">共有データへ接続しています。</p>
+      </section>
+      <section class="panel">
+        <div class="section-title-row"><h2>プレイヤー・デッキ登録</h2><button id="addLovecaPlayer" type="button" class="ghost-btn">プレイヤー追加</button></div>
+        <div id="lovecaPlayerSetup"></div>
+      </section>
+      <section class="panel">
+        <h2>対戦を記録</h2>
+        <label class="block-label">日付<input id="lovecaMatchDate" type="date"></label>
+        <div class="loveca-vs-grid">
+          <div class="loveca-side">
+            <h3>プレイヤーA</h3>
+            <label>プレイヤー<select id="lovecaPlayerA"></select></label>
+            <label>使用デッキ<select id="lovecaDeckA"></select></label>
+            <label>進行事故<textarea id="lovecaAccidentA" rows="2" placeholder="自由入力"></textarea></label>
+            <label>メモ<textarea id="lovecaMemoA" rows="3" placeholder="自由入力"></textarea></label>
+          </div>
+          <div class="loveca-side">
+            <h3>プレイヤーB</h3>
+            <label>プレイヤー<select id="lovecaPlayerB"></select></label>
+            <label>使用デッキ<select id="lovecaDeckB"></select></label>
+            <label>進行事故<textarea id="lovecaAccidentB" rows="2" placeholder="自由入力"></textarea></label>
+            <label>メモ<textarea id="lovecaMemoB" rows="3" placeholder="自由入力"></textarea></label>
+          </div>
+        </div>
+        <div class="label">対戦成績</div>
+        <div class="loveca-winner-row">
+          <button id="lovecaWinnerA" type="button" class="ghost-btn">A ○ / B ×</button>
+          <button id="lovecaWinnerB" type="button" class="ghost-btn">A × / B ○</button>
+        </div>
+        <button id="saveLovecaMatch" type="button" class="primary-btn wide-btn">対戦結果を保存</button>
+        <button id="cancelLovecaEdit" type="button" class="ghost-btn wide-btn hidden">編集をキャンセル</button>
+      </section>
+    </div>
+
+    <div id="loveStatsPane" class="love-pane hidden">
+      <section class="panel"><div class="section-title-row"><h2>ラブカ 戦歴</h2><span id="lovecaMatchCount" class="badge soft">0戦</span></div><div id="lovecaOverallStats"></div></section>
+      <section class="panel"><h2>プレイヤー・デッキ別</h2><div id="lovecaDeckStats"></div></section>
+      <section class="panel"><h2>対戦相手・相手デッキ別</h2><label class="block-label">表示するプレイヤー<select id="lovecaStatsPlayer"></select></label><div id="lovecaH2hStats"></div></section>
+      <section class="panel"><h2>対戦履歴</h2><div id="lovecaMatchHistory"></div></section>
+    </div>
     </div>
 
     <div id="pokeScreen" class="hidden">
@@ -379,6 +431,7 @@
   <script type="module" src="./app.js"></script>
   <script type="module" src="./tournament.js"></script>
   <script type="module" src="./pokemon-guide.js"></script>
+  <script type="module" src="./loveca-records.js"></script>
   <script type="module" src="./mahjong.js"></script>
   <script src="./loveca-card-browser.js"></script>
   <script src="./loveca-filter-selector.js"></script>
