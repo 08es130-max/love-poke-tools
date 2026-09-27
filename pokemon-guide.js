@@ -388,7 +388,7 @@ function currentGuidedStatRects(){
  const guide=$('#statCameraOverlay .stat-camera-guide'),gr=guide?.getBoundingClientRect();
  if(!guide||!gr?.width||!gr?.height)return null;
  const sels={hp:'.ghp',spAttack:'.gspa',attack:'.gatk',spDefense:'.gspd',defense:'.gdef',speed:'.gspe'};
- return Object.fromEntries(Object.entries(sels).map(([k,sel])=>{const r=guide.querySelector(sel).getBoundingClientRect(),h=(k==='defense'||k==='spDefense')?gr.height*.20:r.height;return[k,[(r.left-gr.left)/gr.width,(r.top-gr.top)/gr.height,r.width/gr.width,h/gr.height]]}));
+ return Object.fromEntries(Object.entries(sels).map(([k,sel])=>{const r=guide.querySelector(sel).getBoundingClientRect(),isBD=(k==='defense'||k==='spDefense'),h=isBD?gr.height*.20:r.height,top=isBD?r.top-gr.height*.07:r.top;return[k,[(r.left-gr.left)/gr.width,(top-gr.top)/gr.height,r.width/gr.width,h/gr.height]]}));
 }
 function numericRect(k,r){
  if(k==='hp')return[r[0]+r[2]*.12,r[1]+r[3]*.48,r[2]*.76,r[3]*.45];
@@ -438,8 +438,8 @@ function detectNatureMarkers(src,rects){
  for(const k of keys){
   const r=rects?.[k];if(!r)continue;
   let rx=r[0],ry=r[1],rw=r[2],rh=r[3];
-  if(k==='spAttack'){rx=r[0]+r[2]*.88;rw=r[2]*.22;ry=r[1]+r[3]*.34;rh=r[3]*.32}
-  else if(k==='spDefense'){rx=r[0]+r[2]*.88;rw=r[2]*.22;ry=r[1]+r[3]*.34;rh=r[3]*.32}
+  if(k==='spAttack'){rx=r[0]+r[2]*.90;rw=r[2]*.20;ry=r[1]+r[3]*.18;rh=r[3]*.34}
+  else if(k==='spDefense'){rx=r[0]+r[2]*.90;rw=r[2]*.20;ry=r[1]+r[3]*.18;rh=r[3]*.34}
   else if(k==='attack'||k==='defense'){rx=r[0];rw=r[2]*.38;ry=r[1]+r[3]*.12;rh=r[3]*.76}
   else {rx=r[0]+r[2]*.20;rw=r[2]*.60;ry=r[1];rh=r[3]*.42}
   const cc=document.createElement('canvas');cc.width=Math.max(36,Math.round(sw*rw));cc.height=Math.max(36,Math.round(sh*rh));
