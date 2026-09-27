@@ -316,3 +316,17 @@ button,.nav-btn,.mini-btn,.column-reset,.lock-btn{touch-action:manipulation}
   .guide-stat{display:inline-block;margin-top:8px}
   .guide-move-grid{grid-template-columns:1fr}
 }
+
+/* LoveCa shared battle records */
+.love-tab{border:1px solid #efd5df;background:white;color:#8c6473;border-radius:12px;padding:10px;font-weight:800}
+.love-tab.active{background:#f05a8a;color:#fff;border-color:#f05a8a}
+.loveca-vs-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.loveca-side{border:1px solid #eadde3;border-radius:14px;padding:12px;background:#fffafc}
+.loveca-side h3{margin-top:0}.loveca-side label{display:block;font-size:12px;color:#666;margin:9px 0}
+.loveca-side select,.loveca-side textarea{width:100%;margin-top:5px;border:1px solid #ddd;border-radius:10px;padding:9px;background:#fff;font:inherit}
+.loveca-winner-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0 12px}
+.loveca-winner-row .active{background:#f05a8a;color:#fff;border-color:#f05a8a;font-weight:900}
+.loveca-player-config{border:1px solid #eadde3;border-radius:14px;padding:10px;margin:9px 0;background:#fffafc}
+.loveca-config-head,.loveca-deck-edit{display:grid;grid-template-columns:1fr auto;gap:7px;margin:6px 0}
+.loveca-deck-edit{margin-left:18px}.loveca-history-note{font-size:12px;color:#666;margin-top:5px;line-height:1.5}
+@media(max-width:560px){.loveca-vs-grid{grid-template-columns:1fr}.loveca-side{padding:10px}}
