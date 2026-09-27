@@ -392,6 +392,9 @@ function currentGuidedStatRects(){
 }
 function numericRect(k,r){
  if(k==='hp')return[r[0]+r[2]*.12,r[1]+r[3]*.48,r[2]*.76,r[3]*.45];
+ // The lower B/D guide boxes are taller so their values sit safely inside the frame.
+ // Crop their lower-middle band explicitly; other four stats keep the proven crop.
+ if(k==='defense'||k==='spDefense')return[r[0]+r[2]*.14,r[1]+r[3]*.46,r[2]*.72,r[3]*.42];
  return[r[0]+r[2]*.16,r[1]+r[3]*.50,r[2]*.68,r[3]*.42];
 }
 function possiblePhotoStatValues(base,k,lv){
