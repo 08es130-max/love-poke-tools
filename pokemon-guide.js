@@ -352,7 +352,7 @@ function currentGuidedStatRects(){
 }
 async function readGuidedStats(src,rects){
  const out={};
- for(const [k,r] of Object.entries(rects||{})){const rr=k==='hp'?[r[0]+r[2]*.54,r[1],r[2]*.46,r[3]]:r;const n=await ocrGuidedNumber(src,rr);if(n&&n>=10&&n<=999)out[k]=n}
+ for(const [k,r] of Object.entries(rects||{})){const rr=k==='hp'?[r[0]+r[2]*.57,r[1],r[2]*.43,r[3]]:r;const n=await ocrGuidedNumber(src,rr);if(n&&n>=10&&n<=999)out[k]=n}
  return out;
 }
 async function consumeGuidedImage(src,previewUrl,rects){
