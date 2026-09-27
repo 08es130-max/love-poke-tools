@@ -326,13 +326,16 @@ $('#saveBuildMemo')?.addEventListener('click',()=>{
 });
 document.addEventListener('click',e=>{const b=e.target.closest('[data-build-delete]');if(!b)return;const rows=loadBuildMemos();rows.splice(Number(b.dataset.buildDelete),1);localStorage.setItem(BUILD_MEMO_KEY,JSON.stringify(rows));renderBuildMemos()});
 
+const BUILD_BACKUP_LAST_KEY='lovePokeBuildBackupLastAtV1';
+function formatBackupTime(iso){if(!iso)return '未作成';const d=new Date(iso);return Number.isNaN(d.getTime())?'未作成':d.toLocaleString('ja-JP',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}
 function setBuildBackupStatus(message){const el=$('#buildBackupStatus');if(el)el.textContent=message}
+function showBuildBackupLast(){setBuildBackupStatus(`最終バックアップ：${formatBackupTime(localStorage.getItem(BUILD_BACKUP_LAST_KEY))}　※大会データには共有されません。`)}
 $('#exportBuildMemos')?.addEventListener('click',()=>{
  const payload={app:'love-poke-tools',kind:'build-memos',version:1,exportedAt:new Date().toISOString(),memos:loadBuildMemos()};
  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
- const d=new Date(),stamp=`${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
- a.href=url;a.download=`ラブカポケモン_育成メモバックアップ_${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}.json`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
- setBuildBackupStatus(`バックアップを保存しました（${payload.memos.length}件）。`);
+ const d=new Date(),stamp=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}_${String(d.getHours()).padStart(2,'0')}-${String(d.getMinutes()).padStart(2,'0')}`;
+ a.href=url;a.download=`ラブカポケモン_育成メモバックアップ_${stamp}.json`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ localStorage.setItem(BUILD_BACKUP_LAST_KEY,d.toISOString());showBuildBackupLast();
 });
 $('#importBuildMemos')?.addEventListener('click',()=>$('#importBuildMemosFile')?.click());
 $('#importBuildMemosFile')?.addEventListener('change',async e=>{
@@ -346,4 +349,4 @@ $('#importBuildMemosFile')?.addEventListener('change',async e=>{
  }catch(err){setBuildBackupStatus(`復元できませんでした：${err.message}`)}
  finally{e.target.value=''}
 });
-refreshPartyAnalysisSelect();renderBuildMemos();
+refreshPartyAnalysisSelect();renderBuildMemos();showBuildBackupLast();
