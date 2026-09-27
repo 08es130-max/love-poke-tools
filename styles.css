@@ -512,3 +512,11 @@ button,.nav-btn,.mini-btn,.column-reset,.lock-btn{touch-action:manipulation}
 .stat-camera-guide .gspd{left:10%;top:55%;width:23%;height:15%}
 .stat-camera-guide .gdef{left:67%;top:55%;width:23%;height:15%}
 .stat-camera-guide .gspe{left:38.5%;top:73%;width:23%;height:15%}
+
+/* v0.9.19: pull recognition zones inward toward the hex */
+.stat-camera-guide .ghp{left:33%;top:15.5%;width:34%;height:13%}
+.stat-camera-guide .gspa{left:14%;top:32%;width:23%;height:15%}
+.stat-camera-guide .gatk{left:63%;top:32%;width:23%;height:15%}
+.stat-camera-guide .gspd{left:14%;top:55%;width:23%;height:15%}
+.stat-camera-guide .gdef{left:63%;top:55%;width:23%;height:15%}
+.stat-camera-guide .gspe{left:38.5%;top:69.5%;width:23%;height:18%}
