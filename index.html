@@ -324,18 +324,55 @@
 
 
       <div id="pokeGuidePane" class="poke-pane hidden">
-        <section class="panel">
-          <div class="section-title-row">
-            <h2>SV 図鑑・育成</h2>
-            <span class="badge ok">オフライン対応</span>
-          </div>
-          <p class="hint">ポケモンを検索すると、SV Ver.3.0.0（DLC込み）で覚えられる技を確認できます。抽選結果や大会のポケモン名からも直接開けます。</p>
-          <label class="block-label">ポケモン検索
-            <input id="guidePokemonSearch" type="search" placeholder="例：コノヨザル、カイリュー">
-          </label>
-          <div id="guidePokemonSuggestions" class="guide-suggestions"></div>
-        </section>
-        <section id="guidePokemonDetail" class="panel hidden"></section>
+        <nav class="guide-tool-nav" aria-label="育成ツール">
+          <button type="button" class="guide-tool-tab active" data-guide-tool="dex">図鑑・技</button>
+          <button type="button" class="guide-tool-tab" data-guide-tool="types">タイプ相性</button>
+          <button type="button" class="guide-tool-tab" data-guide-tool="speed">すばやさ比較</button>
+        </nav>
+        <div id="guideDexTool" class="guide-tool-pane">
+          <section class="panel">
+            <div class="section-title-row">
+              <h2>SV 図鑑・育成</h2>
+              <span class="badge ok">オフライン対応</span>
+            </div>
+            <p class="hint">ポケモンを検索すると、SV Ver.3.0.0（DLC込み）で覚えられる技を確認できます。抽選結果や大会のポケモン名からも直接開けます。</p>
+            <label class="block-label">ポケモン検索
+              <input id="guidePokemonSearch" type="search" placeholder="例：コノヨザル、カイリュー">
+            </label>
+            <div id="guidePokemonSuggestions" class="guide-suggestions"></div>
+          </section>
+          <section id="guidePokemonDetail" class="panel hidden"></section>
+        </div>
+        <div id="guideTypesTool" class="guide-tool-pane hidden">
+          <section class="panel">
+            <div class="section-title-row"><h2>タイプ相性表</h2><span class="badge soft">SV 18タイプ</span></div>
+            <p class="hint">縦が攻撃するタイプ、横が防御するタイプです。◎＝2倍、△＝0.5倍、×＝無効、空欄＝等倍。</p>
+            <div id="typeChartTable" class="type-chart-wrap"></div>
+          </section>
+        </div>
+        <div id="guideSpeedTool" class="guide-tool-pane hidden">
+          <section class="panel speed-control-panel">
+            <div class="section-title-row"><h2>すばやさ比較</h2><span id="speedResultCount" class="badge soft">—</span></div>
+            <p class="hint">実数値はSVの能力値計算式で算出します。大会を選ぶと、その大会で使用されたポケモンだけに絞り込めます。</p>
+            <div class="speed-controls">
+              <label>表示範囲<select id="speedTournamentFilter"><option value="all">全ポケモン</option></select></label>
+              <label>レベル<input id="speedLevel" type="number" min="1" max="100" value="50"></label>
+              <label>個体値<input id="speedIv" type="number" min="0" max="31" value="31"></label>
+              <label>努力値<input id="speedEv" type="number" min="0" max="252" step="4" value="252"></label>
+              <label>性格<select id="speedNature"><option value="1.1">上昇補正（1.1倍）</option><option value="1" selected>補正なし</option><option value="0.9">下降補正（0.9倍）</option></select></label>
+              <label>持ち物<select id="speedItem"><option value="1">なし</option><option value="1.5">こだわりスカーフ ×1.5</option><option value="0.5">くろいてっきゅう ×0.5</option></select></label>
+              <label>特性<select id="speedAbility"><option value="1">補正なし</option><option value="2">すいすい等 ×2</option><option value="1.5">はやあし ×1.5</option><option value="1.5">古代活性/クォークチャージ(S上昇) ×1.5</option><option value="0.5">スロースタート ×0.5</option></select></label>
+              <label>ランク補正<select id="speedRank"><option value="-6">-6</option><option value="-5">-5</option><option value="-4">-4</option><option value="-3">-3</option><option value="-2">-2</option><option value="-1">-1</option><option value="0" selected>±0</option><option value="1">+1</option><option value="2">+2</option><option value="3">+3</option><option value="4">+4</option><option value="5">+5</option><option value="6">+6</option></select></label>
+              <label class="switch-row speed-check"><span>おいかぜ ×2</span><input id="speedTailwind" type="checkbox"></label>
+              <label class="switch-row speed-check"><span>まひ ×0.5</span><input id="speedParalysis" type="checkbox"></label>
+              <label class="speed-search">ポケモン検索<input id="speedSearch" type="search" placeholder="名前で絞り込み"></label>
+            </div>
+          </section>
+          <section class="panel speed-table-panel">
+            <div class="speed-table-head"><span>順位</span><span>ポケモン</span><span>S種族値</span><span>実数値</span></div>
+            <div id="speedTable"></div>
+          </section>
+        </div>
       </div>
 
       <div id="pokeHistoryPane" class="poke-pane hidden">
