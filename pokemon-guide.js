@@ -218,11 +218,18 @@ function renderSpeedTable(){
   const root=$('#speedTable');if(!root)return;
   const rows=benchmarkRows(),target=targetSpeed();
   $('#speedResultCount').textContent=`${rows.length}体`;
+  const counts=rows.reduce((m,row)=>(m.set(row.fastest,(m.get(row.fastest)||0)+1),m),new Map());
   let last=null,rank=0;
   root.innerHTML=rows.map((row,index)=>{
-    if(row.fastest!==last){rank=index+1;last=row.fastest}
-    const near=target&&Math.abs(row.fastest-target.value)<=1;
-    return `<button type="button" class="speed-row benchmark-row ${near?'target-line-near':''}" data-poke-guide-id="${row.p.id}"><span class="speed-rank">${rank}</span><span class="speed-name"><strong>${escapeHtml(row.p.name)}</strong><small>No.${String(row.p.id).padStart(4,'0')}</small></span><span class="speed-base">S${row.base}</span><span>${row.fastest}</span><span>${row.neutral}</span><span>${row.scarf}</span><span class="speed-ability-value">${row.ability?`${row.abilityValue}<small>${row.ability[0]}</small>`:'—'}</span></button>`;
+    const groupCount=counts.get(row.fastest)||1;
+    const groupStart=index===0||rows[index-1].fastest!==row.fastest;
+    const groupEnd=index===rows.length-1||rows[index+1].fastest!==row.fastest;
+    if(groupStart){rank=index+1;last=row.fastest}
+    const targetSame=!!(target&&row.fastest===target.value);
+    const near=!!(target&&!targetSame&&Math.abs(row.fastest-target.value)<=1);
+    const classes=['speed-row','benchmark-row',groupCount>1?'speed-tie':'',groupStart&&groupCount>1?'speed-tie-start':'',groupEnd&&groupCount>1?'speed-tie-end':'',targetSame?'speed-tie-target':'',near?'target-line-near':''].filter(Boolean).join(' ');
+    const tieBadge=groupStart&&groupCount>1?`<small class="speed-tie-badge">同速 ${row.fastest}・${groupCount}体</small>`:'';
+    return `<button type="button" class="${classes}" data-poke-guide-id="${row.p.id}"><span class="speed-rank">${rank}</span><span class="speed-name"><strong>${escapeHtml(row.p.name)}</strong>${tieBadge}<small>No.${String(row.p.id).padStart(4,'0')}</small></span><span class="speed-base">S${row.base}</span><span>${row.fastest}</span><span>${row.neutral}</span><span>${row.scarf}</span><span class="speed-ability-value">${row.ability?`${row.abilityValue}<small>${row.ability[0]}</small>`:'—'}</span></button>`;
   }).join('')||'<p class="note">条件に該当するポケモンがいません。</p>';
   renderTargetResult(rows,target);
 }
