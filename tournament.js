@@ -207,11 +207,27 @@ function pokemonAnalysisProfile(p){
   };
 }
 function usageCoefficientFor(mon){
-  const rate=Number(window.POKEMON_USAGE_RATES?.[String(mon.final.id)]||0);
-  // Usage is a supporting signal, not the main strength score.
-  // 0% => x1.000, current top usage (~43%) => about x1.060.
-  const coefficient=1+0.06*(Math.log1p(rate)/Math.log1p(43));
-  return {rate,coefficient};
+  // Usage is the one evaluation that checks the entire evolution family rather
+  // than only the final evolution. If multiple family members are ranked, use
+  // the best (lowest) rank. This captures viable pre-evolutions such as Chansey.
+  const source=mon.source||mon.final;
+  const full=window.POKEMON_DATA?.find(item=>
+    Number(item.id)===Number(source?.id) &&
+    String(item.formKey||'')===String(source?.formKey||'')
+  ) || window.POKEMON_DATA?.find(item=>Number(item.id)===Number(source?.id)) || source;
+  const family=window.POKEMON_DATA?.filter(item=>item.evo===full?.evo) || [full];
+  const ranked=family.map(item=>({
+    pokemon:item,
+    rank:Number(window.POKEMON_USAGE_RANKS?.[item.name]||0)
+  })).filter(x=>x.rank>0&&x.rank<=150).sort((a,b)=>a.rank-b.rank);
+  const best=ranked[0]||null;
+  const rank=best?.rank||0;
+  // All top-150 Pokemon are treated as strong in the current singles metagame.
+  // Keep only three broad tiers; outside the top 150 receives no adjustment.
+  const coefficient=rank>0&&rank<=50?1.12:
+    rank<=100&&rank>0?1.10:
+    rank<=150&&rank>0?1.08:1;
+  return {rank,coefficient,matched:best?.pokemon||null};
 }
 function partyAnalysis(player){
   const mons=(player.pokemon||[]).map(pokemonAnalysisProfile);
@@ -259,9 +275,11 @@ function partyAnalysis(player){
     -typeSynergyPenalty;
   const usageRows=mons.map(usageCoefficientFor);
   const usageCoefficient=usageRows.reduce((s,x)=>s+x.coefficient,0)/usageRows.length;
-  const usageAverage=usageRows.reduce((s,x)=>s+x.rate,0)/usageRows.length;
+  const usageAverage=usageRows.reduce((s,x)=>s+(x.rank||0),0)/usageRows.length;
+  const usageRankedCount=usageRows.filter(x=>x.rank>0).length;
+  const usageBestRank=Math.min(...usageRows.filter(x=>x.rank>0).map(x=>x.rank),Infinity);
   const score=baseScore*usageCoefficient;
-  return {mons,score,baseScore,avgBst,avgAttack,avgBulk,avgSpeed,fastCount,coverage,maxWeak,weakTypes,weaknessRows,exposedTypes,typeSynergyPenalty,typeSynergyBonus,coveredWeaknesses,usageCoefficient,usageAverage};
+  return {mons,score,baseScore,avgBst,avgAttack,avgBulk,avgSpeed,fastCount,coverage,maxWeak,weakTypes,weaknessRows,exposedTypes,typeSynergyPenalty,typeSynergyBonus,coveredWeaknesses,usageCoefficient,usageAverage,usageRankedCount,usageBestRank};
 }
 function offensivePressure(a,b){
   if(!a.mons.length||!b.mons.length)return .5;
@@ -322,7 +340,7 @@ function forecastHtml(tournament){
         <div class="forecast-rank">${index+1}番人気</div>
         <div class="forecast-main"><strong>${escapeHtml(row.player.name)}</strong><span>予想優勝率 ${(row.probability*100).toFixed(1)}%</span></div>
         <div class="forecast-odds">${row.odds.toFixed(1)}倍</div>
-        <div class="forecast-stats">戦力 ${a.score.toFixed(1)} ／ 平均BST ${a.avgBst.toFixed(0)} ／ 火力 ${a.avgAttack.toFixed(0)} ／ 耐久 ${a.avgBulk.toFixed(0)} ／ 平均S ${a.avgSpeed.toFixed(0)} ／ 高速S100+ ${a.fastCount}匹 ／ 大会S上位加点 +${(a.speedRankBonus||0).toFixed(1)} ／ タイプ補完 +${(a.typeSynergyBonus||0).toFixed(1)}/-${(a.typeSynergyPenalty||0).toFixed(1)} ／ 一致弱点範囲 ${a.coverage}/18 ／ 使用率補正 ×${a.usageCoefficient.toFixed(3)} ／ ${escapeHtml(weakness)}</div>
+        <div class="forecast-stats">戦力 ${a.score.toFixed(1)} ／ 平均BST ${a.avgBst.toFixed(0)} ／ 火力 ${a.avgAttack.toFixed(0)} ／ 耐久 ${a.avgBulk.toFixed(0)} ／ 平均S ${a.avgSpeed.toFixed(0)} ／ 高速S100+ ${a.fastCount}匹 ／ 大会S上位加点 +${(a.speedRankBonus||0).toFixed(1)} ／ タイプ補完 +${(a.typeSynergyBonus||0).toFixed(1)}/-${(a.typeSynergyPenalty||0).toFixed(1)} ／ 一致弱点範囲 ${a.coverage}/18 ／ 使用率補正 ×${a.usageCoefficient.toFixed(3)}（TOP150系統 ${a.usageRankedCount||0}匹） ／ ${escapeHtml(weakness)}</div>
       </article>`;
     }).join('')}</div>`;
 }
