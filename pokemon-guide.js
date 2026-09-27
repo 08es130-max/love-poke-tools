@@ -371,9 +371,10 @@ async function ocrGuidedMaxHp(src,rect){
  const sw=src.width||src.videoWidth,sh=src.height||src.videoHeight,[x,y,w,h]=rect;
  // The SV HP line is "current / max". Crop only the right-hand max-value zone.
  const crops=[
-  [x+w*.55,y+h*.38,w*.40,h*.56],
-  [x+w*.50,y+h*.42,w*.46,h*.52],
-  [x+w*.58,y+h*.46,w*.36,h*.46]
+  // Keep all three digits of the max-HP value; previous crops started too far right.
+  [x+w*.46,y+h*.36,w*.50,h*.60],
+  [x+w*.43,y+h*.40,w*.54,h*.56],
+  [x+w*.49,y+h*.44,w*.47,h*.50]
  ],found=[];
  for(const cr of crops){
   const xs=await ocrGuidedNumber(src,cr,false);
@@ -459,15 +460,18 @@ function detectNatureMarkers(src,rects){
  // so do not search for a down marker at all.
  if(!up)return{up:'',down:''};
  const others=scores.filter(x=>x.k!==up.k);
- // Four neutral stats have a white endpoint dot. The down stat has the blue marker instead.
- // Prefer the one with the weakest white-dot evidence; blue pixels only break close calls.
- const downRank=[...others].sort((a,b)=>(a.white-b.white)||((b.blue)-(a.blue)));
- let down=downRank[0]||null;
- if(down&&downRank[1]&&Math.abs(down.white-downRank[1].white)<=2){
-  const blueRank=[...others].sort((a,b)=>b.blue-a.blue);
-  if(blueRank[0]?.blue>=3)down=blueRank[0];
+ // First trust a clearly isolated blue/down marker. In SV this is more specific than
+ // absence of a white neutral dot. White-dot elimination is only the fallback.
+ const blueRank=[...others].sort((a,b)=>b.blue-a.blue);
+ const blue1=blueRank[0],blue2=blueRank[1];
+ if(blue1&&blue1.blue>=3&&blue1.blue>=Math.max(3,(blue2?.blue||0)*1.30)){
+  return{up:up.k,down:blue1.k};
  }
- return{up:up?.k||'',down:down?.k||''};
+ // If blue is weak/ambiguous, four neutral stats should have a white endpoint dot.
+ // Choose the non-up stat with the weakest white-dot evidence.
+ const downRank=[...others].sort((a,b)=>(a.white-b.white)||((b.blue)-(a.blue)));
+ const down=downRank[0]||null;
+ return{up:up.k,down:down?.k||''};
 }
 async function consumeGuidedImage(src,previewUrl,rects){
  const pv=$('#statPhotoPreview'),box=$('#statPhotoConfirm');pv.classList.remove('hidden');pv.innerHTML='<img src="'+previewUrl+'" alt="能力六角形"><p id="statPhotoOcrStatus" class="hint">6つの能力値を読み取っています…</p>';box.classList.remove('hidden');
