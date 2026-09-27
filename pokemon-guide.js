@@ -386,6 +386,22 @@ $('#statPhotoIdentify')?.addEventListener('click',identifyPhotoPokemon);
 async function rotatedPhotoCanvas(file,deg){
  const bmp=await createImageBitmap(file),swap=Math.abs(deg)%180===90,c=document.createElement('canvas');c.width=swap?bmp.height:bmp.width;c.height=swap?bmp.width:bmp.height;const g=c.getContext('2d');g.translate(c.width/2,c.height/2);g.rotate(deg*Math.PI/180);g.drawImage(bmp,-bmp.width/2,-bmp.height/2);bmp.close();return c;
 }
+function cropPhotoRegion(src,x,y,w,h,scale=4){
+ const c=document.createElement('canvas'),sw=src.width||src.naturalWidth,sh=src.height||src.naturalHeight;c.width=Math.max(1,Math.round(sw*w*scale));c.height=Math.max(1,Math.round(sh*h*scale));const g=c.getContext('2d');g.imageSmoothingEnabled=false;g.drawImage(src,sw*x,sh*y,sw*w,sh*h,0,0,c.width,c.height);const d=g.getImageData(0,0,c.width,c.height);for(let i=0;i<d.data.length;i+=4){const v=.299*d.data[i]+.587*d.data[i+1]+.114*d.data[i+2],q=v>150?255:0;d.data[i]=d.data[i+1]=d.data[i+2]=q}g.putImageData(d,0,0);return c;
+}
+async function ocrDigitsRegion(src,rect){
+ const crop=cropPhotoRegion(src,...rect),rec=await window.Tesseract.recognize(crop,'eng',{tessedit_char_whitelist:'0123456789',preserve_interword_spaces:'1'});const nums=String(rec.data?.text||'').match(/\d{1,3}/g)||[];return nums.map(Number).filter(n=>n>0&&n<=999);
+}
+async function readSvFixedStats(src){
+ /* SV status hex-chart, normalized after landscape rotation. Generous regions tolerate handheld framing. */
+ const regions={
+  hp:[.39,.10,.25,.15],attack:[.61,.24,.18,.18],defense:[.61,.55,.18,.18],
+  spAttack:[.22,.24,.20,.18],spDefense:[.22,.55,.20,.18],speed:[.41,.67,.22,.18],
+  level:[.02,.02,.28,.18]
+ },out={};
+ for(const [k,r] of Object.entries(regions)){const ns=await ocrDigitsRegion(src,r);if(ns.length)out[k]=k==='level'?ns.find(n=>n<=100):ns[ns.length-1]}
+ return out;
+}
 async function handleStatPhotoFile(f){
  if(!f)return;const pv=$('#statPhotoPreview'),box=$('#statPhotoConfirm'),url=URL.createObjectURL(f);pv.classList.remove('hidden');pv.innerHTML='<img src="'+url+'" alt="能力画面"><p id="statPhotoOcrStatus" class="hint">写真の向きを確認しています…</p>';box.classList.remove('hidden');
  $('#statPhotoLevel').value='';for(const k of PHOTO_KEYS)$('#'+PHOTO_IDS[k]).value='';$('#statPhotoAbility').value='';$('#statPhotoPokemon').value='';$('#statPhotoPokemonCandidates').innerHTML='';
@@ -398,8 +414,12 @@ async function handleStatPhotoFile(f){
    if(score.hits>=7)break;
   }
   parsePhotoText(best?.text||'',true);
-  const lv=$('#statPhotoLevel')?.value,s=$('#statPhotoOcrStatus');if(s)s.textContent='読み取り完了（採用向き '+(best?.deg||0)+'°）。'+(lv?'Lv.'+lv+'を読み取りました。':'Lvを読み取れませんでした。Lv欄を確認してください。');
-  if(lv)await identifyPhotoPokemon();
+  const landscape=best?.deg?await rotatedPhotoCanvas(f,best.deg):await rotatedPhotoCanvas(f,90),fixed=await readSvFixedStats(landscape);
+  if(fixed.level&&!$('#statPhotoLevel').value)$('#statPhotoLevel').value=fixed.level;
+  for(const k of PHOTO_KEYS)if(fixed[k]&&!$('#'+PHOTO_IDS[k]).value)$('#'+PHOTO_IDS[k]).value=fixed[k];
+  const lv=$('#statPhotoLevel')?.value,filled=PHOTO_KEYS.filter(k=>$('#'+PHOTO_IDS[k])?.value).length,s=$('#statPhotoOcrStatus');
+  if(s)s.textContent='読み取り完了。Lv '+(lv||'未取得')+' / 能力値 '+filled+'/6 を取得しました。'+(filled<6?'空欄だけ確認してください。':'内容を確認して計算できます。');
+  if(lv&&filled===6)await identifyPhotoPokemon();
  }catch(err){const s=$('#statPhotoOcrStatus');if(s)s.textContent='自動読み取りに失敗しました。Lvと能力値を確認して入力してください。'}
 }
 $('#statPhotoCameraBtn')?.addEventListener('click',()=>$('#statPhotoCameraInput')?.click());
