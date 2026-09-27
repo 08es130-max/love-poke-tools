@@ -185,6 +185,7 @@ function speedPokemonRows(){
     if(p.formKey||seen.has(Number(p.id)))return false;
     seen.add(Number(p.id));
     if(allowed&&!allowed.has(Number(p.id)))return false;
+    if($('#speedSvOnly')?.checked&&!p.sv)return false;
     if(q&&!p.name.includes(q))return false;
     return !!window.POKEMON_STATS?.[String(p.id)];
   }).map(p=>{
@@ -219,7 +220,7 @@ function showGuideTool(tool='dex'){
   if(tool==='speed'){refreshTournamentFilter();renderSpeedTable()}
 }
 document.querySelectorAll('.guide-tool-tab').forEach(b=>b.addEventListener('click',()=>showGuideTool(b.dataset.guideTool)));
-['speedTournamentFilter','speedLevel','speedIv','speedEv','speedNature','speedItem','speedAbility','speedRank','speedTailwind','speedParalysis','speedSearch'].forEach(id=>{
+['speedTournamentFilter','speedLevel','speedIv','speedEv','speedNature','speedItem','speedAbility','speedRank','speedTailwind','speedParalysis','speedSvOnly','speedSearch'].forEach(id=>{
   document.getElementById(id)?.addEventListener(id==='speedSearch'?'input':'change',renderSpeedTable);
 });
 window.addEventListener('lovePokeTournamentsUpdated',refreshTournamentFilter);
