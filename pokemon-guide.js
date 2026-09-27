@@ -367,6 +367,22 @@ async function ocrGuidedNumber(src,rect,isHp=false){
  const freq=new Map();for(const v of found)freq.set(v,(freq.get(v)||0)+1);
  return [...freq.entries()].sort((a,b)=>b[1]-a[1]).map(x=>x[0]);
 }
+async function ocrGuidedMaxHp(src,rect){
+ const sw=src.width||src.videoWidth,sh=src.height||src.videoHeight,[x,y,w,h]=rect;
+ // The SV HP line is "current / max". Crop only the right-hand max-value zone.
+ const crops=[
+  [x+w*.55,y+h*.38,w*.40,h*.56],
+  [x+w*.50,y+h*.42,w*.46,h*.52],
+  [x+w*.58,y+h*.46,w*.36,h*.46]
+ ],found=[];
+ for(const cr of crops){
+  const xs=await ocrGuidedNumber(src,cr,false);
+  if(xs?.length)found.push(...xs);
+ }
+ if(!found.length)return null;
+ const freq=new Map();for(const v of found)freq.set(v,(freq.get(v)||0)+1);
+ return [...freq.entries()].sort((a,b)=>b[1]-a[1]).map(x=>x[0]);
+}
 function currentGuidedStatRects(){
  const guide=$('#statCameraOverlay .stat-camera-guide'),gr=guide?.getBoundingClientRect();
  if(!guide||!gr?.width||!gr?.height)return null;
@@ -390,10 +406,11 @@ async function readGuidedStats(src,rects){
  for(const [k,r] of Object.entries(rects||{})){
   const rois=[];
   if(k==='hp'){
-   // Keep the whole HP value visible. OCR "current/max" together, then prefer
-   // the right-most number (maximum HP) instead of physically clipping digits.
-   rois.push({r:[r[0]+r[2]*.10,r[1]+r[3]*.43,r[2]*.82,r[3]*.52],w:7,hpPair:true});
-   rois.push({r:[r[0]+r[2]*.18,r[1]+r[3]*.48,r[2]*.72,r[3]*.45],w:4,hpPair:true});
+   const possible=st?possiblePhotoStatValues(st[k],k,lv):null;
+   const xs=await ocrGuidedMaxHp(src,r);
+   const valid=(xs||[]).filter(v=>!possible||possible.has(v));
+   if(valid.length)out[k]=valid[0];
+   continue;
   }else if(k==='spDefense'){
    // D sits close to the left edge/hex point; give its number more horizontal room.
    rois.push({r:[r[0]+r[2]*.08,r[1]+r[3]*.46,r[2]*.78,r[3]*.48],w:7});
@@ -410,8 +427,6 @@ async function readGuidedStats(src,rects){
   for(const item of rois){
    let xs=await ocrGuidedNumber(src,item.r,k==='hp');
    if(!xs?.length)continue;
-   // HP OCR can return both sides of "161/161"; the last recognized value is max HP.
-   if(k==='hp'&&item.hpPair)xs=[xs[xs.length-1]];
    xs.forEach((v,rank)=>{if(!possible||possible.has(v))score.set(v,(score.get(v)||0)+item.w/Math.max(1,rank+1))});
   }
   const ranked=[...score.entries()].sort((a,b)=>b[1]-a[1]);
