@@ -536,6 +536,6 @@ button,.nav-btn,.mini-btn,.column-reset,.lock-btn{touch-action:manipulation}
    Keep this block at EOF so legacy calibration rules cannot override it. */
 #statCameraOverlay .stat-camera-guide .gspd,
 #statCameraOverlay .stat-camera-guide .gdef{
-  top:80% !important;
+  top:66% !important;
   height:20% !important;
 }
