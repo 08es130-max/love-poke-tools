@@ -427,3 +427,5 @@ button,.nav-btn,.mini-btn,.column-reset,.lock-btn{touch-action:manipulation}
 
 .stat-photo-candidates{margin:9px 0}.photo-candidate-list{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.photo-candidate{border:1px solid #eadde3;border-radius:10px;background:#fff;padding:4px 2px;font-size:9px;min-width:0}.photo-candidate img{display:block;width:100%;height:58px;object-fit:contain}.photo-candidate span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.photo-candidate.selected{outline:2px solid var(--pink);background:#fff4f8}
 @media(max-width:480px){.photo-candidate-list{grid-template-columns:repeat(4,minmax(0,1fr))}.photo-candidate img{height:50px}}
+
+.stat-photo-source-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:9px 0}.stat-photo-source-actions button{width:100%}
