@@ -429,3 +429,5 @@ button,.nav-btn,.mini-btn,.column-reset,.lock-btn{touch-action:manipulation}
 @media(max-width:480px){.photo-candidate-list{grid-template-columns:repeat(4,minmax(0,1fr))}.photo-candidate img{height:50px}}
 
 .stat-photo-source-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:9px 0}.stat-photo-source-actions button{width:100%}
+
+.header-meta{display:flex;align-items:center;gap:8px}.app-version{font-size:10px;font-weight:800;letter-spacing:.04em;padding:2px 6px;border:1px solid #ffffff80;border-radius:999px;color:#fff;white-space:nowrap}
