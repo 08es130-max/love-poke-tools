@@ -470,14 +470,14 @@ function detectNatureMarkers(src,rects){
   scores.push({k,red,blue});
  }
  const rr=[...scores].sort((a,b)=>b.red-a.red),up=rr[0]&&rr[0].red>=2?rr[0]:null;
- if(!up)return{up:'',down:''};
+ if(!up)return{up:'',down:'',scores};
  const br=scores.filter(x=>x.k!==up.k).sort((a,b)=>b.blue-a.blue),b1=br[0],b2=br[1];
- return{up:up.k,down:b1&&b1.blue>=2&&b1.blue>=(b2?.blue||0)+1?b1.k:''};
+ return{up:up.k,down:b1&&b1.blue>=2&&b1.blue>=(b2?.blue||0)+1?b1.k:'',scores};
 }
 async function consumeGuidedImage(src,previewUrl,rects){
  const pv=$('#statPhotoPreview'),box=$('#statPhotoConfirm');pv.classList.remove('hidden');pv.innerHTML='<img src="'+previewUrl+'" alt="能力六角形"><p id="statPhotoOcrStatus" class="hint">6つの能力値を読み取っています…</p>';box.classList.remove('hidden');
  for(const k of PHOTO_KEYS)$('#'+PHOTO_IDS[k]).value='';
- try{const vals=await readGuidedStats(src,rects),nature=detectNatureMarkers(src,rects);for(const k of PHOTO_KEYS)if(vals[k])$('#'+PHOTO_IDS[k]).value=vals[k];$('#statPhotoNatureUp').value=nature.up||'';$('#statPhotoNatureDown').value=nature.down||'';const n=PHOTO_KEYS.filter(k=>vals[k]).length;$('#statPhotoOcrStatus').textContent='能力値 '+n+'/6 を取得しました。'+(nature.up||nature.down?' 性格補正も反映しました。':' 性格補正は確認してください。')}catch{$('#statPhotoOcrStatus').textContent='読み取りに失敗しました。空欄を入力してください。'}
+ try{const vals=await readGuidedStats(src,rects),nature=detectNatureMarkers(src,rects);for(const k of PHOTO_KEYS)if(vals[k])$('#'+PHOTO_IDS[k]).value=vals[k];$('#statPhotoNatureUp').value=nature.up||'';$('#statPhotoNatureDown').value=nature.down||'';const n=PHOTO_KEYS.filter(k=>vals[k]).length;const short={attack:'A',defense:'B',spAttack:'C',spDefense:'D',speed:'S'};const dbg=(nature.scores||[]).map(x=>short[x.k]+' 赤:'+x.red+' 青:'+x.blue).join(' / ');$('#statPhotoOcrStatus').textContent='能力値 '+n+'/6 を取得しました。'+(nature.up||nature.down?' 性格補正も反映しました。':' 性格補正は確認してください。')+(dbg?'［性格検出 '+dbg+' → ↑'+(short[nature.up]||'なし')+' ↓'+(short[nature.down]||'なし')+'］':'')}catch{$('#statPhotoOcrStatus').textContent='読み取りに失敗しました。空欄を入力してください。'}
 }
 function renderStatPokemonChoices(){
  const input=$('#statPhotoPokemon'),box=$('#statPhotoPokemonChoices');if(!input||!box)return;
