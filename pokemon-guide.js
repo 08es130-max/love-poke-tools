@@ -388,7 +388,7 @@ function currentGuidedStatRects(){
  const guide=$('#statCameraOverlay .stat-camera-guide'),gr=guide?.getBoundingClientRect();
  if(!guide||!gr?.width||!gr?.height)return null;
  const sels={hp:'.ghp',spAttack:'.gspa',attack:'.gatk',spDefense:'.gspd',defense:'.gdef',speed:'.gspe'};
- return Object.fromEntries(Object.entries(sels).map(([k,sel])=>{const r=guide.querySelector(sel).getBoundingClientRect(),isBD=(k==='defense'||k==='spDefense'),h=isBD?gr.height*.20:r.height,top=isBD?r.top-gr.height*.15:r.top;return[k,[(r.left-gr.left)/gr.width,(top-gr.top)/gr.height,r.width/gr.width,h/gr.height]]}));
+ return Object.fromEntries(Object.entries(sels).map(([k,sel])=>{const r=guide.querySelector(sel).getBoundingClientRect();return[k,[(r.left-gr.left)/gr.width,(r.top-gr.top)/gr.height,r.width/gr.width,r.height/gr.height]]}));
 }
 function numericRect(k,r){
  if(k==='hp')return[r[0]+r[2]*.12,r[1]+r[3]*.48,r[2]*.76,r[3]*.45];
