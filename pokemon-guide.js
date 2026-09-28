@@ -445,38 +445,37 @@ async function readGuidedStats(src,rects){
  return out;
 }
 function detectNatureMarkers(src,rects){
- const sw=src.width||src.videoWidth,sh=src.height||src.videoHeight,keys=['attack','defense','spAttack','spDefense','speed'],scores=[];
+ const sw=src.width||src.videoWidth,sh=src.height||src.videoHeight;
+ const keys=['attack','defense','spAttack','spDefense','speed'],scores=[];
+ // Only inspect the chart-facing edge of each stat box. This avoids treating
+ // the blue SV background as a down-nature marker.
+ const markerRoi={
+  attack:r=>[r[0],r[1]+r[3]*.22,r[2]*.22,r[3]*.36],
+  defense:r=>[r[0],r[1]+r[3]*.18,r[2]*.22,r[3]*.38],
+  spAttack:r=>[r[0]+r[2]*.78,r[1]+r[3]*.18,r[2]*.22,r[3]*.38],
+  spDefense:r=>[r[0]+r[2]*.78,r[1]+r[3]*.16,r[2]*.22,r[3]*.40],
+  speed:r=>[r[0]+r[2]*.40,r[1],r[2]*.20,r[3]*.24]
+ };
  for(const k of keys){
   const r=rects?.[k];if(!r)continue;
-  let rx=r[0],ry=r[1],rw=r[2],rh=r[3];
-  if(k==='spAttack'){rx=r[0]+r[2]*.86;rw=r[2]*.22;ry=r[1]+r[3]*.08;rh=r[3]*.28}
-  else if(k==='spDefense'){rx=r[0]+r[2]*.86;rw=r[2]*.22;ry=r[1]+r[3]*.08;rh=r[3]*.28}
-  else if(k==='attack'||k==='defense'){rx=r[0];rw=r[2]*.38;ry=r[1]+r[3]*.12;rh=r[3]*.76}
-  else {rx=r[0]+r[2]*.20;rw=r[2]*.60;ry=r[1];rh=r[3]*.42}
-  const cc=document.createElement('canvas');cc.width=Math.max(36,Math.round(sw*rw));cc.height=Math.max(36,Math.round(sh*rh));
+  const [rx,ry,rw,rh]=markerRoi[k](r);
+  const cc=document.createElement('canvas');
+  cc.width=Math.max(32,Math.round(sw*rw));cc.height=Math.max(32,Math.round(sh*rh));
   const g=cc.getContext('2d');g.drawImage(src,sw*rx,sh*ry,sw*rw,sh*rh,0,0,cc.width,cc.height);
-  const d=g.getImageData(0,0,cc.width,cc.height).data;let red=0,blue=0,white=0;
+  const d=g.getImageData(0,0,cc.width,cc.height).data;let red=0,blue=0;
   for(let i=0;i<d.length;i+=4){
    const R=d[i],G=d[i+1],B=d[i+2];
-   if(R>=145&&R-G>=55&&R-B>=25&&B>=50)red++;
-   if(B>=160&&B-R>=65&&B-G>=45&&R<=130)blue++;
-   if(R>=185&&G>=185&&B>=175&&Math.max(R,G,B)-Math.min(R,G,B)<=38)white++;
+   if(R>=145&&R-G>=55&&R-B>=25&&B>=45)red++;
+   // Chevron blue is bright/cyan compared with the dark navy background.
+   if(B>=155&&B-R>=55&&B-G>=25&&G>=75&&R<=145)blue++;
   }
-  scores.push({k,red,blue,white});
+  scores.push({k,red,blue});
  }
- const redRank=[...scores].sort((a,b)=>b.red-a.red);
- const up=redRank[0]?.red>=3?redRank[0]:null;
- // Nature modifiers always come as a pair. No red/up marker means neutral nature,
- // so do not search for a down marker at all.
+ const redRank=[...scores].sort((a,b)=>b.red-a.red),up=redRank[0]?.red>=3?redRank[0]:null;
  if(!up)return{up:'',down:''};
- const others=scores.filter(x=>x.k!==up.k);
- // Down nature is accepted only when a blue marker is directly detected.
- // Never infer a down stat from missing/weak white dots.
- const blueRank=[...others].sort((a,b)=>b.blue-a.blue);
+ const blueRank=scores.filter(x=>x.k!==up.k).sort((a,b)=>b.blue-a.blue);
  const blue1=blueRank[0],blue2=blueRank[1];
- if(blue1&&blue1.blue>=2&&blue1.blue>=Math.max(2,(blue2?.blue||0)*1.18)){
-  return{up:up.k,down:blue1.k};
- }
+ if(blue1&&blue1.blue>=2&&blue1.blue>=Math.max(2,(blue2?.blue||0)*1.12))return{up:up.k,down:blue1.k};
  return{up:up.k,down:''};
 }
 async function consumeGuidedImage(src,previewUrl,rects){
