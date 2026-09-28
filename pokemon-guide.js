@@ -452,10 +452,12 @@ function detectNatureMarkers(src,rects){
  const markerRoi={
   // Keep the horizontal slice tight to the chart-facing edge, but allow the
   // marker to move vertically with camera perspective / guide alignment.
-  attack:r=>[r[0],r[1]+r[3]*.06,r[2]*.28,r[3]*.72],
-  defense:r=>[r[0],r[1]+r[3]*.06,r[2]*.28,r[3]*.72],
-  spAttack:r=>[r[0]+r[2]*.72,r[1]+r[3]*.06,r[2]*.28,r[3]*.72],
-  spDefense:r=>[r[0]+r[2]*.72,r[1]+r[3]*.06,r[2]*.28,r[3]*.72],
+  // Nature chevrons sit just OUTSIDE the stat boxes on the chart-facing side.
+  // Extend slightly beyond each visible box so the marker is actually sampled.
+  attack:r=>[r[0]-r[2]*.18,r[1]+r[3]*.02,r[2]*.38,r[3]*.76],
+  defense:r=>[r[0]-r[2]*.18,r[1]+r[3]*.02,r[2]*.38,r[3]*.76],
+  spAttack:r=>[r[0]+r[2]*.80,r[1]+r[3]*.02,r[2]*.38,r[3]*.76],
+  spDefense:r=>[r[0]+r[2]*.80,r[1]+r[3]*.02,r[2]*.38,r[3]*.76],
   speed:r=>[r[0]+r[2]*.34,r[1],r[2]*.32,r[3]*.32]
  };
  for(const k of keys){
