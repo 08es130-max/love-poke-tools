@@ -450,11 +450,13 @@ function detectNatureMarkers(src,rects){
  // Only inspect the chart-facing edge of each stat box. This avoids treating
  // the blue SV background as a down-nature marker.
  const markerRoi={
-  attack:r=>[r[0],r[1]+r[3]*.22,r[2]*.22,r[3]*.36],
-  defense:r=>[r[0],r[1]+r[3]*.18,r[2]*.22,r[3]*.38],
-  spAttack:r=>[r[0]+r[2]*.78,r[1]+r[3]*.18,r[2]*.22,r[3]*.38],
-  spDefense:r=>[r[0]+r[2]*.78,r[1]+r[3]*.16,r[2]*.22,r[3]*.40],
-  speed:r=>[r[0]+r[2]*.40,r[1],r[2]*.20,r[3]*.24]
+  // Keep the horizontal slice tight to the chart-facing edge, but allow the
+  // marker to move vertically with camera perspective / guide alignment.
+  attack:r=>[r[0],r[1]+r[3]*.06,r[2]*.28,r[3]*.72],
+  defense:r=>[r[0],r[1]+r[3]*.06,r[2]*.28,r[3]*.72],
+  spAttack:r=>[r[0]+r[2]*.72,r[1]+r[3]*.06,r[2]*.28,r[3]*.72],
+  spDefense:r=>[r[0]+r[2]*.72,r[1]+r[3]*.06,r[2]*.28,r[3]*.72],
+  speed:r=>[r[0]+r[2]*.34,r[1],r[2]*.32,r[3]*.32]
  };
  for(const k of keys){
   const r=rects?.[k];if(!r)continue;
