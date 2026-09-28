@@ -447,32 +447,32 @@ async function readGuidedStats(src,rects){
 function detectNatureMarkers(src,rects){
  const sw=src.width||src.videoWidth,sh=src.height||src.videoHeight;
  const keys=['attack','defense','spAttack','spDefense','speed'],scores=[];
- // Read only small marker zones immediately beside each stat value.
- // Red = raised stat, cyan/blue = lowered stat in the SV summary screen.
+ // Nature arrows sit on the hexagon side of each stat block, not outside it.
+ // Sample a compact vertical strip around that inner edge.
  const markerRoi={
-  attack:r=>[r[0]-r[2]*.12,r[1]+r[3]*.18,r[2]*.24,r[3]*.42],
-  defense:r=>[r[0]-r[2]*.12,r[1]+r[3]*.18,r[2]*.24,r[3]*.42],
-  spAttack:r=>[r[0]+r[2]*.88,r[1]+r[3]*.18,r[2]*.24,r[3]*.42],
-  spDefense:r=>[r[0]+r[2]*.88,r[1]+r[3]*.18,r[2]*.24,r[3]*.42],
-  speed:r=>[r[0]+r[2]*.38,r[1]-r[3]*.08,r[2]*.24,r[3]*.28]
+  attack:r=>[r[0]-r[2]*.18,r[1]+r[3]*.08,r[2]*.32,r[3]*.58],
+  defense:r=>[r[0]-r[2]*.18,r[1]+r[3]*.08,r[2]*.32,r[3]*.58],
+  spAttack:r=>[r[0]+r[2]*.86,r[1]+r[3]*.08,r[2]*.32,r[3]*.58],
+  spDefense:r=>[r[0]+r[2]*.86,r[1]+r[3]*.08,r[2]*.32,r[3]*.58],
+  speed:r=>[r[0]+r[2]*.32,r[1]-r[3]*.14,r[2]*.36,r[3]*.36]
  };
  for(const k of keys){
   const r=rects?.[k];if(!r)continue;
   const [rx,ry,rw,rh]=markerRoi[k](r),cc=document.createElement('canvas');
-  cc.width=Math.max(24,Math.round(sw*rw));cc.height=Math.max(24,Math.round(sh*rh));
+  cc.width=Math.max(28,Math.round(sw*rw));cc.height=Math.max(28,Math.round(sh*rh));
   const g=cc.getContext('2d');g.drawImage(src,sw*rx,sh*ry,sw*rw,sh*rh,0,0,cc.width,cc.height);
   const d=g.getImageData(0,0,cc.width,cc.height).data;let red=0,blue=0;
   for(let i=0;i<d.length;i+=4){
-   const R=d[i],G=d[i+1],B=d[i+2];
-   if(R>=150&&R-G>=50&&R-B>=20)red++;
-   if(B>=150&&G>=80&&B-R>=45&&B-G>=15)blue++;
+   const R=d[i],G=d[i+1],B=d[i+2],mx=Math.max(R,G,B),mn=Math.min(R,G,B);
+   if(R>=135&&R-G>=35&&R-B>=12&&mx-mn>=40)red++;
+   if(B>=125&&B-R>=28&&B-G>=5&&mx-mn>=32)blue++;
   }
   scores.push({k,red,blue});
  }
  const rr=[...scores].sort((a,b)=>b.red-a.red),up=rr[0]&&rr[0].red>=2?rr[0]:null;
  if(!up)return{up:'',down:''};
  const br=scores.filter(x=>x.k!==up.k).sort((a,b)=>b.blue-a.blue),b1=br[0],b2=br[1];
- return{up:up.k,down:b1&&b1.blue>=2&&b1.blue>(b2?.blue||0)?b1.k:''};
+ return{up:up.k,down:b1&&b1.blue>=2&&b1.blue>=(b2?.blue||0)+1?b1.k:''};
 }
 async function consumeGuidedImage(src,previewUrl,rects){
  const pv=$('#statPhotoPreview'),box=$('#statPhotoConfirm');pv.classList.remove('hidden');pv.innerHTML='<img src="'+previewUrl+'" alt="能力六角形"><p id="statPhotoOcrStatus" class="hint">6つの能力値を読み取っています…</p>';box.classList.remove('hidden');
