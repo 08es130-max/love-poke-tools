@@ -417,10 +417,21 @@ async function readGuidedStats(src,rects){
    continue;
   }else{
    // Tight number crops are authoritative; wider crops only rescue difficult captures.
-   rois.push({r:numericRect(k,r),w:6});
-   rois.push({r:[r[0]+r[2]*.13,r[1]+r[3]*.46,r[2]*.74,r[3]*.46],w:3});
-   rois.push({r:[r[0]+r[2]*.20,r[1]+r[3]*.53,r[2]*.62,r[3]*.36],w:2});
-   rois.push({r:[r[0]+r[2]*.08,r[1]+r[3]*.40,r[2]*.84,r[3]*.52],w:1});
+   if(k==='defense'||k==='spDefense'){
+    // B/D are the weakest SV camera positions. Sample the number at several
+    // nearby vertical offsets so small framing differences do not produce blanks.
+    const ys=[.24,.32,.40,.48];
+    for(const [i,yy] of ys.entries()){
+     rois.push({r:[r[0]+r[2]*.10,r[1]+r[3]*yy,r[2]*.80,r[3]*.34],w:6-i});
+     rois.push({r:[r[0]+r[2]*.18,r[1]+r[3]*(yy+.03),r[2]*.64,r[3]*.28],w:4-i*.5});
+    }
+    rois.push({r:[r[0]+r[2]*.04,r[1]+r[3]*.18,r[2]*.92,r[3]*.62],w:1});
+   }else{
+    rois.push({r:numericRect(k,r),w:6});
+    rois.push({r:[r[0]+r[2]*.13,r[1]+r[3]*.46,r[2]*.74,r[3]*.46],w:3});
+    rois.push({r:[r[0]+r[2]*.20,r[1]+r[3]*.53,r[2]*.62,r[3]*.36],w:2});
+    rois.push({r:[r[0]+r[2]*.08,r[1]+r[3]*.40,r[2]*.84,r[3]*.52],w:1});
+   }
   }
   const possible=st?possiblePhotoStatValues(st[k],k,lv):null,score=new Map();
   for(const item of rois){
