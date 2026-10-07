@@ -700,6 +700,12 @@
           550
         );
 
+        const now = performance.now();
+        pauseUntil = Math.max(pauseUntil, now + 2600);
+        direction = 'down';
+        frame = 0;
+        lastFrameTime = now;
+        paint();
         showBubble(randomPhrase());
       }
     );
