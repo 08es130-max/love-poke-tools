@@ -19,7 +19,27 @@
   window[INSTANCE_KEY] = true;
 
   const SETTINGS_KEY = 'lovepoke_mascot_settings_v2';
-  const SPRITE_URL = './assets/mascot/shioriko-sprite.png';
+  const CHARACTERS = Object.freeze({
+    ayumu: { name: '上原歩夢', sprite: './assets/mascot/ayumu-sprite.png' },
+    kasumi: { name: '中須かすみ', sprite: './assets/mascot/kasumi-sprite.png' },
+    shizuku: { name: '桜坂しずく', sprite: './assets/mascot/shizuku-sprite.png' },
+    karin: { name: '朝香果林', sprite: './assets/mascot/karin-sprite.png' },
+    ai: { name: '宮下愛', sprite: './assets/mascot/ai-sprite.png' },
+    kanata: { name: '近江彼方', sprite: './assets/mascot/kanata-sprite.png' },
+    setsuna: { name: '優木せつ菜', sprite: './assets/mascot/setsuna-sprite.png' },
+    emma: { name: 'エマ・ヴェルデ', sprite: './assets/mascot/emma-sprite.png' },
+    rina: { name: '天王寺璃奈', sprite: './assets/mascot/rina-sprite.png' },
+    shioriko: { name: '三船栞子', sprite: './assets/mascot/shioriko-sprite.png' },
+    mia: { name: 'ミア・テイラー', sprite: './assets/mascot/mia-sprite.png' },
+    lanzhu: { name: '鐘嵐珠', sprite: './assets/mascot/lanzhu-sprite.png' },
+    yu: { name: '高咲侑', sprite: './assets/mascot/yu-sprite.png' }
+  });
+
+  const FALLBACK_CHARACTER = 'shioriko';
+
+  function currentCharacter() {
+    return CHARACTERS[settings.character] || CHARACTERS[FALLBACK_CHARACTER];
+  }
 
   const SPRITE = Object.freeze({
     frameWidth: 272,
@@ -46,6 +66,7 @@
 
   const defaults = Object.freeze({
     enabled: true,
+    character: FALLBACK_CHARACTER,
     moving: true,
     speech: true,
     size: 'medium',
@@ -214,6 +235,11 @@
         sizes.medium /
         SPRITE.frameHeight;
     }
+
+    target.style.setProperty(
+      '--mascot-image',
+      `url("${currentCharacter().sprite}")`
+    );
 
     target.style.setProperty(
       '--mascot-column',
@@ -490,6 +516,13 @@
     if (!dialog) return;
 
     dialog.querySelector(
+      '#mascotCharacter'
+    ).value =
+      settings.character in CHARACTERS
+        ? settings.character
+        : FALLBACK_CHARACTER;
+
+    dialog.querySelector(
       '#mascotEnabled'
     ).checked =
       settings.enabled;
@@ -533,9 +566,24 @@
               );
 
             applySettings();
+            if (key === 'character') {
+              imageReady = false;
+              updateVisibility();
+              loadSprite();
+              mascot?.setAttribute(
+                'aria-label',
+                `${currentCharacter().name}マスコット。タップすると話します`
+              );
+            }
           }
         );
     };
+
+    bind(
+      '#mascotCharacter',
+      'character',
+      element => element.value
+    );
 
     bind(
       '#mascotEnabled',
@@ -613,7 +661,7 @@
 
     mascot.setAttribute(
       'aria-label',
-      '栞子マスコット。タップすると話します'
+      `${currentCharacter().name}マスコット。タップすると話します`
     );
 
     mascot.addEventListener(
@@ -689,7 +737,7 @@
         <header class="mascot-dialog-head">
           <div>
             <h2>マスコット設定</h2>
-            <p>栞子が画面の外周を歩きます。</p>
+            <p>好きな虹ヶ咲メンバーが画面の外周を歩きます。</p>
           </div>
           <button class="ghost-btn" value="close">閉じる</button>
         </header>
@@ -699,6 +747,14 @@
         </div>
 
         <div class="mascot-setting-grid">
+          <label class="mascot-character-setting">
+            <span>キャラクター</span>
+            <select id="mascotCharacter">
+              ${Object.entries(CHARACTERS).map(([id, character]) =>
+                `<option value="${id}">${character.name}</option>`
+              ).join('')}
+            </select>
+          </label>
           <label class="mascot-switch">
             <span>マスコットを表示</span>
             <input id="mascotEnabled" type="checkbox">
@@ -799,6 +855,7 @@
 
   function loadSprite() {
     const image = new Image();
+    const selected = currentCharacter();
 
     image.onload = () => {
       imageReady =
@@ -827,7 +884,20 @@
       );
     };
 
-    image.src = SPRITE_URL;
+    image.onerror = () => {
+      if (settings.character !== FALLBACK_CHARACTER) {
+        settings.character = FALLBACK_CHARACTER;
+        saveSettings();
+        syncDialog();
+        loadSprite();
+        return;
+      }
+      imageReady = false;
+      updateVisibility();
+      dialog?.classList.add('mascot-image-error');
+    };
+
+    image.src = selected.sprite;
   }
 
   function init() {
