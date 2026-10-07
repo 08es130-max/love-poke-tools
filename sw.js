@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'lovepoke-';
-const CACHE_NAME = `${CACHE_PREFIX}v20261007-76`;
+const CACHE_NAME = `${CACHE_PREFIX}v20261007-77`;
 
 const ASSETS = [
   './',
@@ -18,6 +18,7 @@ const ASSETS = [
   './mascot.js',
   './mascot.css',
   './assets/mascot/shioriko-sprite.png',
+  './assets/mascot/ayumu-sprite.png',
   './loveca-cards.json',
   './firebase-config.js',
   './firebase-client.js',
