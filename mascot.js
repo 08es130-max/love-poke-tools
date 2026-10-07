@@ -85,12 +85,34 @@
     large: 112
   });
 
-  const phrases = Object.freeze([
-    '栞子が画面の端をうろちょろします',
-    '角に来たら方向転換です',
-    'ときどき立ち止まってしまいます',
-    'タップありがとうございます'
-  ]);
+  const PHRASES = Object.freeze({
+    shioriko: Object.freeze([
+      '今日もよろしくお願いします',
+      '何かお手伝いしましょうか？',
+      '無理はなさらないでくださいね',
+      'タップありがとうございます'
+    ]),
+    ayumu: Object.freeze([
+      '今日も一緒にがんばろうね！',
+      'ちゃんと見てるからね',
+      'えへへ、呼んだ？',
+      'タップしてくれてありがとう！'
+    ])
+  });
+
+  function currentPhrases() {
+    return PHRASES[settings.character] || [
+      `${currentCharacter().name}です！`,
+      '呼んだ？',
+      '今日もよろしくね！',
+      'タップしてくれてありがとう！'
+    ];
+  }
+
+  function randomPhrase() {
+    const list = currentPhrases();
+    return list[Math.floor(Math.random() * list.length)];
+  }
 
   let settings = loadSettings();
 
@@ -619,14 +641,7 @@
       .addEventListener(
         'click',
         () => {
-          showBubble(
-            phrases[
-              Math.floor(
-                Math.random() *
-                phrases.length
-              )
-            ]
-          );
+          showBubble(randomPhrase());
         }
       );
   }
@@ -685,14 +700,7 @@
           550
         );
 
-        showBubble(
-          phrases[
-            Math.floor(
-              Math.random() *
-              phrases.length
-            )
-          ]
-        );
+        showBubble(randomPhrase());
       }
     );
 
