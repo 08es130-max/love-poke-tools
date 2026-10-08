@@ -1,6 +1,6 @@
 (() => {
 'use strict';
-const ROOT='lovePokeMascotRoot',KEY='lovepoke_mascot_settings_v3',OLD='lovepoke_mascot_settings_v2',VER='0.9.73';
+const ROOT='lovePokeMascotRoot',KEY='lovepoke_mascot_settings_v3',OLD='lovepoke_mascot_settings_v2',VER='0.9.74';
 const C={
  ayumu:['上原歩夢','ayumu'],kasumi:['中須かすみ','kasumi'],shizuku:['桜坂しずく','shizuku'],karin:['朝香果林','karin'],
  ai:['宮下愛','ai'],kanata:['近江彼方','kanata'],setsuna:['優木せつ菜','setsuna'],emma:['エマ・ヴェルデ','emma'],
@@ -481,7 +481,7 @@ function updatePersonality(a,now,multi){
   }
 }
 function wall(a,now){let q=box(a),hit=false;if(a.x<q.l){a.x=q.l;a.vx=Math.abs(a.vx);hit=true}else if(a.x>q.r){a.x=q.r;a.vx=-Math.abs(a.vx);hit=true}if(a.y<q.t){a.y=q.t;a.vy=Math.abs(a.vy);hit=true}else if(a.y>q.b){a.y=q.b;a.vy=-Math.abs(a.vy);hit=true}if(hit&&now>a.cool){setV(a,Math.atan2(a.vy,a.vx)+(Math.random()-.5)*.5);a.cool=now+650;pose(a,now,700)}}
-function collide(now){for(let i=0;i<actors.length;i++)for(let j=i+1;j<actors.length;j++){let a=actors[i],b=actors[j];if(now<a.cool||now<b.cool)continue;if(socialEvent&&((socialEvent.a===a&&socialEvent.b===b)||(socialEvent.a===b&&socialEvent.b===a)))continue;let ax=a.x+a.w/2,ay=a.y+a.h/2,bx=b.x+b.w/2,by=b.y+b.h/2,dx=bx-ax,dy=by-ay,di=Math.hypot(dx,dy),mi=Math.min(a.w,a.h)*.32+Math.min(b.w,b.h)*.32;if(di>0&&di<mi){let nx=dx/di,ny=dy/di,o=mi-di;a.x-=nx*o/2;a.y-=ny*o/2;b.x+=nx*o/2;b.y+=ny*o/2;setV(a,Math.atan2(-ny,-nx)+(Math.random()-.5)*.7);setV(b,Math.atan2(ny,nx)+(Math.random()-.5)*.7);a.cool=b.cool=now+850;pose(a,now,850);pose(b,now,850)}}}
+function collide(now){for(let i=0;i<actors.length;i++)for(let j=i+1;j<actors.length;j++){let a=actors[i],b=actors[j];if(now<a.cool||now<b.cool)continue;if(socialEvent&&((socialEvent.a===a&&socialEvent.b===b)||(socialEvent.a===b&&socialEvent.b===a)))continue;if(socialEvent&&socialEvent.phase==='talk'&&[socialEvent.a,socialEvent.b].some(person=>person===a||person===b))continue;let ax=a.x+a.w/2,ay=a.y+a.h/2,bx=b.x+b.w/2,by=b.y+b.h/2,dx=bx-ax,dy=by-ay,di=Math.hypot(dx,dy),mi=Math.min(a.w,a.h)*.32+Math.min(b.w,b.h)*.32;if(di>0&&di<mi){let nx=dx/di,ny=dy/di,o=mi-di;a.x-=nx*o/2;a.y-=ny*o/2;b.x+=nx*o/2;b.y+=ny*o/2;setV(a,Math.atan2(-ny,-nx)+(Math.random()-.5)*.7);setV(b,Math.atan2(ny,nx)+(Math.random()-.5)*.7);a.cool=b.cool=now+850;pose(a,now,850);pose(b,now,850)}}}
 function single(a,dist,now){let q=box(a);if(a.d==='right'){a.x+=dist;if(a.x>=q.r){a.x=q.r;a.d='down';pose(a,now)}}else if(a.d==='down'){a.y+=dist;if(a.y>=q.b){a.y=q.b;a.d='left';pose(a,now)}}else if(a.d==='left'){a.x-=dist;if(a.x<=q.l){a.x=q.l;a.d='up';pose(a,now)}}else{a.y-=dist;if(a.y<=q.t){a.y=q.t;a.d='right';pose(a,now)}}}
 function tick(now){
   const dt=Math.min(50,now-(last||now));last=now;
@@ -529,7 +529,7 @@ function ui(){root=document.createElement('div');root.id=ROOT;root.className='ma
   lineupButton.className='mascot-lineup-btn';
   lineupButton.textContent='整列';
   lineupButton.addEventListener('click',()=>{
-    S.lineup=!S.lineup;socialEvent=null;nextSocialAt=performance.now()+9000;save();place();syncStatus();
+    if(socialEvent)endConversation(performance.now());S.lineup=!S.lineup;nextSocialAt=performance.now()+9000;save();place();syncStatus();
     actors.forEach(a=>render(a,performance.now()));
   });
   dialog=document.createElement('dialog');dialog.className='mascot-dialog';dialog.innerHTML=`
