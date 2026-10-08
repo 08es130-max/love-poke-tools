@@ -1,6 +1,6 @@
 (() => {
 'use strict';
-const ROOT='lovePokeMascotRoot',KEY='lovepoke_mascot_settings_v3',OLD='lovepoke_mascot_settings_v2',VER='0.9.65';
+const ROOT='lovePokeMascotRoot',KEY='lovepoke_mascot_settings_v3',OLD='lovepoke_mascot_settings_v2',VER='0.9.66';
 const C={
  ayumu:['上原歩夢','ayumu'],kasumi:['中須かすみ','kasumi'],shizuku:['桜坂しずく','shizuku'],karin:['朝香果林','karin'],
  ai:['宮下愛','ai'],kanata:['近江彼方','kanata'],setsuna:['優木せつ菜','setsuna'],emma:['エマ・ヴェルデ','emma'],
@@ -27,8 +27,45 @@ function valid(a){return [...new Set((Array.isArray(a)?a:[]).filter(x=>C[x]))]}
 function load(){try{let s=JSON.parse(localStorage.getItem(KEY)||'{}'),sel=valid(s.selectedCharacters);if(!sel.length){let o=JSON.parse(localStorage.getItem(OLD)||'{}');sel=o.character&&C[o.character]?[o.character]:['shioriko']}return{enabled:true,moving:true,speech:true,size:'medium',speed:'normal',...s,selectedCharacters:sel}}catch{return{enabled:true,moving:true,speech:true,size:'medium',speed:'normal',selectedCharacters:['shioriko']}}}
 function save(){S.selectedCharacters=valid(S.selectedCharacters);if(!S.selectedCharacters.length)S.selectedCharacters=['shioriko'];localStorage.setItem(KEY,JSON.stringify(S));localStorage.setItem(OLD,JSON.stringify({enabled:S.enabled,character:S.selectedCharacters[0],moving:S.moving,speech:S.speech,size:S.size,speed:S.speed}))}
 function sprite(id){return './assets/mascot/'+C[id][1]+'-sprite.png?v='+VER}
-function scale(id){return ['ayumu','shioriko'].includes(id)?1:1.18}
-function dims(id){let m=metrics.get(id)||{fw:272,fh:217},h=(size[S.size]||88)*scale(id);return{w:h*m.fw/m.fh,h,fw:m.fw,fh:m.fh}}
+// Visible character height is normalized, not the transparent sprite cell height.
+function crowdScale(n){if(n>=13)return .77;if(n>=9)return .82;if(n>=5)return .88;if(n>=2)return .94;return 1}
+function dims(id){
+  const m=metrics.get(id)||{fw:272,fh:217,visibleRatio:.76};
+  const count=Math.max(1,valid(S.selectedCharacters).length);
+  const intendedVisibleHeight=(size[S.size]||88)*.85*crowdScale(count);
+  const ratio=Math.min(.95,Math.max(.48,m.visibleRatio||.76));
+  const h=intendedVisibleHeight/ratio;
+  return{w:h*m.fw/m.fh,h,fw:m.fw,fh:m.fh}
+}
+// Measure the actual nontransparent artwork; several PNGs have different padding.
+function spriteVisibleRatio(image,fw,fh){
+  try{
+    const w=Math.round(fw),h=Math.round(fh);
+    const canvas=document.createElement('canvas');
+    canvas.width=w;canvas.height=h;
+    const ctx=canvas.getContext('2d',{willReadFrequently:true});
+    if(!ctx)return .76;
+    const ratios=[];
+    for(const r of [0,2,3,4]){
+      ctx.clearRect(0,0,w,h);
+      ctx.drawImage(image,0,r*fh,fw,fh,0,0,w,h);
+      const data=ctx.getImageData(0,0,w,h).data;
+      let top=h,bottom=-1;
+      for(let y=0;y<h;y+=2){
+        for(let x=0;x<w;x+=2){
+          if(data[(y*w+x)*4+3]>85){
+            if(y<top)top=y;
+            if(y>bottom)bottom=y;
+          }
+        }
+      }
+      if(bottom>=top)ratios.push((bottom-top+2)/h);
+    }
+    if(!ratios.length)return .76;
+    ratios.sort((a,b)=>a-b);
+    return Math.min(.95,Math.max(.48,(ratios[1]+ratios[2])/2));
+  }catch(_){return .76}
+}
 function box(a){let st=getComputedStyle(document.documentElement),n=x=>parseFloat(st.getPropertyValue(x))||0,e=5;return{l:n('--mascot-safe-left')+e,t:n('--mascot-safe-top')+e,r:innerWidth-n('--mascot-safe-right')-a.w-e,b:innerHeight-n('--mascot-safe-bottom')-a.h-e}}
 function dir(a){return Math.abs(a.vx)>=Math.abs(a.vy)?(a.vx>=0?'right':'left'):(a.vy>=0?'down':'up')}
 function row(d){return{right:0,left:1,down:2,up:3,idle:4}[d]??4}
@@ -37,7 +74,7 @@ function render(a,now){let m=metrics.get(a.id)||{fw:272,fh:217},pose=(now<a.pose
 function pose(a,now,ms=800){a.pose=Math.max(a.pose,now+ms);a.frame=Math.floor(Math.random()*4);a.el.classList.remove('mascot-collision-pose');void a.el.offsetWidth;a.el.classList.add('mascot-collision-pose');setTimeout(()=>a.el&&a.el.classList.remove('mascot-collision-pose'),ms)}
 function bubble(a){if(!S.speech)return;let p=P[a.id]||[C[a.id][0]+'です！'];a.b.textContent=p[Math.floor(Math.random()*p.length)];a.b.hidden=false;a.b.style.left=Math.min(innerWidth-170,Math.max(8,a.x+a.w/2-80))+'px';a.b.style.top=Math.max(8,a.y-58)+'px';clearTimeout(a.bt);a.bt=setTimeout(()=>a.b.hidden=true,2600)}
 function actor(id){let d=dims(id),el=document.createElement('button'),b=document.createElement('div');el.type='button';el.className='edge-mascot mascot-sprite mascot-actor';el.setAttribute('aria-label',C[id][0]+'マスコット');b.className='mascot-bubble mascot-actor-bubble';b.hidden=true;let a={id,el,b,w:d.w,h:d.h,x:0,y:0,vx:0,vy:0,d:'right',frame:0,lastF:0,pose:0,cool:0,bt:null};el.addEventListener('click',()=>{let n=performance.now();pose(a,n,1100);bubble(a)});layer.append(el,b);return a}
-function loadMetric(id){return new Promise(res=>{let i=new Image();i.onload=()=>{metrics.set(id,{fw:i.naturalWidth/4,fh:i.naturalHeight/5});res(true)};i.onerror=()=>res(false);i.src=sprite(id)})}
+function loadMetric(id){return new Promise(res=>{let i=new Image();i.onload=()=>{const fw=i.naturalWidth/4,fh=i.naturalHeight/5;metrics.set(id,{fw,fh,visibleRatio:spriteVisibleRatio(i,fw,fh)});res(true)};i.onerror=()=>res(false);i.src=sprite(id)})}
 async function rebuild(){actors.forEach(a=>{clearTimeout(a.bt);a.el.remove();a.b.remove()});actors=[];let ids=valid(S.selectedCharacters);if(!ids.length)ids=['shioriko'];S.selectedCharacters=ids;save();let ok=(await Promise.all(ids.map(async id=>[id,await loadMetric(id)]))).filter(x=>x[1]).map(x=>x[0]);if(!ok.length){await loadMetric('shioriko');ok=['shioriko']}ok.forEach(id=>actors.push(actor(id)));place();visible();syncStatus()}
 function place(){let multi=actors.length>1,cols=Math.max(2,Math.ceil(Math.sqrt(actors.length)));actors.forEach((a,i)=>{let q=box(a);if(multi){let rows=Math.ceil(actors.length/cols),c=i%cols,r=Math.floor(i/cols);a.x=q.l+(q.r-q.l)*(c+.5)/cols;a.y=q.t+(q.b-q.t)*(r+.5)/rows;setV(a,Math.random()*Math.PI*2)}else{a.x=q.l;a.y=q.b;a.d='right';a.vx=speed[S.speed]||42;a.vy=0}})}
 function visible(){layer.hidden=!S.enabled||!actors.length;if(!S.speech)actors.forEach(a=>a.b.hidden=true)}
