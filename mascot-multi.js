@@ -955,7 +955,7 @@ async function beginLive(manual=false){
      (!manual&&(!LIVE_INTERVALS[S.liveMode]||socialEvent||
        document.querySelector('dialog[open]'))))return false;
   const eligible=actors.filter(a=>LIVE_ASSETS[a.id]&&!a.performing);
-  if(!eligible.length)return false;
+  if(!eligible.length){if(!manual)scheduleLive();return false}
   const a=eligible[Math.floor(Math.random()*eligible.length)];
   const serial=liveGeneration;
   liveLoading=true;
@@ -964,7 +964,7 @@ async function beginLive(manual=false){
   catch(err){console.warn('Mascot mini-live:',err);scheduleLive();return false}
   finally{liveLoading=false}
   if(serial!==liveGeneration||!actors.includes(a)||liveEvent||S.lineup||
-     !S.moving||document.hidden||(!manual&&socialEvent))return false;
+     !S.moving||document.hidden||(!manual&&(socialEvent||!LIVE_INTERVALS[S.liveMode])))return false;
   if(manual&&socialEvent)endConversation(performance.now());
   const now=performance.now();
   hideSpeech(a);
@@ -1130,6 +1130,7 @@ async function rebuild(){
   S.selectedCharacters=valid(S.selectedCharacters);
   save();
   if(!S.selectedCharacters.length){
+    scheduleLive();
     visible();
     syncStatus();
     return;
@@ -1139,6 +1140,7 @@ async function rebuild(){
   if(serial!==rebuildSerial)return; // Ignore older async image-load results.
   results.filter(x=>x[1]).forEach(([id])=>actors.push(actor(id)));
   if(actors.length)place();
+  scheduleLive();
   visible();
   syncStatus(actors.length?'':'キャラクター画像を読み込めませんでした');
 }
