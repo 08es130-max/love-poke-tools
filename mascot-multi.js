@@ -1,6 +1,6 @@
 (() => {
 'use strict';
-const ROOT='lovePokeMascotRoot',KEY='lovepoke_mascot_settings_v3',OLD='lovepoke_mascot_settings_v2',VER='0.9.72';
+const ROOT='lovePokeMascotRoot',KEY='lovepoke_mascot_settings_v3',OLD='lovepoke_mascot_settings_v2',VER='0.9.73';
 const C={
  ayumu:['上原歩夢','ayumu'],kasumi:['中須かすみ','kasumi'],shizuku:['桜坂しずく','shizuku'],karin:['朝香果林','karin'],
  ai:['宮下愛','ai'],kanata:['近江彼方','kanata'],setsuna:['優木せつ菜','setsuna'],emma:['エマ・ヴェルデ','emma'],
@@ -493,13 +493,16 @@ function tick(now){
       });
     }else{
       const multi=actors.length>1,dist=(speed[S.speed]||42)*dt/1000;
+      if(multi&&S.moving)updateSocial(now);
+      else if(socialEvent)endConversation(now);
       actors.forEach(a=>{
-        const paused=now<a.pose||!S.moving;
+        updatePersonality(a,now,multi);
+        const paused=now<a.pose||now<a.restUntil||!S.moving;
         if(!paused){
           if(multi){
             a.x+=a.vx*dt/1000;a.y+=a.vy*dt/1000;
             wall(a,now);a.d=dir(a);
-          }else single(a,dist,now);
+          }else single(a,dist*(PERSONALITY[a.id]?.pace||1),now);
         }
         const iv=paused?520:190;
         if(now-a.lastF>=iv){a.frame=(a.frame+1)%4;a.lastF=now}
