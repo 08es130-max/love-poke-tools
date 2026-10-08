@@ -36,10 +36,18 @@
   });
 
   const FALLBACK_CHARACTER = 'shioriko';
+  const BASE_SPRITE_VERSION = '0.9.62';
 
   function currentCharacter() {
     return CHARACTERS[settings.character] || CHARACTERS[FALLBACK_CHARACTER];
   }
+
+  function characterDisplayScale() {
+    return ['ayumu', 'shioriko'].includes(settings.character) ? 1 : 1.18;
+  }
+
+  let spriteFrameWidth = 272;
+  let spriteFrameHeight = 217;
 
   const SPRITE = Object.freeze({
     frameWidth: 272,
@@ -60,7 +68,7 @@
       up: 4,
       idle: 4
     }),
-    walkFrameMs: 150,
+    walkFrameMs: 190,
     idleFrameMs: 520
   });
 
@@ -184,12 +192,13 @@
 
   function dimensions() {
     const height =
-      sizes[settings.size] || sizes.medium;
+      (sizes[settings.size] || sizes.medium) *
+      characterDisplayScale();
 
     const width =
       height *
-      SPRITE.frameWidth /
-      SPRITE.frameHeight;
+      spriteFrameWidth /
+      spriteFrameHeight;
 
     const inset = safeInsets();
     const edge = 5;
@@ -255,12 +264,12 @@
     if (!Number.isFinite(scale) || scale <= 0) {
       scale =
         sizes.medium /
-        SPRITE.frameHeight;
+        spriteFrameHeight;
     }
 
     target.style.setProperty(
       '--mascot-image',
-      `url("${currentCharacter().sprite}")`
+      `url("${currentCharacter().sprite}?v=${BASE_SPRITE_VERSION}")`
     );
 
     target.style.setProperty(
@@ -276,7 +285,7 @@
     target.style.setProperty(
       '--mascot-sheet-width',
       `${
-        SPRITE.frameWidth *
+        spriteFrameWidth *
         SPRITE.columns *
         scale
       }px`
@@ -285,7 +294,7 @@
     target.style.setProperty(
       '--mascot-sheet-height',
       `${
-        SPRITE.frameHeight *
+        spriteFrameHeight *
         SPRITE.rows *
         scale
       }px`
@@ -294,7 +303,7 @@
     target.style.setProperty(
       '--mascot-frame-x',
       `${
-        -SPRITE.frameWidth *
+        -spriteFrameWidth *
         column *
         scale
       }px`
@@ -303,7 +312,7 @@
     target.style.setProperty(
       '--mascot-frame-y',
       `${
-        -SPRITE.frameHeight *
+        -spriteFrameHeight *
         row *
         scale
       }px`
@@ -324,11 +333,17 @@
     mascot.style.setProperty(
       '--mascot-scale',
       box.height /
-        SPRITE.frameHeight
+        spriteFrameHeight
     );
 
+    const paused = isPaused();
+    const step = frame % 4;
+    const bob = paused ? 0 : [0, -4, 0, -2][step] * characterDisplayScale();
+    const sway = paused ? 0 : [0, 1.5, 0, -1.5][step] * characterDisplayScale();
+    const swayX = (direction === 'up' || direction === 'down') ? sway : 0;
+
     mascot.style.transform =
-      `translate3d(${x}px, ${y}px, 0)`;
+      `translate3d(${x + swayX}px, ${y + bob}px, 0)`;
 
     renderSprite(
       mascot,
@@ -590,6 +605,8 @@
             applySettings();
             if (key === 'character') {
               imageReady = false;
+              spriteFrameWidth = SPRITE.frameWidth;
+              spriteFrameHeight = SPRITE.frameHeight;
               updateVisibility();
               loadSprite();
               mascot?.setAttribute(
@@ -827,7 +844,7 @@
       preview.style.setProperty(
         '--mascot-scale',
         80 /
-          SPRITE.frameHeight
+          spriteFrameHeight
       );
 
       renderSprite(
@@ -872,29 +889,35 @@
     const selected = currentCharacter();
 
     image.onload = () => {
+      const frameWidth = image.naturalWidth / SPRITE.columns;
+      const frameHeight = image.naturalHeight / SPRITE.rows;
+
       imageReady =
-        image.naturalWidth ===
-          SPRITE.frameWidth *
-            SPRITE.columns &&
-        image.naturalHeight ===
-          SPRITE.frameHeight *
-            SPRITE.rows;
+        Number.isFinite(frameWidth) &&
+        Number.isFinite(frameHeight) &&
+        frameWidth > 0 &&
+        frameHeight > 0;
+
+      if (imageReady) {
+        spriteFrameWidth = frameWidth;
+        spriteFrameHeight = frameHeight;
+        clampPosition();
+        paint();
+
+        if (preview) {
+          preview.style.setProperty(
+            '--mascot-scale',
+            80 / spriteFrameHeight
+          );
+          renderSprite(preview, 'down', 0);
+        }
+      }
 
       updateVisibility();
 
       dialog?.classList.toggle(
         'mascot-image-error',
         !imageReady
-      );
-    };
-
-    image.onerror = () => {
-      imageReady = false;
-
-      updateVisibility();
-
-      dialog?.classList.add(
-        'mascot-image-error'
       );
     };
 
@@ -906,12 +929,13 @@
         loadSprite();
         return;
       }
+
       imageReady = false;
       updateVisibility();
       dialog?.classList.add('mascot-image-error');
     };
 
-    image.src = selected.sprite;
+    image.src = `${selected.sprite}?v=${BASE_SPRITE_VERSION}`;
   }
 
   function init() {
