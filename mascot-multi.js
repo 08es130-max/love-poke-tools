@@ -903,7 +903,7 @@ const REPLIES={
 };
 let socialEvent=null;
 let nextSocialAt=0;
-let yuInContact=new Set(),yuConversationQueue=[];
+let yuInContact=new Set(),yuConversationQueue=[],recentTalkPairs=[];
 const speed={slow:24,normal:42,fast:68},size={small:68,medium:88,large:112};
 let S=load(),root,layer,dialog,status,lineupButton,actors=[],last=0,metrics=new Map(),rebuildSerial=0;
 function valid(a){return [...new Set((Array.isArray(a)?a:[]).filter(x=>C[x]))]}
@@ -1034,7 +1034,7 @@ async function rebuild(){
   actors.forEach(a=>{clearTimeout(a.bt);a.el.remove();a.b.remove()});
   actors=[];
   socialEvent=null;
-  yuInContact.clear();yuConversationQueue=[];
+  yuInContact.clear();yuConversationQueue=[];recentTalkPairs=[];
   nextSocialAt=performance.now()+2300;
   S.selectedCharacters=valid(S.selectedCharacters);
   save();
@@ -1286,13 +1286,16 @@ function pairLines(a,b){
 function bonded(a,b){
   return BONDS.some(([x,y])=>(x===a.id&&y===b.id)||(x===b.id&&y===a.id));
 }
+function talkPairKey(a,b){return [a.id,b.id].sort().join(':')}
 function chooseSocialPair(){
   if(actors.length<2)return null;
   const yu=actors.find(a=>a.id==='yu');
   // Give Yu plenty of opportunities to speak to each selected member.
   if(yu&&Math.random()<.4){
     const others=actors.filter(a=>a!==yu);
-    others.sort((a,b)=>Math.hypot(a.x-yu.x,a.y-yu.y)-Math.hypot(b.x-yu.x,b.y-yu.y));
+    others.sort((a,b)=>
+      (recentTalkPairs.includes(talkPairKey(yu,a))?180:0)+Math.hypot(a.x-yu.x,a.y-yu.y)-
+      ((recentTalkPairs.includes(talkPairKey(yu,b))?180:0)+Math.hypot(b.x-yu.x,b.y-yu.y)));
     return [yu,others[Math.floor(Math.random()*Math.min(3,others.length))]];
   }
   const combinations=[];
@@ -1300,7 +1303,7 @@ function chooseSocialPair(){
     for(let j=i+1;j<actors.length;j++){
       const a=actors[i],b=actors[j];
       const distance=Math.hypot(a.x-b.x,a.y-b.y);
-      combinations.push({a,b,score:distance-(bonded(a,b)?95:0)});
+      combinations.push({a,b,score:distance-(bonded(a,b)?95:0)+(recentTalkPairs.includes(talkPairKey(a,b))?190:0)});
     }
   }
   combinations.sort((a,b)=>a.score-b.score);
@@ -1371,6 +1374,8 @@ function beginConversation(e,now){
     b.d=b.x>a.x?'left':'right';
   }
   e.phase='talk';e.started=now;e.until=now+6650;e.secondSpoken=false;
+  recentTalkPairs.push(talkPairKey(a,b));
+  if(recentTalkPairs.length>4)recentTalkPairs.shift();
   e.lines=pairLines(a,b);
   actors.forEach(person=>{if(person!==a)hideSpeech(person)});
   say(a,e.lines[0],3150);
