@@ -334,10 +334,10 @@
   .mascot-character-head { align-items:flex-start; flex-direction:column; }
 }
 
-/* left-and-right vertical lineup v0.9.70 */
+/* aligned edge lineup v0.9.71 */
 .mascot-lineup-btn {
   position: fixed;
-  right: max(10px, calc(env(safe-area-inset-right, 0px) + 8px));
+  right: max(70px, calc(env(safe-area-inset-right, 0px) + 68px));
   bottom: max(10px, calc(env(safe-area-inset-bottom, 0px) + 8px));
   z-index: 920;
   min-width: 49px;
@@ -362,7 +362,7 @@
   transition: none;
 }
 
-/* Gear on the left and lineup toggle on the right, both at the bottom. */
+/* Lineup button is to the LEFT of the settings gear. */
 .mascot-settings-btn {
-  right: max(70px, calc(env(safe-area-inset-right, 0px) + 68px));
+  right: max(10px, calc(env(safe-area-inset-right, 0px) + 8px));
 }
