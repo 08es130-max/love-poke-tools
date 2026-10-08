@@ -1356,6 +1356,12 @@ function startQueuedYuConversation(now){
   return false;
 }
 function beginConversation(e,now){
+  // Respect the authored order, so a reply never appears before the greeting.
+  const authored=PAIR_DIALOGUES.find(pair=>
+    pair.ids.includes(e.a.id)&&pair.ids.includes(e.b.id));
+  if(authored&&authored.ids[0]===e.b.id){
+    const swap=e.a;e.a=e.b;e.b=swap;
+  }
   const {a,b}=e;
   a.restUntil=0;b.restUntil=0;
   a.pose=Math.max(a.pose,now+6650);
