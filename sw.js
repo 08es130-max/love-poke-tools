@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'lovepoke-';
-const CACHE_NAME = `${CACHE_PREFIX}v20261008-84`;
+const CACHE_NAME = `${CACHE_PREFIX}v20261008-85`;
 
 const ASSETS = [
   './',
