@@ -1445,7 +1445,7 @@ function wall(a,now){let q=box(a),hit=false;if(a.x<q.l){a.x=q.l;a.vx=Math.abs(a.
 function collide(now){for(let i=0;i<actors.length;i++)for(let j=i+1;j<actors.length;j++){let a=actors[i],b=actors[j];if(now<a.cool||now<b.cool)continue;if(socialEvent&&((socialEvent.a===a&&socialEvent.b===b)||(socialEvent.a===b&&socialEvent.b===a)))continue;if(socialEvent&&socialEvent.phase==='talk'&&[socialEvent.a,socialEvent.b].some(person=>person===a||person===b))continue;let ax=a.x+a.w/2,ay=a.y+a.h/2,bx=b.x+b.w/2,by=b.y+b.h/2,dx=bx-ax,dy=by-ay,di=Math.hypot(dx,dy),mi=Math.min(a.w,a.h)*.32+Math.min(b.w,b.h)*.32;if(di>0&&di<mi){
   // Physical encounters may start a conversation sooner, without overlapping
   // an existing event or turning an opted-out speech setting back on.
-  if(!socialEvent&&S.speech&&now>=nextSocialAt-2000&&Math.random()<(a.id==='yu'||b.id==='yu'?.70:.65)){
+  if(!socialEvent&&S.speech&&now>=nextSocialAt-2000&&Math.random()<(a.id==='yu'||b.id==='yu' ? .70 : .65)){
     socialEvent={a,b,phase:'talk',until:0};
     beginConversation(socialEvent,now);
     a.cool=b.cool=now+1500;
