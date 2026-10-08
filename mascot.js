@@ -36,7 +36,7 @@
   });
 
   const FALLBACK_CHARACTER = 'shioriko';
-  const BASE_SPRITE_VERSION = '0.9.62';
+  const BASE_SPRITE_VERSION = '0.9.63';
 
   function currentCharacter() {
     return CHARACTERS[settings.character] || CHARACTERS[FALLBACK_CHARACTER];
