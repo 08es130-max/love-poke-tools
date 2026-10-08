@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'lovepoke-';
-const CACHE_NAME = `${CACHE_PREFIX}v20261007-78`;
+const CACHE_NAME = `${CACHE_PREFIX}v20261008-79`;
 
 const ASSETS = [
   './',
@@ -17,8 +17,19 @@ const ASSETS = [
   './loveca-card-browser.css',
   './mascot.js',
   './mascot.css',
-  './assets/mascot/shioriko-sprite.png',
   './assets/mascot/ayumu-sprite.png',
+  './assets/mascot/kasumi-sprite.png',
+  './assets/mascot/shizuku-sprite.png',
+  './assets/mascot/karin-sprite.png',
+  './assets/mascot/ai-sprite.png',
+  './assets/mascot/kanata-sprite.png',
+  './assets/mascot/setsuna-sprite.png',
+  './assets/mascot/emma-sprite.png',
+  './assets/mascot/rina-sprite.png',
+  './assets/mascot/shioriko-sprite.png',
+  './assets/mascot/mia-sprite.png',
+  './assets/mascot/lanzhu-sprite.png',
+  './assets/mascot/yu-sprite.png',
   './loveca-cards.json',
   './firebase-config.js',
   './firebase-client.js',
