@@ -1,6 +1,6 @@
 (() => {
 'use strict';
-const ROOT='lovePokeMascotRoot',KEY='lovepoke_mascot_settings_v3',OLD='lovepoke_mascot_settings_v2',VER='0.9.68';
+const ROOT='lovePokeMascotRoot',KEY='lovepoke_mascot_settings_v3',OLD='lovepoke_mascot_settings_v2',VER='0.9.69';
 const C={
  ayumu:['上原歩夢','ayumu'],kasumi:['中須かすみ','kasumi'],shizuku:['桜坂しずく','shizuku'],karin:['朝香果林','karin'],
  ai:['宮下愛','ai'],kanata:['近江彼方','kanata'],setsuna:['優木せつ菜','setsuna'],emma:['エマ・ヴェルデ','emma'],
@@ -81,26 +81,56 @@ async function rebuild(){actors.forEach(a=>{clearTimeout(a.bt);a.el.remove();a.b
 function placeLineup(){
   const order=Object.keys(C);
   const sorted=[...actors].sort((a,b)=>order.indexOf(a.id)-order.indexOf(b.id));
-  const inset=getComputedStyle(document.documentElement);
-  const safeLeft=parseFloat(inset.getPropertyValue('--mascot-safe-left'))||0;
-  const safeRight=parseFloat(inset.getPropertyValue('--mascot-safe-right'))||0;
-  const left=Math.max(5,safeLeft+5);
-  const right=Math.max(5,safeRight+5);
-  const available=Math.max(1,innerWidth-left-right);
-  const slot=available/Math.max(1,sorted.length);
-  let maxHeight=0;
-  sorted.forEach((a,i)=>{
+  const n=sorted.length;
+  if(!n)return;
+  const style=getComputedStyle(document.documentElement);
+  const safeLeft=parseFloat(style.getPropertyValue('--mascot-safe-left'))||0;
+  const safeRight=parseFloat(style.getPropertyValue('--mascot-safe-right'))||0;
+  const safeBottom=parseFloat(style.getPropertyValue('--mascot-safe-bottom'))||0;
+  const left=safeLeft+5;
+  // Keep the right edge free for the gear and the lineup button stacked above it.
+  const reservedControls=60;
+  const area=Math.max(1,innerWidth-left-safeRight-5-reservedControls);
+  const topCount=n>7?7:0;
+  const bottomCount=n-topCount;
+  const top=sorted.slice(0,topCount);
+  const bottom=sorted.slice(topCount);
+  const topSlot=topCount?area/topCount:Infinity;
+  const bottomSlot=area/bottomCount;
+
+  // Both rows share one scale: bottom-row characters must not look larger.
+  const widthLimit=Math.min(...sorted.map(a=>{
+    const natural=dims(a.id);
+    const slot=top.includes(a)?topSlot:bottomSlot;
+    return Math.max(0.05,(slot-4)/natural.w);
+  }));
+  const fit=Math.min(1,widthLimit);
+  const measured=new Map();
+  sorted.forEach(a=>{
     const d=dims(a.id);
-    const fit=Math.min(1,Math.max(1,slot-3)/d.w);
     a.w=d.w*fit;
     a.h=d.h*fit;
-    const q=box(a);
-    a.x=Math.min(q.r,Math.max(q.l,left+(i+.5)*slot-a.w/2));
-    a.y=q.b;
-    a.d='down';a.vx=0;a.vy=0;a.pose=0;a.lastF=0;
-    maxHeight=Math.max(maxHeight,a.h);
+    measured.set(a.id,{w:a.w,h:a.h});
   });
-  root.style.setProperty('--mascot-lineup-height',Math.ceil(maxHeight)+'px');
+
+  const baseY=Math.max(0,innerHeight-safeBottom-7);
+  const bottomRowHeight=Math.max(...bottom.map(a=>a.h));
+  const topBaseline=baseY-bottomRowHeight-5;
+
+  function arrange(row,slot,baseline){
+    row.forEach((a,i)=>{
+      a.x=left+(i+0.5)*slot-a.w/2;
+      a.y=baseline-a.h;
+      a.d='down';
+      a.vx=0;a.vy=0;
+      a.pose=0;a.lastF=0;
+    });
+  }
+  if(topCount)arrange(top,topSlot,topBaseline);
+  arrange(bottom,bottomSlot,baseY);
+
+  // The controls occupy their own column and do not cover either row.
+  root.style.setProperty('--mascot-lineup-height',Math.ceil((topCount?Math.max(...top.map(a=>a.h))+5:0)+bottomRowHeight)+'px');
   root.classList.add('mascot-lineup-active');
 }
 function place(){
@@ -154,10 +184,10 @@ function tick(now){
 }
 function selected(){return[...dialog.querySelectorAll('[data-char]:checked')].map(x=>x.value)}
 function syncStatus(msg=''){
-  if(status)status.textContent=msg||(S.lineup?'画面下に整列中：移動せずポーズが変わります':S.selectedCharacters.length===1?'1人選択中：外周を歩きます':S.selectedCharacters.length+'人選択中：画面全体を自由に歩きます');
+  if(status)status.textContent=msg||(S.lineup?'画面下に2段で整列中：移動せずポーズが変わります':S.selectedCharacters.length===1?'1人選択中：外周を歩きます':S.selectedCharacters.length+'人選択中：画面全体を自由に歩きます');
   if(lineupButton){
     lineupButton.textContent=S.lineup?'歩行':'整列';
-    lineupButton.setAttribute('aria-label',S.lineup?'通常歩行に戻す':'キャラクターを画面下に一列に整列');
+    lineupButton.setAttribute('aria-label',S.lineup?'通常歩行に戻す':'キャラクターを画面下に2段で整列');
     lineupButton.setAttribute('aria-pressed',S.lineup?'true':'false');
   }
 }
