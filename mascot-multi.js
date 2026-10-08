@@ -63,7 +63,9 @@ function spriteVisibleRatio(image,fw,fh){
     }
     if(!ratios.length)return .76;
     ratios.sort((a,b)=>a-b);
-    return Math.min(.95,Math.max(.48,(ratios[1]+ratios[2])/2));
+    const mid=Math.floor(ratios.length/2);
+    const typical=ratios.length%2?ratios[mid]:(ratios[mid-1]+ratios[mid])/2;
+    return Math.min(.95,Math.max(.48,typical));
   }catch(_){return .76}
 }
 function box(a){let st=getComputedStyle(document.documentElement),n=x=>parseFloat(st.getPropertyValue(x))||0,e=5;return{l:n('--mascot-safe-left')+e,t:n('--mascot-safe-top')+e,r:innerWidth-n('--mascot-safe-right')-a.w-e,b:innerHeight-n('--mascot-safe-bottom')-a.h-e}}
