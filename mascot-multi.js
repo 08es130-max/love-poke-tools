@@ -389,6 +389,11 @@ function bubblePlacement(a){
   const clampX=x=>Math.min(maxX,Math.max(8,x));
   const wantedTop=speaker.top-h-5;
   const top=Math.max(4,wantedTop); // Stay above the sprite even near the safe-area boundary.
+  const topChoices=[top];
+  // If a conversation partner is standing directly above the speaker,
+  // we may need to lift the bubble above that partner as well.
+  if(other&&other.top<speaker.top)
+    topChoices.push(Math.max(4,Math.min(top,other.top-h-7)));
   const defaultX=clampX(speaker.center-w/2);
   const xs=[defaultX];
   // First try directly overhead; then either upper corner, away from the partner.
@@ -399,10 +404,10 @@ function bubblePlacement(a){
   xs.push(clampX(speaker.left-w-5),clampX(speaker.right+5));
   xs.push(8,maxX);
   const existing=actors.filter(x=>x!==a&&x!==partner&&!x.b.hidden);
-  let chosen=defaultX,score=Infinity;
-  for(const x of [...new Set(xs)]){
-    const rect={left:x,right:x+w,top,bottom:top+h};
-    // Prioritize leaving the two talking characters unobstructed.
+  let chosen=defaultX,chosenTop=top,score=Infinity;
+  for(const y of [...new Set(topChoices)])for(const x of [...new Set(xs)]){
+    const rect={left:x,right:x+w,top:y,bottom:y+h};
+    // Avoid BOTH characters before optimizing closeness to the speaker.
     const partnerObstruction=overlapArea(rect,other);
     const speakerObstruction=overlapArea(rect,speaker);
     const otherBubbleObstruction=existing.reduce((sum,person)=>{
@@ -410,12 +415,13 @@ function bubblePlacement(a){
       return p?sum+overlapArea(rect,p):sum;
     },0);
     const value=(partnerObstruction+speakerObstruction)*100+
-      otherBubbleObstruction*20+Math.abs(x-defaultX)*.14;
-    if(value<score){score=value;chosen=x}
+      otherBubbleObstruction*20+
+      Math.abs(x-defaultX)*.14+Math.abs(y-top)*.3;
+    if(value<score){score=value;chosen=x;chosenTop=y}
   }
   a.b.style.maxWidth=w+'px';
   a.b.style.left=chosen+'px';
-  a.b.style.top=top+'px';
+  a.b.style.top=chosenTop+'px';
   const pointer=Math.max(11,Math.min(w-11,speaker.center-chosen));
   a.b.style.setProperty('--bubble-tail-x',pointer+'px');
 }
