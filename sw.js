@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'lovepoke-';
-const CACHE_NAME = `${CACHE_PREFIX}v20261008-82`;
+const CACHE_NAME = `${CACHE_PREFIX}v20261008-83`;
 
 const ASSETS = [
   './',
@@ -16,6 +16,7 @@ const ASSETS = [
   './loveca-filter-selector.js',
   './loveca-card-browser.css',
   './mascot.js',
+  './mascot-multi.js',
   './mascot.css',
   './assets/mascot/ayumu-sprite.png',
   './assets/mascot/kasumi-sprite.png',
