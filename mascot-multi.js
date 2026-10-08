@@ -174,11 +174,11 @@ function spriteVisibleRatio(image,fw,fh){
 function box(a){let st=getComputedStyle(document.documentElement),n=x=>parseFloat(st.getPropertyValue(x))||0,e=5;return{l:n('--mascot-safe-left')+e,t:n('--mascot-safe-top')+e,r:innerWidth-n('--mascot-safe-right')-a.w-e,b:innerHeight-n('--mascot-safe-bottom')-a.h-e}}
 function dir(a){return Math.abs(a.vx)>=Math.abs(a.vy)?(a.vx>=0?'right':'left'):(a.vy>=0?'down':'up')}
 function row(d){return{right:0,left:1,down:2,up:3,idle:4}[d]??4}
-function setV(a,ang=Math.atan2(a.vy,a.vx)){let v=speed[S.speed]||42;a.vx=Math.cos(ang)*v;a.vy=Math.sin(ang)*v;a.d=dir(a)}
-function render(a,now){let m=metrics.get(a.id)||{fw:272,fh:217},pose=(S.lineup||now<a.pose||!S.moving)?'idle':a.d,sc=a.h/m.fh,f=a.frame%4,b=(pose==='idle'?0:[0,-4,0,-2][f]*Math.max(.65,Math.min(1.15,a.h/88)));if(S.lineup)positionLineupActor(a);a.el.style.width=a.w+'px';a.el.style.height=a.h+'px';a.el.style.setProperty('--mascot-image','url("'+sprite(a.id)+'")');a.el.style.setProperty('--mascot-sheet-width',(m.fw*4*sc)+'px');a.el.style.setProperty('--mascot-sheet-height',(m.fh*5*sc)+'px');a.el.style.setProperty('--mascot-frame-x',(-m.fw*f*sc)+'px');a.el.style.setProperty('--mascot-frame-y',(-m.fh*row(pose)*sc)+'px');a.el.style.transform='translate3d('+a.x+'px,'+(a.y+b)+'px,0)'}
+function setV(a,ang=Math.atan2(a.vy,a.vx)){let v=(speed[S.speed]||42)*(PERSONALITY[a.id]?.pace||1);a.vx=Math.cos(ang)*v;a.vy=Math.sin(ang)*v;a.d=dir(a)}
+function render(a,now){let m=metrics.get(a.id)||{fw:272,fh:217},pose=(S.lineup||now<a.pose||now<(a.restUntil||0)||!S.moving)?'idle':a.d,sc=a.h/m.fh,f=a.frame%4,b=(pose==='idle'?0:[0,-4,0,-2][f]*Math.max(.65,Math.min(1.15,a.h/88)));if(S.lineup)positionLineupActor(a);a.el.style.width=a.w+'px';a.el.style.height=a.h+'px';a.el.style.setProperty('--mascot-image','url("'+sprite(a.id)+'")');a.el.style.setProperty('--mascot-sheet-width',(m.fw*4*sc)+'px');a.el.style.setProperty('--mascot-sheet-height',(m.fh*5*sc)+'px');a.el.style.setProperty('--mascot-frame-x',(-m.fw*f*sc)+'px');a.el.style.setProperty('--mascot-frame-y',(-m.fh*row(pose)*sc)+'px');a.el.style.transform='translate3d('+a.x+'px,'+(a.y+b)+'px,0)'}
 function pose(a,now,ms=800){a.pose=Math.max(a.pose,now+ms);a.frame=Math.floor(Math.random()*4);a.el.classList.remove('mascot-collision-pose');void a.el.offsetWidth;a.el.classList.add('mascot-collision-pose');setTimeout(()=>a.el&&a.el.classList.remove('mascot-collision-pose'),ms)}
 function bubble(a){if(!S.speech)return;let p=P[a.id]||[C[a.id][0]+'です！'];a.b.textContent=p[Math.floor(Math.random()*p.length)];a.b.hidden=false;a.b.style.left=Math.min(innerWidth-170,Math.max(8,a.x+a.w/2-80))+'px';a.b.style.top=Math.max(8,a.y-58)+'px';clearTimeout(a.bt);a.bt=setTimeout(()=>a.b.hidden=true,2600)}
-function actor(id){let d=dims(id),el=document.createElement('button'),b=document.createElement('div');el.type='button';el.className='edge-mascot mascot-sprite mascot-actor';el.setAttribute('aria-label',C[id][0]+'マスコット');b.className='mascot-bubble mascot-actor-bubble';b.hidden=true;let a={id,el,b,w:d.w,h:d.h,x:0,y:0,vx:0,vy:0,d:'right',frame:0,lastF:0,pose:0,cool:0,bt:null};el.addEventListener('click',()=>{let n=performance.now();pose(a,n,1100);bubble(a)});layer.append(el,b);return a}
+function actor(id){let d=dims(id),el=document.createElement('button'),b=document.createElement('div');el.type='button';el.className='edge-mascot mascot-sprite mascot-actor';el.setAttribute('aria-label',C[id][0]+'マスコット');b.className='mascot-bubble mascot-actor-bubble';b.hidden=true;let a={id,el,b,w:d.w,h:d.h,x:0,y:0,vx:0,vy:0,d:'right',frame:0,lastF:0,pose:0,cool:0,bt:null,restUntil:0,nextRest:performance.now()+(PERSONALITY[id]?.rest||17000)*(.7+Math.random()*.6),nextTurn:performance.now()+(PERSONALITY[id]?.turn||12000)*(.7+Math.random()*.7)};el.addEventListener('click',()=>{let n=performance.now();pose(a,n,1100);bubble(a)});layer.append(el,b);return a}
 function spriteIdleBounds(image,fw,fh){
   const fallback={cx:.5,bottom:.92,height:.76,width:.60};
   try{
@@ -223,6 +223,8 @@ async function rebuild(){
   const serial=++rebuildSerial;
   actors.forEach(a=>{clearTimeout(a.bt);a.el.remove();a.b.remove()});
   actors=[];
+  socialEvent=null;
+  nextSocialAt=performance.now()+7500;
   S.selectedCharacters=valid(S.selectedCharacters);
   save();
   if(!S.selectedCharacters.length){
@@ -320,13 +322,13 @@ function place(){
       a.y=q.t+(q.b-q.t)*(r+.5)/rows;
       setV(a,Math.random()*Math.PI*2);
     }else{
-      a.x=q.l;a.y=q.b;a.d='right';a.vx=speed[S.speed]||42;a.vy=0;
+      a.x=q.l;a.y=q.b;a.d='right';a.vx=(speed[S.speed]||42)*(PERSONALITY[a.id]?.pace||1);a.vy=0;
     }
   });
 }
 function visible(){layer.hidden=!actors.length;if(!S.speech)actors.forEach(a=>a.b.hidden=true)}
 function wall(a,now){let q=box(a),hit=false;if(a.x<q.l){a.x=q.l;a.vx=Math.abs(a.vx);hit=true}else if(a.x>q.r){a.x=q.r;a.vx=-Math.abs(a.vx);hit=true}if(a.y<q.t){a.y=q.t;a.vy=Math.abs(a.vy);hit=true}else if(a.y>q.b){a.y=q.b;a.vy=-Math.abs(a.vy);hit=true}if(hit&&now>a.cool){setV(a,Math.atan2(a.vy,a.vx)+(Math.random()-.5)*.5);a.cool=now+650;pose(a,now,700)}}
-function collide(now){for(let i=0;i<actors.length;i++)for(let j=i+1;j<actors.length;j++){let a=actors[i],b=actors[j];if(now<a.cool||now<b.cool)continue;let ax=a.x+a.w/2,ay=a.y+a.h/2,bx=b.x+b.w/2,by=b.y+b.h/2,dx=bx-ax,dy=by-ay,di=Math.hypot(dx,dy),mi=Math.min(a.w,a.h)*.32+Math.min(b.w,b.h)*.32;if(di>0&&di<mi){let nx=dx/di,ny=dy/di,o=mi-di;a.x-=nx*o/2;a.y-=ny*o/2;b.x+=nx*o/2;b.y+=ny*o/2;setV(a,Math.atan2(-ny,-nx)+(Math.random()-.5)*.7);setV(b,Math.atan2(ny,nx)+(Math.random()-.5)*.7);a.cool=b.cool=now+850;pose(a,now,850);pose(b,now,850)}}}
+function collide(now){for(let i=0;i<actors.length;i++)for(let j=i+1;j<actors.length;j++){let a=actors[i],b=actors[j];if(now<a.cool||now<b.cool)continue;if(socialEvent&&((socialEvent.a===a&&socialEvent.b===b)||(socialEvent.a===b&&socialEvent.b===a)))continue;let ax=a.x+a.w/2,ay=a.y+a.h/2,bx=b.x+b.w/2,by=b.y+b.h/2,dx=bx-ax,dy=by-ay,di=Math.hypot(dx,dy),mi=Math.min(a.w,a.h)*.32+Math.min(b.w,b.h)*.32;if(di>0&&di<mi){let nx=dx/di,ny=dy/di,o=mi-di;a.x-=nx*o/2;a.y-=ny*o/2;b.x+=nx*o/2;b.y+=ny*o/2;setV(a,Math.atan2(-ny,-nx)+(Math.random()-.5)*.7);setV(b,Math.atan2(ny,nx)+(Math.random()-.5)*.7);a.cool=b.cool=now+850;pose(a,now,850);pose(b,now,850)}}}
 function single(a,dist,now){let q=box(a);if(a.d==='right'){a.x+=dist;if(a.x>=q.r){a.x=q.r;a.d='down';pose(a,now)}}else if(a.d==='down'){a.y+=dist;if(a.y>=q.b){a.y=q.b;a.d='left';pose(a,now)}}else if(a.d==='left'){a.x-=dist;if(a.x<=q.l){a.x=q.l;a.d='up';pose(a,now)}}else{a.y-=dist;if(a.y<=q.t){a.y=q.t;a.d='right';pose(a,now)}}}
 function tick(now){
   const dt=Math.min(50,now-(last||now));last=now;
@@ -371,7 +373,7 @@ function ui(){root=document.createElement('div');root.id=ROOT;root.className='ma
   lineupButton.className='mascot-lineup-btn';
   lineupButton.textContent='整列';
   lineupButton.addEventListener('click',()=>{
-    S.lineup=!S.lineup;save();place();syncStatus();
+    S.lineup=!S.lineup;socialEvent=null;nextSocialAt=performance.now()+9000;save();place();syncStatus();
     actors.forEach(a=>render(a,performance.now()));
   });
   dialog=document.createElement('dialog');dialog.className='mascot-dialog';dialog.innerHTML=`
@@ -408,7 +410,7 @@ function ui(){root=document.createElement('div');root.id=ROOT;root.className='ma
       <label><span>速度</span><select id="mSpeed"><option value="slow">ゆっくり</option><option value="normal">普通</option><option value="fast">速い</option></select></label>
     </div>
   </form>
-`;status=dialog.querySelector('#mStatus');gear.addEventListener('click',()=>{sync();dialog.showModal?dialog.showModal():dialog.setAttribute('open','')});root.append(layer,lineupButton,gear,dialog);document.body.append(root);dialog.querySelector('#mMoving').onchange=e=>{S.moving=e.target.checked;save()};dialog.querySelector('#mSpeech').onchange=e=>{S.speech=e.target.checked;save();visible()};dialog.querySelector('#mSize').onchange=async e=>{S.size=e.target.value;save();await rebuild();sync()};dialog.querySelector('#mSpeed').onchange=e=>{S.speed=e.target.value;actors.forEach(a=>setV(a));save()};dialog.querySelectorAll('[data-char]').forEach(x=>x.onchange=async()=>{let s=selected();S.selectedCharacters=s;save();await rebuild();sync()});dialog.querySelector('#mAll').onclick=async()=>{S.selectedCharacters=Object.keys(C);save();await rebuild();sync()};dialog.querySelector('#mClear').onclick=async()=>{S.selectedCharacters=[];save();await rebuild();sync()}}
+`;status=dialog.querySelector('#mStatus');gear.addEventListener('click',()=>{sync();dialog.showModal?dialog.showModal():dialog.setAttribute('open','')});root.append(layer,lineupButton,gear,dialog);document.body.append(root);dialog.querySelector('#mMoving').onchange=e=>{S.moving=e.target.checked;if(!S.moving){socialEvent=null;actors.forEach(a=>{a.restUntil=0;a.b.hidden=true})}nextSocialAt=performance.now()+8500;save()};dialog.querySelector('#mSpeech').onchange=e=>{S.speech=e.target.checked;save();visible()};dialog.querySelector('#mSize').onchange=async e=>{S.size=e.target.value;save();await rebuild();sync()};dialog.querySelector('#mSpeed').onchange=e=>{S.speed=e.target.value;actors.forEach(a=>setV(a));save()};dialog.querySelectorAll('[data-char]').forEach(x=>x.onchange=async()=>{let s=selected();S.selectedCharacters=s;save();await rebuild();sync()});dialog.querySelector('#mAll').onclick=async()=>{S.selectedCharacters=Object.keys(C);save();await rebuild();sync()};dialog.querySelector('#mClear').onclick=async()=>{S.selectedCharacters=[];save();await rebuild();sync()}}
 async function init(){document.querySelectorAll('#'+ROOT).forEach(x=>x.remove());ui();sync();await rebuild();addEventListener('resize',()=>{
  if(S.lineup){placeLineup();return}
  actors.forEach(a=>{let d=dims(a.id);a.w=d.w;a.h=d.h;let q=box(a);a.x=Math.min(q.r,Math.max(q.l,a.x));a.y=Math.min(q.b,Math.max(q.t,a.y))})
