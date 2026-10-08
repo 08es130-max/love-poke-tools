@@ -1,6 +1,6 @@
 (() => {
 'use strict';
-const ROOT='lovePokeMascotRoot',KEY='lovepoke_mascot_settings_v3',OLD='lovepoke_mascot_settings_v2',VER='0.9.78';
+const ROOT='lovePokeMascotRoot',KEY='lovepoke_mascot_settings_v3',OLD='lovepoke_mascot_settings_v2',VER='0.9.79';
 const C={
  ayumu:['上原歩夢','ayumu'],kasumi:['中須かすみ','kasumi'],shizuku:['桜坂しずく','shizuku'],karin:['朝香果林','karin'],
  ai:['宮下愛','ai'],kanata:['近江彼方','kanata'],setsuna:['優木せつ菜','setsuna'],emma:['エマ・ヴェルデ','emma'],
@@ -903,7 +903,7 @@ const REPLIES={
 };
 let socialEvent=null;
 let nextSocialAt=0;
-let yuInContact=new Set(),yuConversationQueue=[],recentTalkPairs=[];
+let recentTalkPairs=[];
 const speed={slow:24,normal:42,fast:68},size={small:68,medium:88,large:112};
 let S=load(),root,layer,dialog,status,lineupButton,actors=[],last=0,metrics=new Map(),rebuildSerial=0;
 function valid(a){return [...new Set((Array.isArray(a)?a:[]).filter(x=>C[x]))]}
@@ -1034,7 +1034,7 @@ async function rebuild(){
   actors.forEach(a=>{clearTimeout(a.bt);a.el.remove();a.b.remove()});
   actors=[];
   socialEvent=null;
-  yuInContact.clear();yuConversationQueue=[];recentTalkPairs=[];
+  recentTalkPairs=[];
   nextSocialAt=performance.now()+2300;
   S.selectedCharacters=valid(S.selectedCharacters);
   save();
@@ -1289,74 +1289,30 @@ function bonded(a,b){
 function talkPairKey(a,b){return [a.id,b.id].sort().join(':')}
 function chooseSocialPair(){
   if(actors.length<2)return null;
-  const yu=actors.find(a=>a.id==='yu');
-  // Give Yu plenty of opportunities to speak to each selected member.
-  if(yu&&Math.random()<.4){
-    const others=actors.filter(a=>a!==yu);
-    others.sort((a,b)=>
-      (recentTalkPairs.includes(talkPairKey(yu,a))?180:0)+Math.hypot(a.x-yu.x,a.y-yu.y)-
-      ((recentTalkPairs.includes(talkPairKey(yu,b))?180:0)+Math.hypot(b.x-yu.x,b.y-yu.y)));
-    return [yu,others[Math.floor(Math.random()*Math.min(3,others.length))]];
-  }
-  const combinations=[];
+  const possibilities=[];
+  // All pairs participate. Yu only gets a modest +30% weighting;
+  // unlike the previous forced/queued Yu dialogue, no pair pre-empts another.
   for(let i=0;i<actors.length;i++){
     for(let j=i+1;j<actors.length;j++){
       const a=actors[i],b=actors[j];
-      const distance=Math.hypot(a.x-b.x,a.y-b.y);
-      combinations.push({a,b,score:distance-(bonded(a,b)?95:0)+(recentTalkPairs.includes(talkPairKey(a,b))?190:0)});
+      const distance=Math.hypot(a.x+a.w/2-b.x-b.w/2,
+                                a.y+a.h/2-b.y-b.h/2);
+      let weight=1/(1+distance/235);
+      weight*=weight;
+      if(bonded(a,b))weight*=1.25;
+      if(a.id==='yu'||b.id==='yu')weight*=1.30;
+      if(recentTalkPairs.includes(talkPairKey(a,b)))weight*=.13;
+      possibilities.push({a,b,weight});
     }
   }
-  combinations.sort((a,b)=>a.score-b.score);
-  const choices=combinations.slice(0,Math.min(5,combinations.length));
-  const chosen=choices[Math.floor(Math.random()*choices.length)];
-  return [chosen.a,chosen.b];
-}
-// A new physical meeting with Yu is guaranteed a two-way exchange.
-// While another dialogue is running, remember encounters instead of interrupting.
-function detectYuEncounters(now){
-  const yu=actors.find(a=>a.id==='yu');
-  if(!yu||S.lineup||!S.moving||!S.speech){
-    yuInContact.clear();
-    if(!S.speech||S.lineup)yuConversationQueue=[];
-    return;
+  const total=possibilities.reduce((sum,pair)=>sum+pair.weight,0);
+  let target=Math.random()*total;
+  for(const item of possibilities){
+    target-=item.weight;
+    if(target<=0)return [item.a,item.b];
   }
-  const touching=new Set();
-  for(const partner of actors){
-    if(partner===yu)continue;
-    const dx=yu.x+yu.w/2-partner.x-partner.w/2;
-    const dy=yu.y+yu.h/2-partner.y-partner.h/2;
-    const distance=Math.hypot(dx,dy);
-    const range=Math.max(30,(yu.w+partner.w)*.40);
-    if(distance>range)continue;
-    touching.add(partner.id);
-    if(yuInContact.has(partner.id))continue;
-    if(socialEvent&&((socialEvent.a===yu&&socialEvent.b===partner)||
-                     (socialEvent.a===partner&&socialEvent.b===yu)))continue;
-    if(yuConversationQueue.some(item=>item.id===partner.id))continue;
-    yuConversationQueue.push({id:partner.id,metAt:now});
-  }
-  yuInContact=touching;
-  if(!socialEvent)startQueuedYuConversation(now);
-}
-function startQueuedYuConversation(now){
-  if(!S.speech||S.lineup||!S.moving||socialEvent)return false;
-  const yu=actors.find(a=>a.id==='yu');
-  if(!yu)return false;
-  while(yuConversationQueue.length){
-    const entry=yuConversationQueue.shift();
-    const partner=actors.find(a=>a.id===entry.id);
-    if(!partner)continue;
-    const dx=yu.x+yu.w/2-partner.x-partner.w/2;
-    const dy=yu.y+yu.h/2-partner.y-partner.h/2;
-    socialEvent={a:yu,b:partner,phase:'approach',until:now+5000};
-    if(Math.hypot(dx,dy)<=(yu.w+partner.w)*.48+22){
-      beginConversation(socialEvent,now);
-    }else{
-      yu.restUntil=0;partner.restUntil=0;
-    }
-    return true;
-  }
-  return false;
+  const last=possibilities[possibilities.length-1];
+  return [last.a,last.b];
 }
 function beginConversation(e,now){
   // Respect the authored order, so a reply never appears before the greeting.
@@ -1393,7 +1349,6 @@ function updateSocial(now){
     return;
   }
   if(!socialEvent){
-    if(startQueuedYuConversation(now))return;
     if(now<nextSocialAt)return;
     const pair=chooseSocialPair();
     if(!pair)return;
@@ -1490,7 +1445,7 @@ function wall(a,now){let q=box(a),hit=false;if(a.x<q.l){a.x=q.l;a.vx=Math.abs(a.
 function collide(now){for(let i=0;i<actors.length;i++)for(let j=i+1;j<actors.length;j++){let a=actors[i],b=actors[j];if(now<a.cool||now<b.cool)continue;if(socialEvent&&((socialEvent.a===a&&socialEvent.b===b)||(socialEvent.a===b&&socialEvent.b===a)))continue;if(socialEvent&&socialEvent.phase==='talk'&&[socialEvent.a,socialEvent.b].some(person=>person===a||person===b))continue;let ax=a.x+a.w/2,ay=a.y+a.h/2,bx=b.x+b.w/2,by=b.y+b.h/2,dx=bx-ax,dy=by-ay,di=Math.hypot(dx,dy),mi=Math.min(a.w,a.h)*.32+Math.min(b.w,b.h)*.32;if(di>0&&di<mi){
   // Physical encounters may start a conversation sooner, without overlapping
   // an existing event or turning an opted-out speech setting back on.
-  if(!socialEvent&&S.speech&&now>=nextSocialAt-2000&&Math.random()<.65){
+  if(!socialEvent&&S.speech&&now>=nextSocialAt-2000&&Math.random()<(a.id==='yu'||b.id==='yu'?.70:.65)){
     socialEvent={a,b,phase:'talk',until:0};
     beginConversation(socialEvent,now);
     a.cool=b.cool=now+1500;
@@ -1526,7 +1481,6 @@ function tick(now){
         if(now-a.lastF>=iv){a.frame=(a.frame+1)%4;a.lastF=now}
       });
       if(multi&&S.moving){
-        detectYuEncounters(now);
         collide(now);
       }
       actors.forEach(a=>{render(a,now);bubblePlacement(a)});
@@ -1550,7 +1504,7 @@ function ui(){root=document.createElement('div');root.id=ROOT;root.className='ma
   lineupButton.className='mascot-lineup-btn';
   lineupButton.textContent='整列';
   lineupButton.addEventListener('click',()=>{
-    if(socialEvent)endConversation(performance.now());yuConversationQueue=[];yuInContact.clear();S.lineup=!S.lineup;nextSocialAt=performance.now()+2400;save();place();syncStatus();
+    if(socialEvent)endConversation(performance.now());S.lineup=!S.lineup;nextSocialAt=performance.now()+2400;save();place();syncStatus();
     actors.forEach(a=>render(a,performance.now()));
   });
   dialog=document.createElement('dialog');dialog.className='mascot-dialog';dialog.innerHTML=`
@@ -1587,7 +1541,7 @@ function ui(){root=document.createElement('div');root.id=ROOT;root.className='ma
       <label><span>速度</span><select id="mSpeed"><option value="slow">ゆっくり</option><option value="normal">普通</option><option value="fast">速い</option></select></label>
     </div>
   </form>
-`;status=dialog.querySelector('#mStatus');gear.addEventListener('click',()=>{sync();dialog.showModal?dialog.showModal():dialog.setAttribute('open','')});root.append(layer,lineupButton,gear,dialog);document.body.append(root);dialog.querySelector('#mMoving').onchange=e=>{S.moving=e.target.checked;if(!S.moving){socialEvent=null;actors.forEach(a=>{a.restUntil=0;a.b.hidden=true})}nextSocialAt=performance.now()+2300;save()};dialog.querySelector('#mSpeech').onchange=e=>{S.speech=e.target.checked;if(!S.speech){yuConversationQueue=[];yuInContact.clear()}save();visible()};dialog.querySelector('#mSize').onchange=async e=>{S.size=e.target.value;save();await rebuild();sync()};dialog.querySelector('#mSpeed').onchange=e=>{S.speed=e.target.value;actors.forEach(a=>setV(a));save()};dialog.querySelectorAll('[data-char]').forEach(x=>x.onchange=async()=>{let s=selected();S.selectedCharacters=s;save();await rebuild();sync()});dialog.querySelector('#mAll').onclick=async()=>{S.selectedCharacters=Object.keys(C);save();await rebuild();sync()};dialog.querySelector('#mClear').onclick=async()=>{S.selectedCharacters=[];save();await rebuild();sync()}}
+`;status=dialog.querySelector('#mStatus');gear.addEventListener('click',()=>{sync();dialog.showModal?dialog.showModal():dialog.setAttribute('open','')});root.append(layer,lineupButton,gear,dialog);document.body.append(root);dialog.querySelector('#mMoving').onchange=e=>{S.moving=e.target.checked;if(!S.moving){socialEvent=null;actors.forEach(a=>{a.restUntil=0;a.b.hidden=true})}nextSocialAt=performance.now()+2300;save()};dialog.querySelector('#mSpeech').onchange=e=>{S.speech=e.target.checked;save();visible()};dialog.querySelector('#mSize').onchange=async e=>{S.size=e.target.value;save();await rebuild();sync()};dialog.querySelector('#mSpeed').onchange=e=>{S.speed=e.target.value;actors.forEach(a=>setV(a));save()};dialog.querySelectorAll('[data-char]').forEach(x=>x.onchange=async()=>{let s=selected();S.selectedCharacters=s;save();await rebuild();sync()});dialog.querySelector('#mAll').onclick=async()=>{S.selectedCharacters=Object.keys(C);save();await rebuild();sync()};dialog.querySelector('#mClear').onclick=async()=>{S.selectedCharacters=[];save();await rebuild();sync()}}
 async function init(){document.querySelectorAll('#'+ROOT).forEach(x=>x.remove());ui();sync();await rebuild();addEventListener('resize',()=>{
  if(S.lineup){placeLineup();return}
  actors.forEach(a=>{let d=dims(a.id);a.w=d.w;a.h=d.h;let q=box(a);a.x=Math.min(q.r,Math.max(q.l,a.x));a.y=Math.min(q.b,Math.max(q.t,a.y))})
