@@ -352,9 +352,9 @@ function overlapArea(a,b){
   return Math.max(0,Math.min(a.right,b.right)-Math.max(a.left,b.left))*
          Math.max(0,Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top));
 }
-function bubbleDimensions(a){
+function bubbleDimensions(a,maxAllowed=Infinity){
   const el=a.b;
-  const max=Math.max(80,Math.min(194,innerWidth-16));
+  const max=Math.max(80,Math.min(194,innerWidth-16,maxAllowed));
   const length=Array.from(el.textContent||'').length;
   const w=Math.max(Math.min(106,max),Math.min(max,Math.ceil(length*13+26)));
   // Set width before measuring actual wrapped text so multi-line bubbles
@@ -419,10 +419,36 @@ function bubblePlacement(a){
       Math.abs(x-defaultX)*.14+Math.abs(y-top)*.3;
     if(value<score){score=value;chosen=x;chosenTop=y}
   }
-  a.b.style.maxWidth=w+'px';
+  let finalWidth=w;
+  // A narrower, wrapped bubble can tuck into an upper corner beside the
+  // conversation partner instead of floating far above both characters.
+  if(other&&score>8){
+    for(const cap of [154,128]){
+      if(w<=cap)continue;
+      const narrow=bubbleDimensions(a,cap);
+      const nw=narrow.w,nh=narrow.h,maxN=Math.max(8,innerWidth-nw-8);
+      const clipX=x=>Math.max(8,Math.min(maxN,x));
+      const nearY=speaker.top-nh-5;
+      if(nearY<4)continue;
+      const leftX=clipX(speaker.left-nw-5),rightX=clipX(speaker.right+5);
+      const otherSide=other.center>=speaker.center?[leftX,rightX]:[rightX,leftX];
+      const nxOptions=[clipX(speaker.center-nw/2),...otherSide,8,maxN];
+      const nyOptions=[nearY];
+      if(other.top<speaker.top)nyOptions.push(Math.max(4,Math.min(nearY,other.top-nh-7)));
+      for(const y of nyOptions)for(const x of [...new Set(nxOptions)]){
+        const rect={left:x,right:x+nw,top:y,bottom:y+nh};
+        const obstruction=overlapArea(rect,other)+overlapArea(rect,speaker);
+        const value=obstruction*100+Math.abs(x-defaultX)*.14+
+          Math.abs(y-top)*.3+(w-nw)*.22;
+        if(value<score){score=value;chosen=x;chosenTop=y;finalWidth=nw}
+      }
+    }
+  }
+  a.b.style.width=finalWidth+'px';
+  a.b.style.maxWidth=finalWidth+'px';
   a.b.style.left=chosen+'px';
   a.b.style.top=chosenTop+'px';
-  const pointer=Math.max(11,Math.min(w-11,speaker.center-chosen));
+  const pointer=Math.max(11,Math.min(finalWidth-11,speaker.center-chosen));
   a.b.style.setProperty('--bubble-tail-x',pointer+'px');
 }
 function say(a,text,ms=3000){
