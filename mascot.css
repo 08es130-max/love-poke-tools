@@ -548,3 +548,26 @@
   letter-spacing: 1px;
   pointer-events: none;
 }
+
+/* speech anchor v0.9.77 */
+.mascot-actor-bubble {
+  width: auto;
+  min-width: 0;
+  padding: 7px 10px;
+  line-height: 1.4;
+  text-align: left;
+}
+.mascot-actor-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: var(--bubble-tail-x, 50%);
+  width: 10px;
+  height: 10px;
+  box-sizing: border-box;
+  background: rgba(255, 252, 254, .98);
+  border-right: 1px solid #e9b0c8;
+  border-bottom: 1px solid #e9b0c8;
+  transform: translateX(-50%) rotate(45deg);
+  pointer-events: none;
+}
