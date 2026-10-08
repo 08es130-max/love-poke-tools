@@ -21,6 +21,83 @@ const P={
  lanzhu:['ランジュに会いたかったの？','当然、今日も最高に決まってるわ！','もっと自信を持ちなさい！','ランジュが応援してあげる！'],
  yu:['今日もみんなを応援しよう！','ときめくこと、見つかった？','その好きって気持ち、大事にしようね','今日もいっぱいときめこう！']
 };
+// Each member keeps her own pace and preferred rhythm.
+const PERSONALITY=Object.freeze({
+  ayumu:   {pace:.91,rest:17000,restMs:1450,turn:14500},
+  kasumi:  {pace:1.18,rest:26000,restMs:850,turn:6400},
+  shizuku: {pace:.91,rest:15000,restMs:1550,turn:16000},
+  karin:   {pace:.77,rest:14000,restMs:1650,turn:17000},
+  ai:      {pace:1.23,rest:26000,restMs:750,turn:5800},
+  kanata:  {pace:.67,rest:7800,restMs:3000,turn:18000},
+  setsuna: {pace:1.28,rest:27000,restMs:700,turn:5400},
+  emma:    {pace:.83,rest:14000,restMs:1650,turn:15000},
+  rina:    {pace:1.07,rest:16000,restMs:1050,turn:7500},
+  shioriko:{pace:.93,rest:18000,restMs:1200,turn:13000},
+  mia:     {pace:.98,rest:24000,restMs:1350,turn:12000},
+  lanzhu:  {pace:1.14,rest:21000,restMs:1100,turn:9000},
+  yu:      {pace:1.11,rest:15000,restMs:1200,turn:9100}
+});
+// Prefer these pairs for approaching each other and occasionally walking together.
+const BONDS=[
+  ['ayumu','yu'],['kasumi','shizuku'],['ai','rina'],
+  ['kanata','emma'],['karin','emma'],['shioriko','lanzhu'],
+  ['setsuna','yu'],['mia','lanzhu'],['setsuna','shioriko'],
+  ['ai','karin'],['ayumu','shizuku'],['mia','rina']
+];
+// Original short exchanges; order matches the two names in each entry.
+const PAIR_DIALOGUES=[
+  {ids:['ayumu','yu'],lines:[
+    ['侑ちゃん、一緒に少し歩かない？','うん！ 歩夢ちゃんとならどこまでも！'],
+    ['侑ちゃん、今日も楽しそうだね','歩夢ちゃんの笑顔も、ときめくよ！']]},
+  {ids:['kasumi','shizuku'],lines:[
+    ['しず子〜！ かすみんを褒めてください！','ふふ、今日もかわいいですよ、かすみさん'],
+    ['しず子、かすみんと勝負です！','もう、かすみさんってば……']]},
+  {ids:['ai','rina'],lines:[
+    ['りなりー！ 一緒に探検しよっ！','うん。愛さんとなら楽しい'],
+    ['今日もりなりーは最高だね！','璃奈ちゃんボード「にっこり」']]},
+  {ids:['kanata','emma'],lines:[
+    ['エマちゃん、一緒にお昼寝しよ〜','いいよ。のんびり休もうね'],
+    ['ふあぁ……おやつの夢を見たよ〜','ふふっ、今度一緒に食べようね']]},
+  {ids:['karin','emma'],lines:[
+    ['エマ、今日はどこへ行く？','果林ちゃんと一緒ならどこでも楽しいよ'],
+    ['ちょっと休んでもいいかしら','もちろん！ 無理しないでね']]},
+  {ids:['shioriko','lanzhu'],lines:[
+    ['嵐珠、少し落ち着いてください','栞子ももっと楽しみなさい！'],
+    ['一緒にがんばりましょう','ええ、ランジュに任せなさい！']]},
+  {ids:['setsuna','yu'],lines:[
+    ['侑さん！ 今日も全力です！','その熱い気持ち、ときめくよ！'],
+    ['大好きを叫びたいです！','私も！ 一緒に応援しよう！']]},
+  {ids:['mia','lanzhu'],lines:[
+    ['ランジュ、少し声が大きいよ','ミアだって楽しんでるじゃない！']]},
+  {ids:['setsuna','shioriko'],lines:[
+    ['栞子さん、全力で楽しみましょう！','はい。ですが無理は禁物ですよ']]},
+  {ids:['ai','karin'],lines:[
+    ['カリン！ 今日もキマってるね！','ふふ、愛こそ元気いっぱいね']]},
+  {ids:['ayumu','shizuku'],lines:[
+    ['しずくちゃん、練習お疲れさま！','ありがとうございます、歩夢さん！']]},
+  {ids:['mia','rina'],lines:[
+    ['リナ、面白い曲を思いついたんだ','聴きたい。ボード「わくわく」']]}
+];
+const GREETING={
+ ayumu:'一緒に歩けるとうれしいな',kasumi:'かすみんとおしゃべりしましょう！',
+ shizuku:'お話できてうれしいです',karin:'ふふ、ちょっとお話しない？',
+ ai:'やっほー！ 元気してる？',kanata:'少しおしゃべりしよ〜',
+ setsuna:'一緒に楽しみましょう！',emma:'会えてうれしいな',
+ rina:'話せて、うれしい',shioriko:'こんにちは。お元気ですか？',
+ mia:'Hey、何してるの？',lanzhu:'ランジュと話したかったのね！',
+ yu:'今日もときめくことがいっぱい！'
+};
+const REPLIES={
+ ayumu:'うん、そうだね！',kasumi:'さすが、分かってますねっ',
+ shizuku:'ええ、素敵ですね',karin:'それもいいわね',
+ ai:'いいじゃん、楽しもう！',kanata:'そうだね〜',
+ setsuna:'はい！ 全力で！',emma:'うん、うれしいよ',
+ rina:'うん。わたしも',shioriko:'ええ、よろしくお願いします',
+ mia:'まあ、いいんじゃない？',lanzhu:'当然よ！',
+ yu:'うん、ときめいちゃった！'
+};
+let socialEvent=null;
+let nextSocialAt=0;
 const speed={slow:24,normal:42,fast:68},size={small:68,medium:88,large:112};
 let S=load(),root,layer,dialog,status,lineupButton,actors=[],last=0,metrics=new Map(),rebuildSerial=0;
 function valid(a){return [...new Set((Array.isArray(a)?a:[]).filter(x=>C[x]))]}
