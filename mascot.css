@@ -366,3 +366,151 @@
 .mascot-settings-btn {
   right: max(10px, calc(env(safe-area-inset-right, 0px) + 8px));
 }
+
+
+/* compact dialog v0.9.72: fit all 13 choices and controls on iPhone */
+.mascot-dialog {
+  box-sizing: border-box;
+  width: min(calc(100vw - 20px), 480px);
+  max-height: calc(100dvh - 20px);
+  margin: auto;
+}
+.mascot-dialog-card {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: calc(100dvh - 20px);
+  padding: 14px;
+  overflow: hidden;
+}
+.mascot-dialog-head {
+  align-items: center;
+  gap: 9px;
+}
+.mascot-dialog-heading {
+  min-width: 0;
+  flex: 1;
+}
+.mascot-dialog-head h2 {
+  margin: 0 0 4px;
+  font-size: 19px;
+  line-height: 1.2;
+}
+.mascot-dialog-head p {
+  font-size: 12px;
+  line-height: 1.35;
+}
+.mascot-close-btn {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 70px;
+  min-height: 40px;
+  padding: 7px 12px;
+  font-size: 14px;
+  line-height: 1;
+  white-space: nowrap;
+  word-break: keep-all;
+  writing-mode: horizontal-tb;
+}
+.mascot-character-panel {
+  margin: 0;
+  padding: 10px;
+}
+.mascot-character-head {
+  flex-flow: row nowrap;
+  align-items: center;
+  margin-bottom: 7px;
+  gap: 5px;
+  font-size: 13px;
+}
+.mascot-character-actions {
+  flex: 0 0 auto;
+  gap: 5px;
+}
+.mascot-character-actions button {
+  min-width: 50px;
+  min-height: 32px;
+  padding: 4px 7px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.mascot-character-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px 6px;
+}
+.mascot-character-chip {
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 37px;
+  padding: 5px 7px;
+  gap: 5px;
+  border-radius: 9px;
+  font-size: 12px;
+  line-height: 1.2;
+}
+.mascot-character-chip input {
+  width: 17px;
+  height: 17px;
+}
+.mascot-selection-status {
+  margin-top: 7px;
+  font-size: 11px;
+  line-height: 1.25;
+}
+.mascot-setting-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.mascot-setting-grid > label {
+  min-width: 0;
+  gap: 5px;
+  font-size: 12px;
+}
+.mascot-switch {
+  min-height: 41px;
+  padding: 6px 9px;
+  gap: 6px;
+}
+.mascot-setting-grid select {
+  width: 100%;
+  min-height: 37px;
+  padding: 5px 8px;
+  font-size: 14px;
+}
+@media (max-width: 560px) {
+  .mascot-dialog-card {
+    max-height: calc(100dvh - 20px);
+    padding: 12px;
+    overflow: hidden;
+  }
+  .mascot-setting-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+  }
+  .mascot-character-head {
+    flex-direction: row;
+    align-items: center;
+  }
+  .mascot-character-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-height: 620px) {
+  .mascot-dialog-card { padding: 9px; gap: 7px; }
+  .mascot-dialog-head h2 { font-size: 17px; }
+  .mascot-character-panel { padding: 7px; }
+  .mascot-character-chip { min-height: 32px; padding: 3px 5px; font-size: 11px; }
+  .mascot-character-grid { gap: 3px 5px; }
+  .mascot-character-actions button { min-height: 30px; }
+  .mascot-close-btn { min-height: 34px; }
+  .mascot-switch { min-height: 35px; }
+  .mascot-setting-grid select { min-height: 32px; }
+}
+/* For unusually short viewports only, keep every control reachable. */
+@media (max-height: 485px) {
+  .mascot-dialog-card { overflow-y: auto; }
+}
