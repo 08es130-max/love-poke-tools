@@ -895,6 +895,7 @@ const REPLIES={
 };
 let socialEvent=null;
 let nextSocialAt=0;
+let yuInContact=new Set(),yuConversationQueue=[];
 const speed={slow:24,normal:42,fast:68},size={small:68,medium:88,large:112};
 let S=load(),root,layer,dialog,status,lineupButton,actors=[],last=0,metrics=new Map(),rebuildSerial=0;
 function valid(a){return [...new Set((Array.isArray(a)?a:[]).filter(x=>C[x]))]}
@@ -1025,6 +1026,7 @@ async function rebuild(){
   actors.forEach(a=>{clearTimeout(a.bt);a.el.remove();a.b.remove()});
   actors=[];
   socialEvent=null;
+  yuInContact.clear();yuConversationQueue=[];
   nextSocialAt=performance.now()+2300;
   S.selectedCharacters=valid(S.selectedCharacters);
   save();
@@ -1278,19 +1280,72 @@ function bonded(a,b){
 }
 function chooseSocialPair(){
   if(actors.length<2)return null;
+  const yu=actors.find(a=>a.id==='yu');
+  // Give Yu plenty of opportunities to speak to each selected member.
+  if(yu&&Math.random()<.4){
+    const others=actors.filter(a=>a!==yu);
+    others.sort((a,b)=>Math.hypot(a.x-yu.x,a.y-yu.y)-Math.hypot(b.x-yu.x,b.y-yu.y));
+    return [yu,others[Math.floor(Math.random()*Math.min(3,others.length))]];
+  }
   const combinations=[];
   for(let i=0;i<actors.length;i++){
     for(let j=i+1;j<actors.length;j++){
       const a=actors[i],b=actors[j];
       const distance=Math.hypot(a.x-b.x,a.y-b.y);
-      const familiar=bonded(a,b);
-      combinations.push({a,b,distance,score:distance-(familiar?95:0)});
+      combinations.push({a,b,score:distance-(bonded(a,b)?95:0)});
     }
   }
   combinations.sort((a,b)=>a.score-b.score);
   const choices=combinations.slice(0,Math.min(5,combinations.length));
   const chosen=choices[Math.floor(Math.random()*choices.length)];
   return [chosen.a,chosen.b];
+}
+// A new physical meeting with Yu is guaranteed a two-way exchange.
+// While another dialogue is running, remember encounters instead of interrupting.
+function detectYuEncounters(now){
+  const yu=actors.find(a=>a.id==='yu');
+  if(!yu||S.lineup||!S.moving||!S.speech){
+    yuInContact.clear();
+    if(!S.speech||S.lineup)yuConversationQueue=[];
+    return;
+  }
+  const touching=new Set();
+  for(const partner of actors){
+    if(partner===yu)continue;
+    const dx=yu.x+yu.w/2-partner.x-partner.w/2;
+    const dy=yu.y+yu.h/2-partner.y-partner.h/2;
+    const distance=Math.hypot(dx,dy);
+    const range=Math.max(30,(yu.w+partner.w)*.40);
+    if(distance>range)continue;
+    touching.add(partner.id);
+    if(yuInContact.has(partner.id))continue;
+    if(socialEvent&&((socialEvent.a===yu&&socialEvent.b===partner)||
+                     (socialEvent.a===partner&&socialEvent.b===yu)))continue;
+    if(yuConversationQueue.some(item=>item.id===partner.id))continue;
+    yuConversationQueue.push({id:partner.id,metAt:now});
+  }
+  yuInContact=touching;
+  if(!socialEvent)startQueuedYuConversation(now);
+}
+function startQueuedYuConversation(now){
+  if(!S.speech||S.lineup||!S.moving||socialEvent)return false;
+  const yu=actors.find(a=>a.id==='yu');
+  if(!yu)return false;
+  while(yuConversationQueue.length){
+    const entry=yuConversationQueue.shift();
+    const partner=actors.find(a=>a.id===entry.id);
+    if(!partner)continue;
+    const dx=yu.x+yu.w/2-partner.x-partner.w/2;
+    const dy=yu.y+yu.h/2-partner.y-partner.h/2;
+    socialEvent={a:yu,b:partner,phase:'approach',until:now+5000};
+    if(Math.hypot(dx,dy)<=(yu.w+partner.w)*.48+22){
+      beginConversation(socialEvent,now);
+    }else{
+      yu.restUntil=0;partner.restUntil=0;
+    }
+    return true;
+  }
+  return false;
 }
 function beginConversation(e,now){
   const {a,b}=e;
@@ -1319,6 +1374,7 @@ function updateSocial(now){
     return;
   }
   if(!socialEvent){
+    if(startQueuedYuConversation(now))return;
     if(now<nextSocialAt)return;
     const pair=chooseSocialPair();
     if(!pair)return;
@@ -1450,7 +1506,10 @@ function tick(now){
         const iv=paused?520:190;
         if(now-a.lastF>=iv){a.frame=(a.frame+1)%4;a.lastF=now}
       });
-      if(multi&&S.moving)collide(now);
+      if(multi&&S.moving){
+        detectYuEncounters(now);
+        collide(now);
+      }
       actors.forEach(a=>{render(a,now);bubblePlacement(a)});
     }
   }
@@ -1472,7 +1531,7 @@ function ui(){root=document.createElement('div');root.id=ROOT;root.className='ma
   lineupButton.className='mascot-lineup-btn';
   lineupButton.textContent='整列';
   lineupButton.addEventListener('click',()=>{
-    if(socialEvent)endConversation(performance.now());S.lineup=!S.lineup;nextSocialAt=performance.now()+2400;save();place();syncStatus();
+    if(socialEvent)endConversation(performance.now());yuConversationQueue=[];yuInContact.clear();S.lineup=!S.lineup;nextSocialAt=performance.now()+2400;save();place();syncStatus();
     actors.forEach(a=>render(a,performance.now()));
   });
   dialog=document.createElement('dialog');dialog.className='mascot-dialog';dialog.innerHTML=`
@@ -1509,7 +1568,7 @@ function ui(){root=document.createElement('div');root.id=ROOT;root.className='ma
       <label><span>速度</span><select id="mSpeed"><option value="slow">ゆっくり</option><option value="normal">普通</option><option value="fast">速い</option></select></label>
     </div>
   </form>
-`;status=dialog.querySelector('#mStatus');gear.addEventListener('click',()=>{sync();dialog.showModal?dialog.showModal():dialog.setAttribute('open','')});root.append(layer,lineupButton,gear,dialog);document.body.append(root);dialog.querySelector('#mMoving').onchange=e=>{S.moving=e.target.checked;if(!S.moving){socialEvent=null;actors.forEach(a=>{a.restUntil=0;a.b.hidden=true})}nextSocialAt=performance.now()+2300;save()};dialog.querySelector('#mSpeech').onchange=e=>{S.speech=e.target.checked;save();visible()};dialog.querySelector('#mSize').onchange=async e=>{S.size=e.target.value;save();await rebuild();sync()};dialog.querySelector('#mSpeed').onchange=e=>{S.speed=e.target.value;actors.forEach(a=>setV(a));save()};dialog.querySelectorAll('[data-char]').forEach(x=>x.onchange=async()=>{let s=selected();S.selectedCharacters=s;save();await rebuild();sync()});dialog.querySelector('#mAll').onclick=async()=>{S.selectedCharacters=Object.keys(C);save();await rebuild();sync()};dialog.querySelector('#mClear').onclick=async()=>{S.selectedCharacters=[];save();await rebuild();sync()}}
+`;status=dialog.querySelector('#mStatus');gear.addEventListener('click',()=>{sync();dialog.showModal?dialog.showModal():dialog.setAttribute('open','')});root.append(layer,lineupButton,gear,dialog);document.body.append(root);dialog.querySelector('#mMoving').onchange=e=>{S.moving=e.target.checked;if(!S.moving){socialEvent=null;actors.forEach(a=>{a.restUntil=0;a.b.hidden=true})}nextSocialAt=performance.now()+2300;save()};dialog.querySelector('#mSpeech').onchange=e=>{S.speech=e.target.checked;if(!S.speech){yuConversationQueue=[];yuInContact.clear()}save();visible()};dialog.querySelector('#mSize').onchange=async e=>{S.size=e.target.value;save();await rebuild();sync()};dialog.querySelector('#mSpeed').onchange=e=>{S.speed=e.target.value;actors.forEach(a=>setV(a));save()};dialog.querySelectorAll('[data-char]').forEach(x=>x.onchange=async()=>{let s=selected();S.selectedCharacters=s;save();await rebuild();sync()});dialog.querySelector('#mAll').onclick=async()=>{S.selectedCharacters=Object.keys(C);save();await rebuild();sync()};dialog.querySelector('#mClear').onclick=async()=>{S.selectedCharacters=[];save();await rebuild();sync()}}
 async function init(){document.querySelectorAll('#'+ROOT).forEach(x=>x.remove());ui();sync();await rebuild();addEventListener('resize',()=>{
  if(S.lineup){placeLineup();return}
  actors.forEach(a=>{let d=dims(a.id);a.w=d.w;a.h=d.h;let q=box(a);a.x=Math.min(q.r,Math.max(q.l,a.x));a.y=Math.min(q.b,Math.max(q.t,a.y))})
