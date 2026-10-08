@@ -571,3 +571,39 @@
   transform: translateX(-50%) rotate(45deg);
   pointer-events: none;
 }
+
+
+/* In-place mini-live: keep the walking actor's position and size.
+   The active full-body frame replaces, rather than manipulates, its walk sprite. */
+.edge-mascot.mascot-live-active{
+  background-image:none !important;
+  overflow:visible;
+  animation:none !important;
+}
+.mascot-live-frame{
+  position:absolute;
+  left:50%;
+  display:block;
+  width:auto;
+  max-width:none;
+  pointer-events:none;
+  user-select:none;
+  transform:translateX(-50%);
+  object-fit:contain;
+}
+.mascot-live-test-btn{
+  align-self:end;
+  min-height:39px;
+  padding:6px 10px;
+  border:1px solid #d79bc0;
+  border-radius:10px;
+  background:#fff1f9;
+  color:#a73678;
+  font-size:12px;
+  font-weight:700;
+  cursor:pointer;
+  touch-action:manipulation;
+}
+@media(max-height:700px){
+  .mascot-dialog-card{overflow-y:auto}
+}
