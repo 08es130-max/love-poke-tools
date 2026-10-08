@@ -327,6 +327,159 @@ function place(){
   });
 }
 function visible(){layer.hidden=!actors.length;if(!S.speech)actors.forEach(a=>a.b.hidden=true)}
+
+function say(a,text,ms=1750){
+  if(!S.speech||!a?.b)return;
+  a.b.textContent=text;
+  a.b.hidden=false;
+  a.b.style.left=Math.min(innerWidth-170,Math.max(8,a.x+a.w/2-80))+'px';
+  a.b.style.top=Math.max(8,a.y-58)+'px';
+  clearTimeout(a.bt);
+  a.bt=setTimeout(()=>{a.b.hidden=true},ms);
+}
+function hideSpeech(a){
+  if(!a?.b)return;
+  clearTimeout(a.bt);
+  a.b.hidden=true;
+}
+function scheduleNextConversation(now){
+  nextSocialAt=now+15000+Math.random()*12000;
+}
+function pairLines(a,b){
+  const match=PAIR_DIALOGUES.find(pair=>
+    (pair.ids[0]===a.id&&pair.ids[1]===b.id)||
+    (pair.ids[1]===a.id&&pair.ids[0]===b.id)
+  );
+  if(!match)return [GREETING[a.id],REPLIES[b.id]];
+  const lines=match.lines[Math.floor(Math.random()*match.lines.length)];
+  return match.ids[0]===a.id?lines:[lines[1],lines[0]];
+}
+function bonded(a,b){
+  return BONDS.some(([x,y])=>(x===a.id&&y===b.id)||(x===b.id&&y===a.id));
+}
+function chooseSocialPair(){
+  if(actors.length<2)return null;
+  const familiar=BONDS.map(([left,right])=>[
+    actors.find(a=>a.id===left),actors.find(a=>a.id===right)
+  ]).filter(([a,b])=>a&&b);
+  if(familiar.length&&Math.random()<.85){
+    return familiar[Math.floor(Math.random()*familiar.length)];
+  }
+  const first=actors[Math.floor(Math.random()*actors.length)];
+  const remaining=actors.filter(a=>a!==first);
+  return [first,remaining[Math.floor(Math.random()*remaining.length)]];
+}
+function beginConversation(e,now){
+  const {a,b}=e;
+  a.restUntil=0;b.restUntil=0;
+  a.pose=Math.max(a.pose,now+4100);
+  b.pose=Math.max(b.pose,now+4100);
+  a.d=a.x<=b.x?'right':'left';
+  b.d=b.x>a.x?'left':'right';
+  e.phase='talk';e.started=now;e.until=now+4100;e.secondSpoken=false;
+  e.lines=pairLines(a,b);
+  actors.forEach(person=>{if(person!==a)hideSpeech(person)});
+  say(a,e.lines[0],1850);
+}
+function endConversation(now){
+  if(socialEvent){
+    hideSpeech(socialEvent.a);hideSpeech(socialEvent.b);
+  }
+  socialEvent=null;
+  scheduleNextConversation(now);
+}
+function updateSocial(now){
+  if(S.lineup||!S.moving||actors.length<2){
+    if(socialEvent)endConversation(now);
+    return;
+  }
+  if(!socialEvent){
+    if(now<nextSocialAt)return;
+    const pair=chooseSocialPair();
+    if(!pair)return;
+    socialEvent={a:pair[0],b:pair[1],phase:'approach',until:now+8500};
+    socialEvent.a.restUntil=0;
+    socialEvent.b.restUntil=0;
+  }
+  const e=socialEvent,a=e.a,b=e.b;
+  if(!actors.includes(a)||!actors.includes(b)){
+    endConversation(now);return;
+  }
+  if(e.phase==='approach'){
+    const dx=b.x+b.w/2-a.x-a.w/2;
+    const dy=b.y+b.h/2-a.y-a.h/2;
+    const distance=Math.hypot(dx,dy);
+    const talkDistance=(a.w+b.w)*.56+26;
+    if(distance<=talkDistance){
+      beginConversation(e,now);return;
+    }
+    if(now>=e.until){
+      endConversation(now);return;
+    }
+    const angle=Math.atan2(dy,dx);
+    setV(a,angle);
+    setV(b,angle+Math.PI);
+    a.restUntil=0;b.restUntil=0;
+  }else if(e.phase==='talk'){
+    if(!e.secondSpoken&&now>=e.started+1950){
+      e.secondSpoken=true;
+      hideSpeech(a);
+      say(b,e.lines[1],1850);
+    }
+    if(now>=e.until){
+      hideSpeech(a);hideSpeech(b);
+      a.pose=0;b.pose=0;
+      if(bonded(a,b)){
+        e.phase='follow';
+        e.until=now+5300;
+        e.leader=a;
+        e.follower=b;
+        setV(a,Math.random()*Math.PI*2);
+        setV(b,Math.atan2(a.y-b.y,a.x-b.x));
+      }else{
+        endConversation(now);
+        // Resume independent walking after a short chat.
+        setV(a,Math.random()*Math.PI*2);
+        setV(b,Math.random()*Math.PI*2);
+      }
+    }
+  }else if(e.phase==='follow'){
+    if(now>=e.until){
+      setV(b,Math.random()*Math.PI*2);
+      endConversation(now);
+      return;
+    }
+    const leader=e.leader,follower=e.follower;
+    leader.restUntil=0;follower.restUntil=0;
+    const length=Math.hypot(leader.vx,leader.vy)||1;
+    const trail=45+Math.min(leader.w,follower.w)*.15;
+    const x=leader.x-leader.vx/length*trail;
+    const y=leader.y-leader.vy/length*trail;
+    if(Math.hypot(x-follower.x,y-follower.y)>32){
+      setV(follower,Math.atan2(y-follower.y,x-follower.x));
+    }else{
+      setV(follower,Math.atan2(leader.vy,leader.vx));
+    }
+  }
+}
+function updatePersonality(a,now,multi){
+  if(!S.moving)return;
+  if(socialEvent&&(socialEvent.a===a||socialEvent.b===a))return;
+  const p=PERSONALITY[a.id];
+  if(!p)return;
+  if(now>=a.nextRest){
+    a.restUntil=now+p.restMs*(.8+Math.random()*.6);
+    a.nextRest=now+p.rest*(.8+Math.random()*.5);
+    a.frame=0;
+    a.lastF=now;
+  }
+  if(multi&&now>=a.nextTurn&&now>=a.restUntil&&now>=a.pose){
+    const angle=Math.atan2(a.vy,a.vx);
+    const change=(Math.random()-.5)*(a.id==='rina'||a.id==='setsuna'?1.45:.85);
+    setV(a,angle+change);
+    a.nextTurn=now+p.turn*(.75+Math.random()*.7);
+  }
+}
 function wall(a,now){let q=box(a),hit=false;if(a.x<q.l){a.x=q.l;a.vx=Math.abs(a.vx);hit=true}else if(a.x>q.r){a.x=q.r;a.vx=-Math.abs(a.vx);hit=true}if(a.y<q.t){a.y=q.t;a.vy=Math.abs(a.vy);hit=true}else if(a.y>q.b){a.y=q.b;a.vy=-Math.abs(a.vy);hit=true}if(hit&&now>a.cool){setV(a,Math.atan2(a.vy,a.vx)+(Math.random()-.5)*.5);a.cool=now+650;pose(a,now,700)}}
 function collide(now){for(let i=0;i<actors.length;i++)for(let j=i+1;j<actors.length;j++){let a=actors[i],b=actors[j];if(now<a.cool||now<b.cool)continue;if(socialEvent&&((socialEvent.a===a&&socialEvent.b===b)||(socialEvent.a===b&&socialEvent.b===a)))continue;let ax=a.x+a.w/2,ay=a.y+a.h/2,bx=b.x+b.w/2,by=b.y+b.h/2,dx=bx-ax,dy=by-ay,di=Math.hypot(dx,dy),mi=Math.min(a.w,a.h)*.32+Math.min(b.w,b.h)*.32;if(di>0&&di<mi){let nx=dx/di,ny=dy/di,o=mi-di;a.x-=nx*o/2;a.y-=ny*o/2;b.x+=nx*o/2;b.y+=ny*o/2;setV(a,Math.atan2(-ny,-nx)+(Math.random()-.5)*.7);setV(b,Math.atan2(ny,nx)+(Math.random()-.5)*.7);a.cool=b.cool=now+850;pose(a,now,850);pose(b,now,850)}}}
 function single(a,dist,now){let q=box(a);if(a.d==='right'){a.x+=dist;if(a.x>=q.r){a.x=q.r;a.d='down';pose(a,now)}}else if(a.d==='down'){a.y+=dist;if(a.y>=q.b){a.y=q.b;a.d='left';pose(a,now)}}else if(a.d==='left'){a.x-=dist;if(a.x<=q.l){a.x=q.l;a.d='up';pose(a,now)}}else{a.y-=dist;if(a.y<=q.t){a.y=q.t;a.d='right';pose(a,now)}}}
