@@ -334,11 +334,11 @@
   .mascot-character-head { align-items:flex-start; flex-direction:column; }
 }
 
-/* two-row bottom lineup v0.9.69 */
+/* left-and-right vertical lineup v0.9.70 */
 .mascot-lineup-btn {
   position: fixed;
   right: max(10px, calc(env(safe-area-inset-right, 0px) + 8px));
-  bottom: max(61px, calc(env(safe-area-inset-bottom, 0px) + 59px));
+  bottom: max(10px, calc(env(safe-area-inset-bottom, 0px) + 8px));
   z-index: 920;
   min-width: 49px;
   min-height: 42px;
@@ -360,4 +360,9 @@
 }
 .mascot-lineup-active .mascot-actor {
   transition: none;
+}
+
+/* Gear on the left and lineup toggle on the right, both at the bottom. */
+.mascot-settings-btn {
+  right: max(70px, calc(env(safe-area-inset-right, 0px) + 68px));
 }
