@@ -514,3 +514,37 @@
 @media (max-height: 485px) {
   .mascot-dialog-card { overflow-y: auto; }
 }
+
+/* Visible speech and personality feedback v0.9.75 */
+.mascot-actor-bubble {
+  z-index: 910;
+  box-sizing: border-box;
+  max-width: min(200px, calc(100vw - 16px));
+  padding: 9px 11px;
+  border: 1px solid #e9b0c8;
+  border-left: 4px solid #e9508b;
+  border-radius: 12px;
+  background: rgba(255, 252, 254, .98);
+  color: #42303a;
+  font-size: 13px;
+  line-height: 1.45;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+  box-shadow: 0 5px 15px rgba(96, 39, 62, .2);
+  pointer-events: none;
+}
+.mascot-actor-bubble[hidden] { display: none !important; }
+.mascot-napping::after {
+  content: 'Zzz';
+  position: absolute;
+  right: 3px;
+  top: 0;
+  padding: 2px 5px;
+  color: #7b65b2;
+  background: rgba(255,255,255,.88);
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  pointer-events: none;
+}
