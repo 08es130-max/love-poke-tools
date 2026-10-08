@@ -353,14 +353,18 @@ function overlapArea(a,b){
          Math.max(0,Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top));
 }
 function bubbleDimensions(a){
-  const element=a.b;
-  const rect=typeof element.getBoundingClientRect==='function'?element.getBoundingClientRect():null;
-  const max=Math.max(100,Math.min(188,innerWidth-16));
-  const w=Math.min(max,Math.max(90,rect?.width||element.offsetWidth||
-    Math.min(max,Math.max(100,(element.textContent||'').length*12+24))));
-  const lines=Math.max(1,Math.ceil(((element.textContent||'').length*12+24)/Math.max(70,w-21)));
-  const h=Math.min(Math.max(36,lines*19+20),Math.max(44,rect?.height||element.offsetHeight||36));
-  return {w,h};
+  const el=a.b;
+  const max=Math.max(80,Math.min(194,innerWidth-16));
+  const length=Array.from(el.textContent||'').length;
+  const w=Math.max(Math.min(106,max),Math.min(max,Math.ceil(length*13+26)));
+  // Set width before measuring actual wrapped text so multi-line bubbles
+  // never overlap the speaker because of underestimated heights.
+  el.style.width=w+'px';
+  el.style.maxWidth=w+'px';
+  const measured=el.getBoundingClientRect?.().height||el.offsetHeight||0;
+  const lines=Math.max(1,Math.ceil(length*13/Math.max(45,w-28)));
+  const h=measured>0?measured:lines*19+22;
+  return{w,h};
 }
 function bubblePlacement(a){
   if(!a?.b||a.b.hidden)return;
@@ -384,7 +388,7 @@ function bubblePlacement(a){
   const maxX=Math.max(8,innerWidth-w-8);
   const clampX=x=>Math.min(maxX,Math.max(8,x));
   const wantedTop=speaker.top-h-5;
-  const top=Math.max(safeTop+margin,wantedTop);
+  const top=Math.max(4,wantedTop); // Stay above the sprite even near the safe-area boundary.
   const defaultX=clampX(speaker.center-w/2);
   const xs=[defaultX];
   // First try directly overhead; then either upper corner, away from the partner.
