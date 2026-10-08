@@ -875,6 +875,14 @@ const MORE_PAIR_DIALOGUES=[
  }
 ];
 PAIR_DIALOGUES.push(...MORE_PAIR_DIALOGUES);
+
+const YU_ALTERNATIVE_LINES=[["kasumi","侑先輩！ かすみんの新しいポーズどうです？","すっごくかわいい！ 写真撮ってもいい？"],["shizuku","侑先輩、次のステージも見てくださいね","もちろん！ しずくちゃんの歌、楽しみだよ"],["karin","侑、また新しい曲を探してるの？","うん！ 果林さんに似合う曲を考えたいな"],["ai","ゆうゆ！ 新しいときめき発見した？","愛ちゃんの笑顔を見るたび発見してるよ！"],["kanata","侑ちゃん、少し休んでいこうよ〜","うん！ 彼方さんとゆっくりするのもいいね"],["emma","侑ちゃん、今度みんなでピクニックしよう？","行きたい！ みんなの歌も聴けたら最高！"],["rina","侑さん、わたしの気持ち伝わってる？","うん！ 璃奈ちゃんの歌で伝わってるよ！"],["shioriko","侑さん、練習の準備は整いました","ありがとう栞子ちゃん！ みんなで楽しもう！"],["mia","侑、このメロディーどう思う？","すごくいい！ なんだか胸が熱くなるね！"],["lanzhu","侑！ ランジュの次のライブ、絶対来るのよ！","もちろん！ 一番前で応援するよ！"]];
+YU_ALTERNATIVE_LINES.forEach(([partner,a,b])=>{
+ const match=PAIR_DIALOGUES.find(pair=>pair.ids.includes(partner)&&pair.ids.includes('yu'));
+ if(!match)throw new Error('Missing Yu dialogue: '+partner);
+ match.lines.push(match.ids[0]==='yu'?[b,a]:[a,b]);
+});
+
 const GREETING={
  ayumu:'一緒に歩けるとうれしいな',kasumi:'かすみんとおしゃべりしましょう！',
  shizuku:'お話できてうれしいです',karin:'ふふ、ちょっとお話しない？',
