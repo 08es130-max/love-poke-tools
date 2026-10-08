@@ -1,6 +1,6 @@
 (() => {
 'use strict';
-const ROOT='lovePokeMascotRoot',KEY='lovepoke_mascot_settings_v3',OLD='lovepoke_mascot_settings_v2',VER='0.9.69';
+const ROOT='lovePokeMascotRoot',KEY='lovepoke_mascot_settings_v3',OLD='lovepoke_mascot_settings_v2',VER='0.9.70';
 const C={
  ayumu:['上原歩夢','ayumu'],kasumi:['中須かすみ','kasumi'],shizuku:['桜坂しずく','shizuku'],karin:['朝香果林','karin'],
  ai:['宮下愛','ai'],kanata:['近江彼方','kanata'],setsuna:['優木せつ菜','setsuna'],emma:['エマ・ヴェルデ','emma'],
@@ -81,56 +81,59 @@ async function rebuild(){actors.forEach(a=>{clearTimeout(a.bt);a.el.remove();a.b
 function placeLineup(){
   const order=Object.keys(C);
   const sorted=[...actors].sort((a,b)=>order.indexOf(a.id)-order.indexOf(b.id));
-  const n=sorted.length;
-  if(!n)return;
-  const style=getComputedStyle(document.documentElement);
-  const safeLeft=parseFloat(style.getPropertyValue('--mascot-safe-left'))||0;
-  const safeRight=parseFloat(style.getPropertyValue('--mascot-safe-right'))||0;
-  const safeBottom=parseFloat(style.getPropertyValue('--mascot-safe-bottom'))||0;
-  const left=safeLeft+5;
-  // Keep the right edge free for the gear and the lineup button stacked above it.
-  const reservedControls=60;
-  const area=Math.max(1,innerWidth-left-safeRight-5-reservedControls);
-  const topCount=n>7?7:0;
-  const bottomCount=n-topCount;
-  const top=sorted.slice(0,topCount);
-  const bottom=sorted.slice(topCount);
-  const topSlot=topCount?area/topCount:Infinity;
-  const bottomSlot=area/bottomCount;
+  if(!sorted.length)return;
 
-  // Both rows share one scale: bottom-row characters must not look larger.
-  const widthLimit=Math.min(...sorted.map(a=>{
-    const natural=dims(a.id);
-    const slot=top.includes(a)?topSlot:bottomSlot;
-    return Math.max(0.05,(slot-4)/natural.w);
-  }));
-  const fit=Math.min(1,widthLimit);
-  const measured=new Map();
-  sorted.forEach(a=>{
-    const d=dims(a.id);
-    a.w=d.w*fit;
-    a.h=d.h*fit;
-    measured.set(a.id,{w:a.w,h:a.h});
+  // Left column first in official order; Yu is last at the bottom right.
+  const leftCount=Math.ceil(sorted.length/2);
+  const leftColumn=sorted.slice(0,leftCount);
+  const rightColumn=sorted.slice(leftCount);
+  const safe=getComputedStyle(document.documentElement);
+  const topInset=parseFloat(safe.getPropertyValue('--mascot-safe-top'))||0;
+  const bottomInset=parseFloat(safe.getPropertyValue('--mascot-safe-bottom'))||0;
+  const leftInset=parseFloat(safe.getPropertyValue('--mascot-safe-left'))||0;
+  const rightInset=parseFloat(safe.getPropertyValue('--mascot-safe-right'))||0;
+
+  // Leave room for the header at the top and the two controls at the bottom.
+  const top=Math.max(topInset+48,54);
+  const bottom=Math.max(top+32,innerHeight-bottomInset-72);
+  const availableHeight=bottom-top;
+  const slotLeft=availableHeight/Math.max(1,leftColumn.length);
+  const slotRight=rightColumn.length?availableHeight/rightColumn.length:Infinity;
+  const slotHeight=Math.min(slotLeft,slotRight);
+  const sideSpace=Math.max(30,(innerWidth-leftInset-rightInset-20)/2);
+
+  // Aim for the chosen size without the crowd penalty; fit only as needed.
+  // Normalize transparent frame padding so visible figures match in height.
+  const desiredVisible=(size[S.size]||88)*.98;
+  const measurements=sorted.map(a=>{
+    const m=metrics.get(a.id)||{fw:272,fh:217,visibleRatio:.76};
+    const ratio=Math.max(.48,Math.min(.95,m.visibleRatio||.76));
+    const h=desiredVisible/ratio;
+    return{a,h,w:h*m.fw/m.fh};
+  });
+  const fit=Math.min(1,...measurements.map(m=>
+    Math.min(Math.max(.03,(slotHeight-5)/m.h),Math.max(.03,(sideSpace-8)/m.w))
+  ));
+  measurements.forEach(({a,h,w})=>{
+    a.h=h*fit;
+    a.w=w*fit;
   });
 
-  const baseY=Math.max(0,innerHeight-safeBottom-7);
-  const bottomRowHeight=Math.max(...bottom.map(a=>a.h));
-  const topBaseline=baseY-bottomRowHeight-5;
-
-  function arrange(row,slot,baseline){
-    row.forEach((a,i)=>{
-      a.x=left+(i+0.5)*slot-a.w/2;
-      a.y=baseline-a.h;
+  function stack(list,slot,isRight){
+    list.forEach((a,i)=>{
+      const centerX=isRight
+        ? innerWidth-rightInset-6-a.w/2
+        : leftInset+6+a.w/2;
+      a.x=centerX-a.w/2;
+      a.y=top+(i+.5)*slot-a.h/2;
       a.d='down';
       a.vx=0;a.vy=0;
       a.pose=0;a.lastF=0;
     });
   }
-  if(topCount)arrange(top,topSlot,topBaseline);
-  arrange(bottom,bottomSlot,baseY);
-
-  // The controls occupy their own column and do not cover either row.
-  root.style.setProperty('--mascot-lineup-height',Math.ceil((topCount?Math.max(...top.map(a=>a.h))+5:0)+bottomRowHeight)+'px');
+  stack(leftColumn,slotLeft,false);
+  stack(rightColumn,slotRight,true);
+  root.style.setProperty('--mascot-lineup-height','0px');
   root.classList.add('mascot-lineup-active');
 }
 function place(){
@@ -184,10 +187,10 @@ function tick(now){
 }
 function selected(){return[...dialog.querySelectorAll('[data-char]:checked')].map(x=>x.value)}
 function syncStatus(msg=''){
-  if(status)status.textContent=msg||(S.lineup?'画面下に2段で整列中：移動せずポーズが変わります':S.selectedCharacters.length===1?'1人選択中：外周を歩きます':S.selectedCharacters.length+'人選択中：画面全体を自由に歩きます');
+  if(status)status.textContent=msg||(S.lineup?'画面左右に縦整列中：移動せずポーズが変わります':S.selectedCharacters.length===1?'1人選択中：外周を歩きます':S.selectedCharacters.length+'人選択中：画面全体を自由に歩きます');
   if(lineupButton){
     lineupButton.textContent=S.lineup?'歩行':'整列';
-    lineupButton.setAttribute('aria-label',S.lineup?'通常歩行に戻す':'キャラクターを画面下に2段で整列');
+    lineupButton.setAttribute('aria-label',S.lineup?'通常歩行に戻す':'キャラクターを画面左右に縦に整列');
     lineupButton.setAttribute('aria-pressed',S.lineup?'true':'false');
   }
 }
