@@ -1,6 +1,6 @@
 (() => {
 'use strict';
-const ROOT='lovePokeMascotRoot',KEY='lovepoke_mascot_settings_v3',OLD='lovepoke_mascot_settings_v2',VER='0.9.70';
+const ROOT='lovePokeMascotRoot',KEY='lovepoke_mascot_settings_v3',OLD='lovepoke_mascot_settings_v2',VER='0.9.71';
 const C={
  ayumu:['上原歩夢','ayumu'],kasumi:['中須かすみ','kasumi'],shizuku:['桜坂しずく','shizuku'],karin:['朝香果林','karin'],
  ai:['宮下愛','ai'],kanata:['近江彼方','kanata'],setsuna:['優木せつ菜','setsuna'],emma:['エマ・ヴェルデ','emma'],
@@ -72,69 +72,118 @@ function box(a){let st=getComputedStyle(document.documentElement),n=x=>parseFloa
 function dir(a){return Math.abs(a.vx)>=Math.abs(a.vy)?(a.vx>=0?'right':'left'):(a.vy>=0?'down':'up')}
 function row(d){return{right:0,left:1,down:2,up:3,idle:4}[d]??4}
 function setV(a,ang=Math.atan2(a.vy,a.vx)){let v=speed[S.speed]||42;a.vx=Math.cos(ang)*v;a.vy=Math.sin(ang)*v;a.d=dir(a)}
-function render(a,now){let m=metrics.get(a.id)||{fw:272,fh:217},pose=(S.lineup||now<a.pose||!S.moving)?'idle':a.d,sc=a.h/m.fh,f=a.frame%4,b=(pose==='idle'?0:[0,-4,0,-2][f]*Math.max(.65,Math.min(1.15,a.h/88)));a.el.style.width=a.w+'px';a.el.style.height=a.h+'px';a.el.style.setProperty('--mascot-image','url("'+sprite(a.id)+'")');a.el.style.setProperty('--mascot-sheet-width',(m.fw*4*sc)+'px');a.el.style.setProperty('--mascot-sheet-height',(m.fh*5*sc)+'px');a.el.style.setProperty('--mascot-frame-x',(-m.fw*f*sc)+'px');a.el.style.setProperty('--mascot-frame-y',(-m.fh*row(pose)*sc)+'px');a.el.style.transform='translate3d('+a.x+'px,'+(a.y+b)+'px,0)'}
+function render(a,now){let m=metrics.get(a.id)||{fw:272,fh:217},pose=(S.lineup||now<a.pose||!S.moving)?'idle':a.d,sc=a.h/m.fh,f=a.frame%4,b=(pose==='idle'?0:[0,-4,0,-2][f]*Math.max(.65,Math.min(1.15,a.h/88)));if(S.lineup)positionLineupActor(a);a.el.style.width=a.w+'px';a.el.style.height=a.h+'px';a.el.style.setProperty('--mascot-image','url("'+sprite(a.id)+'")');a.el.style.setProperty('--mascot-sheet-width',(m.fw*4*sc)+'px');a.el.style.setProperty('--mascot-sheet-height',(m.fh*5*sc)+'px');a.el.style.setProperty('--mascot-frame-x',(-m.fw*f*sc)+'px');a.el.style.setProperty('--mascot-frame-y',(-m.fh*row(pose)*sc)+'px');a.el.style.transform='translate3d('+a.x+'px,'+(a.y+b)+'px,0)'}
 function pose(a,now,ms=800){a.pose=Math.max(a.pose,now+ms);a.frame=Math.floor(Math.random()*4);a.el.classList.remove('mascot-collision-pose');void a.el.offsetWidth;a.el.classList.add('mascot-collision-pose');setTimeout(()=>a.el&&a.el.classList.remove('mascot-collision-pose'),ms)}
 function bubble(a){if(!S.speech)return;let p=P[a.id]||[C[a.id][0]+'です！'];a.b.textContent=p[Math.floor(Math.random()*p.length)];a.b.hidden=false;a.b.style.left=Math.min(innerWidth-170,Math.max(8,a.x+a.w/2-80))+'px';a.b.style.top=Math.max(8,a.y-58)+'px';clearTimeout(a.bt);a.bt=setTimeout(()=>a.b.hidden=true,2600)}
 function actor(id){let d=dims(id),el=document.createElement('button'),b=document.createElement('div');el.type='button';el.className='edge-mascot mascot-sprite mascot-actor';el.setAttribute('aria-label',C[id][0]+'マスコット');b.className='mascot-bubble mascot-actor-bubble';b.hidden=true;let a={id,el,b,w:d.w,h:d.h,x:0,y:0,vx:0,vy:0,d:'right',frame:0,lastF:0,pose:0,cool:0,bt:null};el.addEventListener('click',()=>{let n=performance.now();pose(a,n,1100);bubble(a)});layer.append(el,b);return a}
-function loadMetric(id){return new Promise(res=>{let i=new Image();i.onload=()=>{const fw=i.naturalWidth/4,fh=i.naturalHeight/5;metrics.set(id,{fw,fh,visibleRatio:spriteVisibleRatio(i,fw,fh)});res(true)};i.onerror=()=>res(false);i.src=sprite(id)})}
+function spriteIdleBounds(image,fw,fh){
+  const fallback={cx:.5,bottom:.92,height:.76,width:.60};
+  try{
+    const w=Math.round(fw),h=Math.round(fh);
+    const canvas=document.createElement('canvas');
+    canvas.width=w;canvas.height=h;
+    const ctx=canvas.getContext('2d',{willReadFrequently:true});
+    if(!ctx)return Array(4).fill(fallback);
+    const bounds=[];
+    for(let frame=0;frame<4;frame++){
+      ctx.clearRect(0,0,w,h);
+      ctx.drawImage(image,frame*fw,4*fh,fw,fh,0,0,w,h);
+      const rgba=ctx.getImageData(0,0,w,h).data;
+      let x0=w,x1=-1,y0=h,y1=-1;
+      for(let y=0;y<h;y+=2)for(let x=0;x<w;x+=2){
+        if(rgba[(y*w+x)*4+3]>85){
+          x0=Math.min(x0,x);x1=Math.max(x1,x);
+          y0=Math.min(y0,y);y1=Math.max(y1,y);
+        }
+      }
+      bounds.push(x1<0?fallback:{
+        cx:(x0+x1+2)/(2*w),
+        bottom:Math.min(1,(y1+2)/h),
+        height:Math.max(.1,(y1-y0+2)/h),
+        width:Math.max(.1,(x1-x0+2)/w)
+      });
+    }
+    return bounds;
+  }catch(_){return Array(4).fill(fallback)}
+}
+function loadMetric(id){return new Promise(res=>{let i=new Image();i.onload=()=>{
+  const fw=i.naturalWidth/4,fh=i.naturalHeight/5;
+  if(!fw||!fh){res(false);return}
+  metrics.set(id,{
+    fw,fh,
+    visibleRatio:spriteVisibleRatio(i,fw,fh),
+    idleBounds:spriteIdleBounds(i,fw,fh)
+  });
+  res(true)
+};i.onerror=()=>res(false);i.src=sprite(id)})}
 async function rebuild(){actors.forEach(a=>{clearTimeout(a.bt);a.el.remove();a.b.remove()});actors=[];let ids=valid(S.selectedCharacters);if(!ids.length)ids=['shioriko'];S.selectedCharacters=ids;save();let ok=(await Promise.all(ids.map(async id=>[id,await loadMetric(id)]))).filter(x=>x[1]).map(x=>x[0]);if(!ok.length){await loadMetric('shioriko');ok=['shioriko']}ok.forEach(id=>actors.push(actor(id)));place();visible();syncStatus()}
 function placeLineup(){
   const order=Object.keys(C);
   const sorted=[...actors].sort((a,b)=>order.indexOf(a.id)-order.indexOf(b.id));
   if(!sorted.length)return;
-
-  // Left column first in official order; Yu is last at the bottom right.
-  const leftCount=Math.ceil(sorted.length/2);
+  const count=sorted.length;
+  const leftCount=Math.ceil(count/2);
   const leftColumn=sorted.slice(0,leftCount);
   const rightColumn=sorted.slice(leftCount);
-  const safe=getComputedStyle(document.documentElement);
-  const topInset=parseFloat(safe.getPropertyValue('--mascot-safe-top'))||0;
-  const bottomInset=parseFloat(safe.getPropertyValue('--mascot-safe-bottom'))||0;
-  const leftInset=parseFloat(safe.getPropertyValue('--mascot-safe-left'))||0;
-  const rightInset=parseFloat(safe.getPropertyValue('--mascot-safe-right'))||0;
+  const style=getComputedStyle(document.documentElement);
+  const safeTop=parseFloat(style.getPropertyValue('--mascot-safe-top'))||0;
+  const safeBottom=parseFloat(style.getPropertyValue('--mascot-safe-bottom'))||0;
+  const safeLeft=parseFloat(style.getPropertyValue('--mascot-safe-left'))||0;
+  const safeRight=parseFloat(style.getPropertyValue('--mascot-safe-right'))||0;
 
-  // Leave room for the header at the top and the two controls at the bottom.
-  const top=Math.max(topInset+48,54);
-  const bottom=Math.max(top+32,innerHeight-bottomInset-72);
-  const availableHeight=bottom-top;
-  const slotLeft=availableHeight/Math.max(1,leftColumn.length);
-  const slotRight=rightColumn.length?availableHeight/rightColumn.length:Infinity;
-  const slotHeight=Math.min(slotLeft,slotRight);
-  const sideSpace=Math.max(30,(innerWidth-leftInset-rightInset-20)/2);
-
-  // Aim for the chosen size without the crowd penalty; fit only as needed.
-  // Normalize transparent frame padding so visible figures match in height.
+  // Use a SINGLE seven-slot vertical grid on both sides, even if right has six.
+  // The unused bottom-right slot holds the settings and lineup buttons.
+  const top=Math.max(safeTop+48,54);
+  const bottom=Math.max(top+24,innerHeight-safeBottom-12);
+  const slot=(bottom-top)/leftCount;
+  const columnWidth=Math.max(1,(innerWidth-safeLeft-safeRight-18)/2);
   const desiredVisible=(size[S.size]||88)*.98;
-  const measurements=sorted.map(a=>{
-    const m=metrics.get(a.id)||{fw:272,fh:217,visibleRatio:.76};
-    const ratio=Math.max(.48,Math.min(.95,m.visibleRatio||.76));
-    const h=desiredVisible/ratio;
-    return{a,h,w:h*m.fw/m.fh};
-  });
-  const fit=Math.min(1,...measurements.map(m=>
-    Math.min(Math.max(.03,(slotHeight-5)/m.h),Math.max(.03,(sideSpace-8)/m.w))
-  ));
-  measurements.forEach(({a,h,w})=>{
-    a.h=h*fit;
-    a.w=w*fit;
+
+  const source=sorted.map(a=>{
+    const metric=metrics.get(a.id)||{fw:272,fh:217};
+    const bounds=metric.idleBounds||[{cx:.5,bottom:.92,height:.76,width:.6}];
+    const heightFractions=bounds.map(b=>b.height).sort((a,b)=>a-b);
+    const visibleHeight=heightFractions[Math.floor(heightFractions.length/2)]||.76;
+    const largestWidth=Math.max(...bounds.map(b=>b.width));
+    const h=desiredVisible/Math.max(.2,visibleHeight);
+    const w=h*metric.fw/metric.fh;
+    return {a,h,w,visibleHeight,largestWidth};
   });
 
-  function stack(list,slot,isRight){
-    list.forEach((a,i)=>{
-      const centerX=isRight
-        ? innerWidth-rightInset-6-a.w/2
-        : leftInset+6+a.w/2;
-      a.x=centerX-a.w/2;
-      a.y=top+(i+.5)*slot-a.h/2;
-      a.d='down';
-      a.vx=0;a.vy=0;
-      a.pose=0;a.lastF=0;
+  // One common multiplier keeps every character's visible height consistent.
+  const fit=Math.min(1,...source.map(x=>Math.min(
+    Math.max(.02,(slot-5)/(x.h*x.visibleHeight)),
+    Math.max(.02,(columnWidth-16)/(x.w*x.largestWidth))
+  )));
+  source.forEach(x=>{x.a.w=x.w*fit;x.a.h=x.h*fit;});
+
+  const maxVisualWidth=Math.max(...source.map(x=>x.w*x.largestWidth*fit));
+  const sideOffset=Math.max(12+maxVisualWidth/2,Math.min(columnWidth/2,60));
+  const leftAnchor=safeLeft+sideOffset;
+  const rightAnchor=innerWidth-safeRight-sideOffset;
+
+  function arrange(column,anchor){
+    column.forEach((a,index)=>{
+      // A shared baseline for corresponding members on both sides.
+      a.anchorX=anchor;
+      a.anchorBottom=top+(index+1)*slot-3;
+      a.d='down';a.vx=0;a.vy=0;
+      a.pose=0;a.frame=0;a.lastF=0;
+      positionLineupActor(a);
     });
   }
-  stack(leftColumn,slotLeft,false);
-  stack(rightColumn,slotRight,true);
+  arrange(leftColumn,leftAnchor);
+  arrange(rightColumn,rightAnchor);
   root.style.setProperty('--mascot-lineup-height','0px');
   root.classList.add('mascot-lineup-active');
+}
+// Correct for alpha padding in each idle pose so feet and horizontal center
+// stay fixed when changing frames, rather than shifting the whole character.
+function positionLineupActor(a){
+  const metric=metrics.get(a.id);
+  const current=(metric?.idleBounds||[])[a.frame%4]||{cx:.5,bottom:.92};
+  a.x=a.anchorX-current.cx*a.w;
+  a.y=a.anchorBottom-current.bottom*a.h;
 }
 function place(){
   if(S.lineup){placeLineup();return}
@@ -187,7 +236,7 @@ function tick(now){
 }
 function selected(){return[...dialog.querySelectorAll('[data-char]:checked')].map(x=>x.value)}
 function syncStatus(msg=''){
-  if(status)status.textContent=msg||(S.lineup?'画面左右に縦整列中：移動せずポーズが変わります':S.selectedCharacters.length===1?'1人選択中：外周を歩きます':S.selectedCharacters.length+'人選択中：画面全体を自由に歩きます');
+  if(status)status.textContent=msg||(S.lineup?'左右同じ高さに整列中：移動せずポーズが変わります':S.selectedCharacters.length===1?'1人選択中：外周を歩きます':S.selectedCharacters.length+'人選択中：画面全体を自由に歩きます');
   if(lineupButton){
     lineupButton.textContent=S.lineup?'歩行':'整列';
     lineupButton.setAttribute('aria-label',S.lineup?'通常歩行に戻す':'キャラクターを画面左右に縦に整列');
