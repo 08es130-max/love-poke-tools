@@ -1,6 +1,6 @@
 (() => {
 'use strict';
-const ROOT='lovePokeMascotRoot',KEY='lovepoke_mascot_settings_v3',OLD='lovepoke_mascot_settings_v2',VER='0.9.76';
+const ROOT='lovePokeMascotRoot',KEY='lovepoke_mascot_settings_v3',OLD='lovepoke_mascot_settings_v2',VER='0.9.77';
 const C={
  ayumu:['上原歩夢','ayumu'],kasumi:['中須かすみ','kasumi'],shizuku:['桜坂しずく','shizuku'],karin:['朝香果林','karin'],
  ai:['宮下愛','ai'],kanata:['近江彼方','kanata'],setsuna:['優木せつ菜','setsuna'],emma:['エマ・ヴェルデ','emma'],
@@ -181,7 +181,7 @@ function render(a,now){
     else a.el.classList.remove('mascot-napping');
   }let m=metrics.get(a.id)||{fw:272,fh:217},pose=(S.lineup||now<a.pose||now<(a.restUntil||0)||!S.moving)?'idle':a.d,sc=a.h/m.fh,f=a.frame%4,b=(pose==='idle'?0:[0,-4,0,-2][f]*Math.max(.65,Math.min(1.15,a.h/88)));if(S.lineup)positionLineupActor(a);a.el.style.width=a.w+'px';a.el.style.height=a.h+'px';a.el.style.setProperty('--mascot-image','url("'+sprite(a.id)+'")');a.el.style.setProperty('--mascot-sheet-width',(m.fw*4*sc)+'px');a.el.style.setProperty('--mascot-sheet-height',(m.fh*5*sc)+'px');a.el.style.setProperty('--mascot-frame-x',(-m.fw*f*sc)+'px');a.el.style.setProperty('--mascot-frame-y',(-m.fh*row(pose)*sc)+'px');a.el.style.transform='translate3d('+a.x+'px,'+(a.y+b)+'px,0)'}
 function pose(a,now,ms=800){a.pose=Math.max(a.pose,now+ms);a.frame=Math.floor(Math.random()*4);a.el.classList.remove('mascot-collision-pose');void a.el.offsetWidth;a.el.classList.add('mascot-collision-pose');setTimeout(()=>a.el&&a.el.classList.remove('mascot-collision-pose'),ms)}
-function bubble(a){if(!S.speech)return;let p=P[a.id]||[C[a.id][0]+'です！'];a.b.textContent=p[Math.floor(Math.random()*p.length)];a.b.hidden=false;a.b.style.left=Math.min(innerWidth-170,Math.max(8,a.x+a.w/2-80))+'px';a.b.style.top=Math.max(8,a.y-58)+'px';clearTimeout(a.bt);a.bt=setTimeout(()=>a.b.hidden=true,2600)}
+function bubble(a){if(!S.speech)return;const p=P[a.id]||[C[a.id][0]+'です！'];say(a,p[Math.floor(Math.random()*p.length)],3000)}
 function actor(id){let d=dims(id),el=document.createElement('button'),b=document.createElement('div');el.type='button';el.className='edge-mascot mascot-sprite mascot-actor';el.setAttribute('aria-label',C[id][0]+'マスコット');b.className='mascot-bubble mascot-actor-bubble';b.hidden=true;let a={id,el,b,w:d.w,h:d.h,x:0,y:0,vx:0,vy:0,d:'right',frame:0,lastF:0,pose:0,cool:0,bt:null,restUntil:0,nextRest:performance.now()+(PERSONALITY[id]?.rest||17000)*(.7+Math.random()*.6),nextTurn:performance.now()+(PERSONALITY[id]?.turn||12000)*(.7+Math.random()*.7)};el.addEventListener('click',()=>{let n=performance.now();pose(a,n,1100);bubble(a)});layer.append(el,b);return a}
 function spriteIdleBounds(image,fw,fh){
   const fallback={cx:.5,bottom:.92,height:.76,width:.60};
@@ -332,14 +332,88 @@ function place(){
 }
 function visible(){layer.hidden=!actors.length;if(!S.speech)actors.forEach(a=>a.b.hidden=true)}
 
+// Approximate the visible artwork, not the transparent sprite cell.
+// This makes the speech pointer sit just above the speaker's head.
+function mascotVisibleBox(a){
+  const bounds=S.lineup?(metrics.get(a.id)?.idleBounds||[])[a.frame%4]:null;
+  const cx=bounds?.cx??.5;
+  const bottom=bounds?.bottom??.94;
+  const h=bounds?.height??(metrics.get(a.id)?.visibleRatio||.76);
+  const width=bounds?.width??.68;
+  const center=a.x+a.w*cx;
+  return {
+    left:center-a.w*width/2, right:center+a.w*width/2,
+    top:a.y+a.h*(bottom-h), bottom:a.y+a.h*bottom,
+    center
+  };
+}
+function overlapArea(a,b){
+  if(!a||!b)return 0;
+  return Math.max(0,Math.min(a.right,b.right)-Math.max(a.left,b.left))*
+         Math.max(0,Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top));
+}
+function bubbleDimensions(a){
+  const element=a.b;
+  const rect=typeof element.getBoundingClientRect==='function'?element.getBoundingClientRect():null;
+  const max=Math.max(100,Math.min(188,innerWidth-16));
+  const w=Math.min(max,Math.max(90,rect?.width||element.offsetWidth||
+    Math.min(max,Math.max(100,(element.textContent||'').length*12+24))));
+  const lines=Math.max(1,Math.ceil(((element.textContent||'').length*12+24)/Math.max(70,w-21)));
+  const h=Math.min(Math.max(36,lines*19+20),Math.max(44,rect?.height||element.offsetHeight||36));
+  return {w,h};
+}
 function bubblePlacement(a){
   if(!a?.b||a.b.hidden)return;
-  const width=Math.min(200,Math.max(136,innerWidth-18));
-  const left=Math.max(8,Math.min(innerWidth-width-8,a.x+a.w/2-width/2));
-  const y=a.y<75?a.y+a.h+7:a.y-82;
-  a.b.style.left=left+'px';
-  a.b.style.top=Math.max(8,Math.min(innerHeight-98,y))+'px';
-  a.b.style.maxWidth=width+'px';
+  const avatar=mascotVisibleBox(a);
+  const partner=socialEvent?.phase==='talk'?
+    (socialEvent.a===a?socialEvent.b:socialEvent.b===a?socialEvent.a:null):null;
+  const other=partner?mascotVisibleBox(partner):null;
+  const {w,h}=bubbleDimensions(a);
+  const styles=getComputedStyle(document.documentElement);
+  const safeTop=parseFloat(styles.getPropertyValue('--mascot-safe-top'))||0;
+  const margin=6;
+
+  // A bubble must stay ABOVE the speaking character, including near screen top.
+  // Normal walkers can shift downward slightly to make headroom; lineup stays fixed.
+  const requiredTop=safeTop+margin+h+5;
+  if(!S.lineup&&avatar.top<requiredTop){
+    const q=box(a);
+    a.y=Math.min(q.b,a.y+requiredTop-avatar.top);
+  }
+  const speaker=mascotVisibleBox(a);
+  const maxX=Math.max(8,innerWidth-w-8);
+  const clampX=x=>Math.min(maxX,Math.max(8,x));
+  const wantedTop=speaker.top-h-5;
+  const top=Math.max(safeTop+margin,wantedTop);
+  const defaultX=clampX(speaker.center-w/2);
+  const xs=[defaultX];
+  // First try directly overhead; then either upper corner, away from the partner.
+  const left=clampX(speaker.center-w+16);
+  const right=clampX(speaker.center-16);
+  const partnerOnRight=!!other&&other.center>=speaker.center;
+  xs.push(...(partnerOnRight?[left,right]:[right,left]));
+  xs.push(clampX(speaker.left-w-5),clampX(speaker.right+5));
+  xs.push(8,maxX);
+  const existing=actors.filter(x=>x!==a&&x!==partner&&!x.b.hidden);
+  let chosen=defaultX,score=Infinity;
+  for(const x of [...new Set(xs)]){
+    const rect={left:x,right:x+w,top,bottom:top+h};
+    // Prioritize leaving the two talking characters unobstructed.
+    const partnerObstruction=overlapArea(rect,other);
+    const speakerObstruction=overlapArea(rect,speaker);
+    const otherBubbleObstruction=existing.reduce((sum,person)=>{
+      const p=person.b.getBoundingClientRect?.();
+      return p?sum+overlapArea(rect,p):sum;
+    },0);
+    const value=(partnerObstruction+speakerObstruction)*100+
+      otherBubbleObstruction*20+Math.abs(x-defaultX)*.14;
+    if(value<score){score=value;chosen=x}
+  }
+  a.b.style.maxWidth=w+'px';
+  a.b.style.left=chosen+'px';
+  a.b.style.top=top+'px';
+  const pointer=Math.max(11,Math.min(w-11,speaker.center-chosen));
+  a.b.style.setProperty('--bubble-tail-x',pointer+'px');
 }
 function say(a,text,ms=3000){
   if(!S.speech||!a?.b)return;
