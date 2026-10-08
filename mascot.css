@@ -333,3 +333,35 @@
   .mascot-character-grid { grid-template-columns:1fr; }
   .mascot-character-head { align-items:flex-start; flex-direction:column; }
 }
+
+/* bottom-lineup v0.9.68 */
+.mascot-lineup-btn {
+  position: fixed;
+  right: max(60px, calc(env(safe-area-inset-right, 0px) + 58px));
+  bottom: max(10px, calc(env(safe-area-inset-bottom, 0px) + 8px));
+  z-index: 920;
+  min-width: 49px;
+  min-height: 42px;
+  padding: 0 9px;
+  border: 1px solid rgba(0, 0, 0, .12);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, .96);
+  color: #c53974;
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, .16);
+  pointer-events: auto;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.mascot-lineup-btn:focus-visible {
+  outline: 3px solid #e8508c;
+  outline-offset: 2px;
+}
+.mascot-lineup-active .mascot-lineup-btn,
+.mascot-lineup-active .mascot-settings-btn {
+  bottom: calc(env(safe-area-inset-bottom, 0px) + var(--mascot-lineup-height, 56px) + 16px);
+}
+.mascot-lineup-active .mascot-actor {
+  transition: none;
+}
