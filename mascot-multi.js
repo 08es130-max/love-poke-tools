@@ -1,6 +1,6 @@
 (() => {
 'use strict';
-const ROOT='lovePokeMascotRoot',KEY='lovepoke_mascot_settings_v3',OLD='lovepoke_mascot_settings_v2',VER='0.9.74';
+const ROOT='lovePokeMascotRoot',KEY='lovepoke_mascot_settings_v3',OLD='lovepoke_mascot_settings_v2',VER='0.9.75';
 const C={
  ayumu:['上原歩夢','ayumu'],kasumi:['中須かすみ','kasumi'],shizuku:['桜坂しずく','shizuku'],karin:['朝香果林','karin'],
  ai:['宮下愛','ai'],kanata:['近江彼方','kanata'],setsuna:['優木せつ菜','setsuna'],emma:['エマ・ヴェルデ','emma'],
@@ -23,19 +23,19 @@ const P={
 };
 // Each member keeps her own pace and preferred rhythm.
 const PERSONALITY=Object.freeze({
-  ayumu:   {pace:.91,rest:17000,restMs:1450,turn:14500},
-  kasumi:  {pace:1.18,rest:26000,restMs:850,turn:6400},
-  shizuku: {pace:.91,rest:15000,restMs:1550,turn:16000},
-  karin:   {pace:.77,rest:14000,restMs:1650,turn:17000},
-  ai:      {pace:1.23,rest:26000,restMs:750,turn:5800},
-  kanata:  {pace:.67,rest:7800,restMs:3000,turn:18000},
-  setsuna: {pace:1.28,rest:27000,restMs:700,turn:5400},
-  emma:    {pace:.83,rest:14000,restMs:1650,turn:15000},
-  rina:    {pace:1.07,rest:16000,restMs:1050,turn:7500},
-  shioriko:{pace:.93,rest:18000,restMs:1200,turn:13000},
-  mia:     {pace:.98,rest:24000,restMs:1350,turn:12000},
-  lanzhu:  {pace:1.14,rest:21000,restMs:1100,turn:9000},
-  yu:      {pace:1.11,rest:15000,restMs:1200,turn:9100}
+  ayumu:   {pace:.86,rest:12200,restMs:1700,turn:12000},
+  kasumi:  {pace:1.43,rest:16600,restMs:880,turn:4100},
+  shizuku: {pace:.82,rest:15000,restMs:1500,turn:11500},
+  karin:   {pace:.69,rest:10500,restMs:1900,turn:16000},
+  ai:      {pace:1.52,rest:16300,restMs:830,turn:3600},
+  kanata:  {pace:.57,rest:6100,restMs:3900,turn:17000},
+  setsuna: {pace:1.56,rest:17500,restMs:770,turn:3100},
+  emma:    {pace:.78,rest:10800,restMs:1800,turn:14200},
+  rina:    {pace:1.26,rest:11200,restMs:900,turn:3500},
+  shioriko:{pace:.88,rest:12800,restMs:1400,turn:10400},
+  mia:     {pace:1.04,rest:16300,restMs:1250,turn:9800},
+  lanzhu:  {pace:1.36,rest:14300,restMs:1050,turn:5800},
+  yu:      {pace:1.14,rest:12300,restMs:1200,turn:8100}
 });
 // Prefer these pairs for approaching each other and occasionally walking together.
 const BONDS=[
@@ -224,7 +224,7 @@ async function rebuild(){
   actors.forEach(a=>{clearTimeout(a.bt);a.el.remove();a.b.remove()});
   actors=[];
   socialEvent=null;
-  nextSocialAt=performance.now()+7500;
+  nextSocialAt=performance.now()+2300;
   S.selectedCharacters=valid(S.selectedCharacters);
   save();
   if(!S.selectedCharacters.length){
@@ -328,12 +328,20 @@ function place(){
 }
 function visible(){layer.hidden=!actors.length;if(!S.speech)actors.forEach(a=>a.b.hidden=true)}
 
-function say(a,text,ms=1750){
+function bubblePlacement(a){
+  if(!a?.b||a.b.hidden)return;
+  const width=Math.min(200,Math.max(136,innerWidth-18));
+  const left=Math.max(8,Math.min(innerWidth-width-8,a.x+a.w/2-width/2));
+  const y=a.y<75?a.y+a.h+7:a.y-82;
+  a.b.style.left=left+'px';
+  a.b.style.top=Math.max(8,Math.min(innerHeight-98,y))+'px';
+  a.b.style.maxWidth=width+'px';
+}
+function say(a,text,ms=3000){
   if(!S.speech||!a?.b)return;
-  a.b.textContent=text;
+  a.b.textContent=C[a.id][0]+'：'+text;
   a.b.hidden=false;
-  a.b.style.left=Math.min(innerWidth-170,Math.max(8,a.x+a.w/2-80))+'px';
-  a.b.style.top=Math.max(8,a.y-58)+'px';
+  bubblePlacement(a);
   clearTimeout(a.bt);
   a.bt=setTimeout(()=>{a.b.hidden=true},ms);
 }
@@ -343,7 +351,7 @@ function hideSpeech(a){
   a.b.hidden=true;
 }
 function scheduleNextConversation(now){
-  nextSocialAt=now+15000+Math.random()*12000;
+  nextSocialAt=now+7000+Math.random()*4500;
 }
 function pairLines(a,b){
   const match=PAIR_DIALOGUES.find(pair=>
@@ -359,27 +367,33 @@ function bonded(a,b){
 }
 function chooseSocialPair(){
   if(actors.length<2)return null;
-  const familiar=BONDS.map(([left,right])=>[
-    actors.find(a=>a.id===left),actors.find(a=>a.id===right)
-  ]).filter(([a,b])=>a&&b);
-  if(familiar.length&&Math.random()<.85){
-    return familiar[Math.floor(Math.random()*familiar.length)];
+  const combinations=[];
+  for(let i=0;i<actors.length;i++){
+    for(let j=i+1;j<actors.length;j++){
+      const a=actors[i],b=actors[j];
+      const distance=Math.hypot(a.x-b.x,a.y-b.y);
+      const familiar=bonded(a,b);
+      combinations.push({a,b,distance,score:distance-(familiar?95:0)});
+    }
   }
-  const first=actors[Math.floor(Math.random()*actors.length)];
-  const remaining=actors.filter(a=>a!==first);
-  return [first,remaining[Math.floor(Math.random()*remaining.length)]];
+  combinations.sort((a,b)=>a.score-b.score);
+  const choices=combinations.slice(0,Math.min(5,combinations.length));
+  const chosen=choices[Math.floor(Math.random()*choices.length)];
+  return [chosen.a,chosen.b];
 }
 function beginConversation(e,now){
   const {a,b}=e;
   a.restUntil=0;b.restUntil=0;
-  a.pose=Math.max(a.pose,now+4100);
-  b.pose=Math.max(b.pose,now+4100);
-  a.d=a.x<=b.x?'right':'left';
-  b.d=b.x>a.x?'left':'right';
-  e.phase='talk';e.started=now;e.until=now+4100;e.secondSpoken=false;
+  a.pose=Math.max(a.pose,now+6650);
+  b.pose=Math.max(b.pose,now+6650);
+  if(!S.lineup){
+    a.d=a.x<=b.x?'right':'left';
+    b.d=b.x>a.x?'left':'right';
+  }
+  e.phase='talk';e.started=now;e.until=now+6650;e.secondSpoken=false;
   e.lines=pairLines(a,b);
   actors.forEach(person=>{if(person!==a)hideSpeech(person)});
-  say(a,e.lines[0],1850);
+  say(a,e.lines[0],3150);
 }
 function endConversation(now){
   if(socialEvent){
@@ -389,7 +403,7 @@ function endConversation(now){
   scheduleNextConversation(now);
 }
 function updateSocial(now){
-  if(S.lineup||!S.moving||actors.length<2){
+  if(!S.moving||actors.length<2){
     if(socialEvent)endConversation(now);
     return;
   }
@@ -397,48 +411,50 @@ function updateSocial(now){
     if(now<nextSocialAt)return;
     const pair=chooseSocialPair();
     if(!pair)return;
-    socialEvent={a:pair[0],b:pair[1],phase:'approach',until:now+8500};
+    socialEvent={a:pair[0],b:pair[1],phase:S.lineup?'talk':'approach',until:now+5800};
     socialEvent.a.restUntil=0;
     socialEvent.b.restUntil=0;
+    if(S.lineup)beginConversation(socialEvent,now);
   }
   const e=socialEvent,a=e.a,b=e.b;
   if(!actors.includes(a)||!actors.includes(b)){
+    endConversation(now);return;
+  }
+  if(S.lineup&&e.phase!=='talk'){
     endConversation(now);return;
   }
   if(e.phase==='approach'){
     const dx=b.x+b.w/2-a.x-a.w/2;
     const dy=b.y+b.h/2-a.y-a.h/2;
     const distance=Math.hypot(dx,dy);
-    const talkDistance=(a.w+b.w)*.56+26;
-    if(distance<=talkDistance){
+    if(distance<=(a.w+b.w)*.48+22||now>=e.until){
       beginConversation(e,now);return;
-    }
-    if(now>=e.until){
-      endConversation(now);return;
     }
     const angle=Math.atan2(dy,dx);
     setV(a,angle);
     setV(b,angle+Math.PI);
+    // Brief brisk approach so players can see the meeting happen.
+    a.vx*=1.75;a.vy*=1.75;
+    b.vx*=1.75;b.vy*=1.75;
     a.restUntil=0;b.restUntil=0;
   }else if(e.phase==='talk'){
-    if(!e.secondSpoken&&now>=e.started+1950){
+    if(!e.secondSpoken&&now>=e.started+3250){
       e.secondSpoken=true;
       hideSpeech(a);
-      say(b,e.lines[1],1850);
+      say(b,e.lines[1],3100);
     }
     if(now>=e.until){
       hideSpeech(a);hideSpeech(b);
       a.pose=0;b.pose=0;
-      if(bonded(a,b)){
-        e.phase='follow';
-        e.until=now+5300;
-        e.leader=a;
-        e.follower=b;
+      if(S.lineup){
+        endConversation(now);
+      }else if(bonded(a,b)){
+        e.phase='follow';e.until=now+5700;
+        e.leader=a;e.follower=b;
         setV(a,Math.random()*Math.PI*2);
         setV(b,Math.atan2(a.y-b.y,a.x-b.x));
       }else{
         endConversation(now);
-        // Resume independent walking after a short chat.
         setV(a,Math.random()*Math.PI*2);
         setV(b,Math.random()*Math.PI*2);
       }
@@ -446,8 +462,7 @@ function updateSocial(now){
   }else if(e.phase==='follow'){
     if(now>=e.until){
       setV(b,Math.random()*Math.PI*2);
-      endConversation(now);
-      return;
+      endConversation(now);return;
     }
     const leader=e.leader,follower=e.follower;
     leader.restUntil=0;follower.restUntil=0;
@@ -455,12 +470,17 @@ function updateSocial(now){
     const trail=45+Math.min(leader.w,follower.w)*.15;
     const x=leader.x-leader.vx/length*trail;
     const y=leader.y-leader.vy/length*trail;
-    if(Math.hypot(x-follower.x,y-follower.y)>32){
+    if(Math.hypot(x-follower.x,y-follower.y)>32)
       setV(follower,Math.atan2(y-follower.y,x-follower.x));
-    }else{
-      setV(follower,Math.atan2(leader.vy,leader.vx));
-    }
+    else setV(follower,Math.atan2(leader.vy,leader.vx));
   }
+}
+function maybeSoloSpeech(now){
+  if(actors.length!==1||!S.speech||now<nextSocialAt)return;
+  const a=actors[0];
+  const list=P[a.id]||[GREETING[a.id]];
+  say(a,list[Math.floor(Math.random()*list.length)],3400);
+  nextSocialAt=now+8500+Math.random()*4500;
 }
 function updatePersonality(a,now,multi){
   if(!S.moving)return;
@@ -487,14 +507,17 @@ function tick(now){
   const dt=Math.min(50,now-(last||now));last=now;
   if(actors.length){
     if(S.lineup){
+      if(actors.length>1)updateSocial(now);else maybeSoloSpeech(now);
       actors.forEach(a=>{
         if(now-a.lastF>=850){a.frame=(a.frame+1)%4;a.lastF=now}
         render(a,now);
+        bubblePlacement(a);
       });
     }else{
       const multi=actors.length>1,dist=(speed[S.speed]||42)*dt/1000;
       if(multi&&S.moving)updateSocial(now);
       else if(socialEvent)endConversation(now);
+      else if(!multi)maybeSoloSpeech(now);
       actors.forEach(a=>{
         updatePersonality(a,now,multi);
         const paused=now<a.pose||now<a.restUntil||!S.moving;
@@ -508,7 +531,7 @@ function tick(now){
         if(now-a.lastF>=iv){a.frame=(a.frame+1)%4;a.lastF=now}
       });
       if(multi&&S.moving)collide(now);
-      actors.forEach(a=>render(a,now));
+      actors.forEach(a=>{render(a,now);bubblePlacement(a)});
     }
   }
   requestAnimationFrame(tick);
@@ -529,7 +552,7 @@ function ui(){root=document.createElement('div');root.id=ROOT;root.className='ma
   lineupButton.className='mascot-lineup-btn';
   lineupButton.textContent='整列';
   lineupButton.addEventListener('click',()=>{
-    if(socialEvent)endConversation(performance.now());S.lineup=!S.lineup;nextSocialAt=performance.now()+9000;save();place();syncStatus();
+    if(socialEvent)endConversation(performance.now());S.lineup=!S.lineup;nextSocialAt=performance.now()+2400;save();place();syncStatus();
     actors.forEach(a=>render(a,performance.now()));
   });
   dialog=document.createElement('dialog');dialog.className='mascot-dialog';dialog.innerHTML=`
@@ -566,7 +589,7 @@ function ui(){root=document.createElement('div');root.id=ROOT;root.className='ma
       <label><span>速度</span><select id="mSpeed"><option value="slow">ゆっくり</option><option value="normal">普通</option><option value="fast">速い</option></select></label>
     </div>
   </form>
-`;status=dialog.querySelector('#mStatus');gear.addEventListener('click',()=>{sync();dialog.showModal?dialog.showModal():dialog.setAttribute('open','')});root.append(layer,lineupButton,gear,dialog);document.body.append(root);dialog.querySelector('#mMoving').onchange=e=>{S.moving=e.target.checked;if(!S.moving){socialEvent=null;actors.forEach(a=>{a.restUntil=0;a.b.hidden=true})}nextSocialAt=performance.now()+8500;save()};dialog.querySelector('#mSpeech').onchange=e=>{S.speech=e.target.checked;save();visible()};dialog.querySelector('#mSize').onchange=async e=>{S.size=e.target.value;save();await rebuild();sync()};dialog.querySelector('#mSpeed').onchange=e=>{S.speed=e.target.value;actors.forEach(a=>setV(a));save()};dialog.querySelectorAll('[data-char]').forEach(x=>x.onchange=async()=>{let s=selected();S.selectedCharacters=s;save();await rebuild();sync()});dialog.querySelector('#mAll').onclick=async()=>{S.selectedCharacters=Object.keys(C);save();await rebuild();sync()};dialog.querySelector('#mClear').onclick=async()=>{S.selectedCharacters=[];save();await rebuild();sync()}}
+`;status=dialog.querySelector('#mStatus');gear.addEventListener('click',()=>{sync();dialog.showModal?dialog.showModal():dialog.setAttribute('open','')});root.append(layer,lineupButton,gear,dialog);document.body.append(root);dialog.querySelector('#mMoving').onchange=e=>{S.moving=e.target.checked;if(!S.moving){socialEvent=null;actors.forEach(a=>{a.restUntil=0;a.b.hidden=true})}nextSocialAt=performance.now()+2300;save()};dialog.querySelector('#mSpeech').onchange=e=>{S.speech=e.target.checked;save();visible()};dialog.querySelector('#mSize').onchange=async e=>{S.size=e.target.value;save();await rebuild();sync()};dialog.querySelector('#mSpeed').onchange=e=>{S.speed=e.target.value;actors.forEach(a=>setV(a));save()};dialog.querySelectorAll('[data-char]').forEach(x=>x.onchange=async()=>{let s=selected();S.selectedCharacters=s;save();await rebuild();sync()});dialog.querySelector('#mAll').onclick=async()=>{S.selectedCharacters=Object.keys(C);save();await rebuild();sync()};dialog.querySelector('#mClear').onclick=async()=>{S.selectedCharacters=[];save();await rebuild();sync()}}
 async function init(){document.querySelectorAll('#'+ROOT).forEach(x=>x.remove());ui();sync();await rebuild();addEventListener('resize',()=>{
  if(S.lineup){placeLineup();return}
  actors.forEach(a=>{let d=dims(a.id);a.w=d.w;a.h=d.h;let q=box(a);a.x=Math.min(q.r,Math.max(q.l,a.x));a.y=Math.min(q.b,Math.max(q.t,a.y))})
