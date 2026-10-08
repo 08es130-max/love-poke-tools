@@ -905,10 +905,99 @@ let socialEvent=null;
 let nextSocialAt=0;
 let recentTalkPairs=[];
 const speed={slow:24,normal:42,fast:68},size={small:68,medium:88,large:112};
+// New members can join by adding their own six-pose frame JSON file.
+const LIVE_ASSETS={shioriko:'./mini-live/shioriko-frames.json'};
+const LIVE_INTERVALS={rare:[15*60000,25*60000],normal:[7*60000,12*60000],often:[3*60000,5*60000]};
+const liveCache=new Map();
+let liveEvent=null,nextLiveAt=Infinity,liveLoading=false,liveGeneration=0;
+function scheduleLive(now=performance.now()){
+  const range=LIVE_INTERVALS[S.liveMode]||null;
+  nextLiveAt=range ? now+range[0]+Math.random()*(range[1]-range[0]) : Infinity;
+}
+async function getLiveFrames(id){
+  if(!LIVE_ASSETS[id])return null;
+  if(!liveCache.has(id)){
+    const loader=(async()=>{
+      const response=await fetch(LIVE_ASSETS[id]);
+      if(!response.ok)throw new Error('Live frames unavailable');
+      const data=await response.json();
+      if(!Array.isArray(data.frames)||data.frames.length<2||
+         !Array.isArray(data.sequence)||!data.sequence.length ||
+         data.frames.some(src=>typeof src!=='string'||!src.startsWith('data:image/'))||
+         data.sequence.some(n=>!Number.isInteger(n)||n<0||n>=data.frames.length)){
+        throw new Error('Invalid live frames');
+      }
+      await Promise.all(data.frames.map(src=>new Promise((resolve,reject)=>{
+        const im=new Image();
+        im.onload=resolve;im.onerror=reject;im.src=src;
+      })));
+      return data;
+    })().catch(err=>{liveCache.delete(id);throw err});
+    liveCache.set(id,loader);
+  }
+  return liveCache.get(id);
+}
+function endLive(now=performance.now()){
+  if(!liveEvent)return;
+  const a=liveEvent.actor;
+  a.performing=false;
+  a.liveImage?.remove();
+  a.liveImage=null;
+  a.el.classList.remove('mascot-live-active');
+  a.frame=0;a.lastF=now;a.pose=now+350;
+  a.nextRest=now+(PERSONALITY[a.id]?.rest||14000);
+  if(actors.length>1)setV(a,Math.random()*Math.PI*2);
+  liveEvent=null;
+  scheduleLive(now);
+}
+async function beginLive(manual=false){
+  if(liveLoading||liveEvent||S.lineup||!S.moving||document.hidden ||
+     (!manual&&(!LIVE_INTERVALS[S.liveMode]||socialEvent||
+       document.querySelector('dialog[open]'))))return false;
+  const eligible=actors.filter(a=>LIVE_ASSETS[a.id]&&!a.performing);
+  if(!eligible.length)return false;
+  const a=eligible[Math.floor(Math.random()*eligible.length)];
+  const serial=liveGeneration;
+  liveLoading=true;
+  let frames;
+  try{frames=await getLiveFrames(a.id)}
+  catch(err){console.warn('Mascot mini-live:',err);scheduleLive();return false}
+  finally{liveLoading=false}
+  if(serial!==liveGeneration||!actors.includes(a)||liveEvent||S.lineup||
+     !S.moving||document.hidden||(!manual&&socialEvent))return false;
+  if(manual&&socialEvent)endConversation(performance.now());
+  const now=performance.now();
+  hideSpeech(a);
+  const image=document.createElement('img');
+  image.className='mascot-live-frame';
+  image.alt='';
+  image.draggable=false;
+  const visualRatio=metrics.get(a.id)?.visibleRatio||.76;
+  image.style.height=(a.h*visualRatio)+'px';
+  image.style.bottom=(a.h*(1-visualRatio)*.35)+'px';
+  image.src=frames.frames[frames.sequence[0]];
+  a.el.appendChild(image);
+  a.liveImage=image;
+  a.performing=true;
+  a.el.classList.remove('mascot-napping','mascot-collision-pose');
+  a.el.classList.add('mascot-live-active');
+  liveEvent={actor:a,frames,started:now,until:now+15000,frame:-1};
+  return true;
+}
+function updateLive(now){
+  if(!liveEvent)return;
+  if(now>=liveEvent.until){endLive(now);return}
+  const event=liveEvent;
+  const step=Math.floor((now-event.started)/360)%event.frames.sequence.length;
+  if(step===event.frame)return;
+  event.frame=step;
+  event.actor.liveImage.src=event.frames.frames[event.frames.sequence[step]];
+}
+
 let S=load(),root,layer,dialog,status,lineupButton,actors=[],last=0,metrics=new Map(),rebuildSerial=0;
 function valid(a){return [...new Set((Array.isArray(a)?a:[]).filter(x=>C[x]))]}
 function load(){
-  const defaults={enabled:true,moving:true,speech:true,lineup:false,size:'medium',speed:'normal'};
+  const defaults={enabled:true,moving:true,speech:true,lineup:false,size:'medium',speed:'normal',liveMode:'normal'};
   try{
     const raw=localStorage.getItem(KEY);
     if(raw!==null){
@@ -988,7 +1077,7 @@ function render(a,now){
   }let m=metrics.get(a.id)||{fw:272,fh:217},pose=(S.lineup||now<a.pose||now<(a.restUntil||0)||!S.moving)?'idle':a.d,sc=a.h/m.fh,f=a.frame%4,b=(pose==='idle'?0:[0,-4,0,-2][f]*Math.max(.65,Math.min(1.15,a.h/88)));if(S.lineup)positionLineupActor(a);a.el.style.width=a.w+'px';a.el.style.height=a.h+'px';a.el.style.setProperty('--mascot-image','url("'+sprite(a.id)+'")');a.el.style.setProperty('--mascot-sheet-width',(m.fw*4*sc)+'px');a.el.style.setProperty('--mascot-sheet-height',(m.fh*5*sc)+'px');a.el.style.setProperty('--mascot-frame-x',(-m.fw*f*sc)+'px');a.el.style.setProperty('--mascot-frame-y',(-m.fh*row(pose)*sc)+'px');a.el.style.transform='translate3d('+a.x+'px,'+(a.y+b)+'px,0)'}
 function pose(a,now,ms=800){a.pose=Math.max(a.pose,now+ms);a.frame=Math.floor(Math.random()*4);a.el.classList.remove('mascot-collision-pose');void a.el.offsetWidth;a.el.classList.add('mascot-collision-pose');setTimeout(()=>a.el&&a.el.classList.remove('mascot-collision-pose'),ms)}
 function bubble(a){if(!S.speech)return;const p=P[a.id]||[C[a.id][0]+'です！'];say(a,p[Math.floor(Math.random()*p.length)],3000)}
-function actor(id){let d=dims(id),el=document.createElement('button'),b=document.createElement('div');el.type='button';el.className='edge-mascot mascot-sprite mascot-actor';el.setAttribute('aria-label',C[id][0]+'マスコット');b.className='mascot-bubble mascot-actor-bubble';b.hidden=true;let a={id,el,b,w:d.w,h:d.h,x:0,y:0,vx:0,vy:0,d:'right',frame:0,lastF:0,pose:0,cool:0,bt:null,restUntil:0,nextRest:performance.now()+(PERSONALITY[id]?.rest||17000)*(.7+Math.random()*.6),nextTurn:performance.now()+(PERSONALITY[id]?.turn||12000)*(.7+Math.random()*.7)};el.addEventListener('click',()=>{let n=performance.now();pose(a,n,1100);bubble(a)});layer.append(el,b);return a}
+function actor(id){let d=dims(id),el=document.createElement('button'),b=document.createElement('div');el.type='button';el.className='edge-mascot mascot-sprite mascot-actor';el.setAttribute('aria-label',C[id][0]+'マスコット');b.className='mascot-bubble mascot-actor-bubble';b.hidden=true;let a={id,el,b,w:d.w,h:d.h,x:0,y:0,vx:0,vy:0,d:'right',frame:0,lastF:0,pose:0,cool:0,bt:null,restUntil:0,nextRest:performance.now()+(PERSONALITY[id]?.rest||17000)*(.7+Math.random()*.6),nextTurn:performance.now()+(PERSONALITY[id]?.turn||12000)*(.7+Math.random()*.7)};el.addEventListener('click',()=>{if(a.performing){endLive(performance.now());return}let n=performance.now();pose(a,n,1100);bubble(a)});layer.append(el,b);return a}
 function spriteIdleBounds(image,fw,fh){
   const fallback={cx:.5,bottom:.92,height:.76,width:.60};
   try{
@@ -1030,6 +1119,8 @@ function loadMetric(id){return new Promise(res=>{let i=new Image();i.onload=()=>
   res(true)
 };i.onerror=()=>res(false);i.src=sprite(id)})}
 async function rebuild(){
+  liveGeneration++;
+  endLive(performance.now());
   const serial=++rebuildSerial;
   actors.forEach(a=>{clearTimeout(a.bt);a.el.remove();a.b.remove()});
   actors=[];
@@ -1442,7 +1533,7 @@ function updatePersonality(a,now,multi){
   }
 }
 function wall(a,now){let q=box(a),hit=false;if(a.x<q.l){a.x=q.l;a.vx=Math.abs(a.vx);hit=true}else if(a.x>q.r){a.x=q.r;a.vx=-Math.abs(a.vx);hit=true}if(a.y<q.t){a.y=q.t;a.vy=Math.abs(a.vy);hit=true}else if(a.y>q.b){a.y=q.b;a.vy=-Math.abs(a.vy);hit=true}if(hit&&now>a.cool){setV(a,Math.atan2(a.vy,a.vx)+(Math.random()-.5)*.5);a.cool=now+650;pose(a,now,700)}}
-function collide(now){for(let i=0;i<actors.length;i++)for(let j=i+1;j<actors.length;j++){let a=actors[i],b=actors[j];if(now<a.cool||now<b.cool)continue;if(socialEvent&&((socialEvent.a===a&&socialEvent.b===b)||(socialEvent.a===b&&socialEvent.b===a)))continue;if(socialEvent&&socialEvent.phase==='talk'&&[socialEvent.a,socialEvent.b].some(person=>person===a||person===b))continue;let ax=a.x+a.w/2,ay=a.y+a.h/2,bx=b.x+b.w/2,by=b.y+b.h/2,dx=bx-ax,dy=by-ay,di=Math.hypot(dx,dy),mi=Math.min(a.w,a.h)*.32+Math.min(b.w,b.h)*.32;if(di>0&&di<mi){
+function collide(now){for(let i=0;i<actors.length;i++)for(let j=i+1;j<actors.length;j++){let a=actors[i],b=actors[j];if(a.performing||b.performing||now<a.cool||now<b.cool)continue;if(socialEvent&&((socialEvent.a===a&&socialEvent.b===b)||(socialEvent.a===b&&socialEvent.b===a)))continue;if(socialEvent&&socialEvent.phase==='talk'&&[socialEvent.a,socialEvent.b].some(person=>person===a||person===b))continue;let ax=a.x+a.w/2,ay=a.y+a.h/2,bx=b.x+b.w/2,by=b.y+b.h/2,dx=bx-ax,dy=by-ay,di=Math.hypot(dx,dy),mi=Math.min(a.w,a.h)*.32+Math.min(b.w,b.h)*.32;if(di>0&&di<mi){
   // Physical encounters may start a conversation sooner, without overlapping
   // an existing event or turning an opted-out speech setting back on.
   if(!socialEvent&&S.speech&&now>=nextSocialAt-2000&&Math.random()<(a.id==='yu'||b.id==='yu' ? .70 : .65)){
@@ -1455,9 +1546,15 @@ function collide(now){for(let i=0;i<actors.length;i++)for(let j=i+1;j<actors.len
 function single(a,dist,now){let q=box(a);if(a.d==='right'){a.x+=dist;if(a.x>=q.r){a.x=q.r;a.d='down';pose(a,now)}}else if(a.d==='down'){a.y+=dist;if(a.y>=q.b){a.y=q.b;a.d='left';pose(a,now)}}else if(a.d==='left'){a.x-=dist;if(a.x<=q.l){a.x=q.l;a.d='up';pose(a,now)}}else{a.y-=dist;if(a.y<=q.t){a.y=q.t;a.d='right';pose(a,now)}}}
 function tick(now){
   const dt=Math.min(50,now-(last||now));last=now;
+  if(!liveEvent&&now>=nextLiveAt&&!liveLoading&&S.moving&&!S.lineup){
+    // Keep the due time until a conversation finishes, rather than skipping a show.
+    if(!socialEvent&&!document.hidden&&!document.querySelector('dialog[open]'))
+      void beginLive(false);
+  }
+  updateLive(now);
   if(actors.length){
     if(S.lineup){
-      if(actors.length>1)updateSocial(now);else maybeSoloSpeech(now);
+      if(!liveEvent){if(actors.length>1)updateSocial(now);else maybeSoloSpeech(now)}
       actors.forEach(a=>{
         if(now-a.lastF>=850){a.frame=(a.frame+1)%4;a.lastF=now}
         render(a,now);
@@ -1465,10 +1562,11 @@ function tick(now){
       });
     }else{
       const multi=actors.length>1,dist=(speed[S.speed]||42)*dt/1000;
-      if(multi&&S.moving)updateSocial(now);
+      if(!liveEvent){if(multi&&S.moving)updateSocial(now);
       else if(socialEvent)endConversation(now);
-      else if(!multi)maybeSoloSpeech(now);
+      else if(!multi)maybeSoloSpeech(now)}
       actors.forEach(a=>{
+        if(a.performing){a.lastF=now;return}
         updatePersonality(a,now,multi);
         const paused=now<a.pose||now<a.restUntil||!S.moving;
         if(!paused){
@@ -1497,14 +1595,14 @@ function syncStatus(msg=''){
     lineupButton.setAttribute('aria-pressed',S.lineup?'true':'false');
   }
 }
-function sync(){dialog.querySelector('#mMoving').checked=S.moving;dialog.querySelector('#mSpeech').checked=S.speech;dialog.querySelector('#mSize').value=S.size;dialog.querySelector('#mSpeed').value=S.speed;let set=new Set(S.selectedCharacters);dialog.querySelectorAll('[data-char]').forEach(x=>x.checked=set.has(x.value));syncStatus()}
+function sync(){dialog.querySelector('#mLiveMode').value=LIVE_INTERVALS[S.liveMode]?S.liveMode:'off';dialog.querySelector('#mMoving').checked=S.moving;dialog.querySelector('#mSpeech').checked=S.speech;dialog.querySelector('#mSize').value=S.size;dialog.querySelector('#mSpeed').value=S.speed;let set=new Set(S.selectedCharacters);dialog.querySelectorAll('[data-char]').forEach(x=>x.checked=set.has(x.value));syncStatus()}
 function ui(){root=document.createElement('div');root.id=ROOT;root.className='mascot-root';layer=document.createElement('div');layer.className='mascot-layer';let gear=document.createElement('button');gear.type='button';gear.className='mascot-settings-btn';gear.textContent='⚙';
   lineupButton=document.createElement('button');
   lineupButton.type='button';
   lineupButton.className='mascot-lineup-btn';
   lineupButton.textContent='整列';
   lineupButton.addEventListener('click',()=>{
-    if(socialEvent)endConversation(performance.now());S.lineup=!S.lineup;nextSocialAt=performance.now()+2400;save();place();syncStatus();
+    endLive(performance.now());liveGeneration++;if(socialEvent)endConversation(performance.now());S.lineup=!S.lineup;nextSocialAt=performance.now()+2400;save();place();syncStatus();
     actors.forEach(a=>render(a,performance.now()));
   });
   dialog=document.createElement('dialog');dialog.className='mascot-dialog';dialog.innerHTML=`
@@ -1539,10 +1637,12 @@ function ui(){root=document.createElement('div');root.id=ROOT;root.className='ma
       <label class="mascot-switch"><span>セリフを表示</span><input id="mSpeech" type="checkbox"></label>
       <label><span>大きさ</span><select id="mSize"><option value="small">小</option><option value="medium">中</option><option value="large">大</option></select></label>
       <label><span>速度</span><select id="mSpeed"><option value="slow">ゆっくり</option><option value="normal">普通</option><option value="fast">速い</option></select></label>
+      <label><span>ランダムライブ</span><select id="mLiveMode"><option value="off">OFF</option><option value="rare">少なめ（15〜25分）</option><option value="normal">普通（7〜12分）</option><option value="often">多め（3〜5分）</option></select></label>
+      <button id="mLiveNow" type="button" class="mascot-live-test-btn">♪ 今すぐライブ</button>
     </div>
   </form>
-`;status=dialog.querySelector('#mStatus');gear.addEventListener('click',()=>{sync();dialog.showModal?dialog.showModal():dialog.setAttribute('open','')});root.append(layer,lineupButton,gear,dialog);document.body.append(root);dialog.querySelector('#mMoving').onchange=e=>{S.moving=e.target.checked;if(!S.moving){socialEvent=null;actors.forEach(a=>{a.restUntil=0;a.b.hidden=true})}nextSocialAt=performance.now()+2300;save()};dialog.querySelector('#mSpeech').onchange=e=>{S.speech=e.target.checked;save();visible()};dialog.querySelector('#mSize').onchange=async e=>{S.size=e.target.value;save();await rebuild();sync()};dialog.querySelector('#mSpeed').onchange=e=>{S.speed=e.target.value;actors.forEach(a=>setV(a));save()};dialog.querySelectorAll('[data-char]').forEach(x=>x.onchange=async()=>{let s=selected();S.selectedCharacters=s;save();await rebuild();sync()});dialog.querySelector('#mAll').onclick=async()=>{S.selectedCharacters=Object.keys(C);save();await rebuild();sync()};dialog.querySelector('#mClear').onclick=async()=>{S.selectedCharacters=[];save();await rebuild();sync()}}
-async function init(){document.querySelectorAll('#'+ROOT).forEach(x=>x.remove());ui();sync();await rebuild();addEventListener('resize',()=>{
+`;status=dialog.querySelector('#mStatus');gear.addEventListener('click',()=>{sync();dialog.showModal?dialog.showModal():dialog.setAttribute('open','')});root.append(layer,lineupButton,gear,dialog);document.body.append(root);dialog.querySelector('#mLiveMode').onchange=e=>{S.liveMode=e.target.value;save();scheduleLive()};dialog.querySelector('#mLiveNow').onclick=()=>{if(!actors.some(a=>LIVE_ASSETS[a.id])){syncStatus('ライブ衣装があるキャラクター（現在は栞子）を選んでください');return}if(S.lineup||!S.moving){syncStatus('歩行モード・動かすONでライブを開始できます');return}dialog.close();void beginLive(true)};dialog.querySelector('#mMoving').onchange=e=>{S.moving=e.target.checked;if(!S.moving){endLive(performance.now());liveGeneration++;socialEvent=null;actors.forEach(a=>{a.restUntil=0;a.b.hidden=true})}nextSocialAt=performance.now()+2300;save()};dialog.querySelector('#mSpeech').onchange=e=>{S.speech=e.target.checked;save();visible()};dialog.querySelector('#mSize').onchange=async e=>{S.size=e.target.value;save();await rebuild();sync()};dialog.querySelector('#mSpeed').onchange=e=>{S.speed=e.target.value;actors.forEach(a=>setV(a));save()};dialog.querySelectorAll('[data-char]').forEach(x=>x.onchange=async()=>{let s=selected();S.selectedCharacters=s;save();await rebuild();sync()});dialog.querySelector('#mAll').onclick=async()=>{S.selectedCharacters=Object.keys(C);save();await rebuild();sync()};dialog.querySelector('#mClear').onclick=async()=>{S.selectedCharacters=[];save();await rebuild();sync()}}
+async function init(){document.querySelectorAll('#'+ROOT).forEach(x=>x.remove());ui();sync();await rebuild();scheduleLive();document.addEventListener('visibilitychange',()=>{if(document.hidden)endLive(performance.now());else if(nextLiveAt<performance.now())scheduleLive()});addEventListener('resize',()=>{
  if(S.lineup){placeLineup();return}
  actors.forEach(a=>{let d=dims(a.id);a.w=d.w;a.h=d.h;let q=box(a);a.x=Math.min(q.r,Math.max(q.l,a.x));a.y=Math.min(q.b,Math.max(q.t,a.y))})
 },{passive:true});requestAnimationFrame(tick)}
