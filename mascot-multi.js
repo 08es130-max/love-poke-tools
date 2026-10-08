@@ -1290,7 +1290,7 @@ function talkPairKey(a,b){return [a.id,b.id].sort().join(':')}
 function chooseSocialPair(){
   if(actors.length<2)return null;
   const possibilities=[];
-  // All pairs participate. Yu only gets a modest +30% weighting;
+  // All pairs participate. Yu gets a modest selection advantage after distance balancing;
   // unlike the previous forced/queued Yu dialogue, no pair pre-empts another.
   for(let i=0;i<actors.length;i++){
     for(let j=i+1;j<actors.length;j++){
@@ -1300,7 +1300,7 @@ function chooseSocialPair(){
       let weight=1/(1+distance/235);
       weight*=weight;
       if(bonded(a,b))weight*=1.25;
-      if(a.id==='yu'||b.id==='yu')weight*=1.30;
+      if(a.id==='yu'||b.id==='yu')weight*=1.80;
       if(recentTalkPairs.includes(talkPairKey(a,b)))weight*=.13;
       possibilities.push({a,b,weight});
     }
