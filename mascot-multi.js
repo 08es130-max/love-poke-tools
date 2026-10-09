@@ -1401,6 +1401,32 @@ function bubblePlacement(a){
       }
     }
   }
+  // During a mini-live, Yu's cheer bubble must never cover the three performers.
+  if(liveEvent&&a===liveEvent.yu){
+    const stage={
+      left:Math.min(...liveEvent.members.map(m=>m.x))-8,
+      right:Math.max(...liveEvent.members.map(m=>m.x+m.w))+8,
+      top:Math.min(...liveEvent.members.map(m=>m.y))-8,
+      bottom:Math.max(...liveEvent.members.map(m=>m.y+m.h))+8
+    };
+    const bubbleWidth=finalWidth,bubbleHeight=bubbleDimensions(a,finalWidth).h;
+    const limitX=Math.max(8,innerWidth-bubbleWidth-8);
+    const candidates=[
+      {x:Math.max(8,Math.min(limitX,stage.left-bubbleWidth-12)),y:chosenTop},
+      {x:Math.max(8,Math.min(limitX,stage.right+12)),y:chosenTop},
+      {x:chosen,y:Math.max(4,stage.top-bubbleHeight-12)},
+      {x:chosen,y:Math.min(innerHeight-bubbleHeight-8,stage.bottom+12)}
+    ];
+    const free=candidates.filter(p=>p.y>=4&&p.y+bubbleHeight<=innerHeight-6&&
+      overlapArea({left:p.x,right:p.x+bubbleWidth,top:p.y,bottom:p.y+bubbleHeight},stage)===0);
+    if(free.length){
+      free.sort((u,v)=>Math.hypot(u.x-chosen,u.y-chosenTop)-Math.hypot(v.x-chosen,v.y-chosenTop));
+      chosen=free[0].x;chosenTop=free[0].y;
+    }else{
+      // If the stage fills the available space, keep the cheer below the performers.
+      chosenTop=Math.max(4,Math.min(innerHeight-bubbleHeight-6,stage.bottom+8));
+    }
+  }
   a.b.style.width=finalWidth+'px';
   a.b.style.maxWidth=finalWidth+'px';
   a.b.style.left=chosen+'px';
