@@ -1452,8 +1452,10 @@ function bubblePlacement(a){
   // Yu's cheering bubble can be placed below the stage but still above Yu's
   // sprite. In that case the tail must point toward Yu, not toward the stage.
   const bubbleMid=chosenTop+bubbleDimensions(a,finalWidth).h/2;
+  // Mini-live: Yu's speech is deliberately placed below the stage.
+  // Always draw the pointer on the bubble's upper edge during her cheers.
   const tailAbove=liveEvent&&a===liveEvent.yu
-    ? bubbleMid<=speaker.top
+    ? true
     : chosenTop>=speaker.bottom+2;
   a.b.classList.toggle('mascot-bubble-below',!!tailAbove);
   a.b.classList.toggle('mascot-bubble-tail-up',!!tailAbove);
