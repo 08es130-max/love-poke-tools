@@ -1,6 +1,6 @@
 // Network-first PWA worker. Cache failures must NEVER override successful fetches.
 const CACHE_PREFIX = 'lovepoke-';
-const CACHE_NAME = CACHE_PREFIX + 'v20261009-108';
+const CACHE_NAME = CACHE_PREFIX + 'v20261009-109';
 
 // Only essential shell assets are precached. Large optional images/data are
 // cached on successful requests so a single failed image cannot block an update.
