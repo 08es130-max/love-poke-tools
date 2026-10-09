@@ -626,3 +626,11 @@
  border-left:1px solid #e9b0c8;
  border-top:1px solid #e9b0c8;
 }
+
+/* Explicit upward pointer for the mini-live cheer bubble. */
+.mascot-actor-bubble.mascot-bubble-tail-up::after{
+ top:-6px!important;bottom:auto!important;
+ border-top:1px solid #e9b0c8!important;
+ border-left:1px solid #e9b0c8!important;
+ border-right:0!important;border-bottom:0!important;
+}
