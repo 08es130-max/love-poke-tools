@@ -21,7 +21,7 @@
 <body>
   <header class="app-header">
     <div>
-      <div class="header-meta"><span class="eyebrow">OFFLINE PWA</span><span class="app-version">Ver.0.9.93</span><button type="button" id="appCheckUpdate" class="app-refresh-btn" aria-label="最新版に更新">↻ 更新</button></div>
+      <div class="header-meta"><span class="eyebrow">OFFLINE PWA</span><span class="app-version">Ver.0.9.94</span><button type="button" id="appCheckUpdate" class="app-refresh-btn" aria-label="最新版に更新">↻ 更新</button></div>
       <h1 id="appTitle">ラブカ ハート計算</h1>
     </div>
     <button id="resetAllBtn" class="ghost-btn">リセット</button>
@@ -528,8 +528,8 @@
   <script type="module" src="./mahjong.js"></script>
   <script src="./loveca-card-browser.js"></script>
   <script src="./loveca-filter-selector.js"></script>
-  <script src="./mascot-multi.js?v=20261009-mascot41"></script>
-  <script src="./mini-live/launcher.js?v=20261009-12"></script>
+  <script src="./mascot-multi.js?v=20261009-mascot42"></script>
+  <script src="./mini-live/launcher.js?v=20261009-13"></script>
   <script>
   (()=>{
     const button=document.getElementById('appCheckUpdate');
@@ -537,7 +537,7 @@
     button.addEventListener('click',async()=>{
       button.disabled=true;
       button.textContent='確認中';
-      let version='0.9.93';
+      let version='0.9.94';
       try{
         if('serviceWorker' in navigator){
           const registration=await navigator.serviceWorker.getRegistration();
