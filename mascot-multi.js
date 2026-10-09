@@ -943,7 +943,7 @@ function endLive(now=performance.now()){
  if(!liveEvent)return;
  for(const a of [...liveEvent.members,liveEvent.yu].filter(Boolean)){
   a.performing=false;a.liveImage?.remove();a.liveImage=null;
-  a.el.classList.remove('mascot-live-active');hideSpeech(a);
+  a.el.classList.remove('mascot-live-active','mascot-yu-cheering');hideSpeech(a);
   a.frame=0;a.lastF=now;a.pose=now+300;a.restUntil=0;
   if(actors.length>1)setV(a,Math.random()*Math.PI*2);
  }
@@ -960,7 +960,7 @@ async function beginLive(manual=false){
   return false;
  }
  const caller=eligible[Math.floor(Math.random()*eligible.length)];
- const others=eligible.filter(a=>a!==caller).sort(()=>Math.random()-.5).slice(0,2);
+ const pool=eligible.filter(a=>a!==caller);for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]]}const others=pool.slice(0,2);
  const members=[caller,...others],serial=liveGeneration;
  liveLoading=true;
  let frames;
@@ -986,6 +986,7 @@ async function beginLive(manual=false){
   a.el.classList.add('mascot-live-active');
  });
  yu.performing=true;
+ yu.el.classList.add('mascot-yu-cheering');
  const yq=box(yu);
  yu.x=Math.max(yq.l,Math.min(yq.r,centerX-yu.w/2));
  yu.y=Math.max(yq.t,Math.min(yq.b,centerY+yu.h*.65));
@@ -1016,6 +1017,7 @@ function updateLive(now){
  const y=e.yu,q=box(y);
  y.x=Math.max(q.l,Math.min(q.r,e.centerX-y.w/2+Math.sin(elapsed/580)*y.w*1.45));
  y.frame=Math.floor(elapsed/180)%4;
+ y.y=Math.max(q.t,Math.min(q.b,e.members[1].y+y.h*.65+Math.abs(Math.sin(elapsed/290))*y.h*.12));
 }
 let S=load(),root,layer,dialog,status,lineupButton,actors=[],last=0,metrics=new Map(),rebuildSerial=0;
 function valid(a){return [...new Set((Array.isArray(a)?a:[]).filter(x=>C[x]))]}
