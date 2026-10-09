@@ -1068,7 +1068,7 @@ function updateLive(now){
  const y=e.yu,q=box(y);
  y.x=Math.max(q.l,Math.min(q.r,e.centerX-y.w/2+Math.sin(elapsed/580)*y.w*1.45));
  y.frame=Math.floor(elapsed/180)%4;
- if(y.liveImage){const index=Math.floor(elapsed/210)%12;y.liveImage.style.backgroundPosition=(index%4*100/3)+'% '+(Math.floor(index/4)*50)+'%'}
+ if(y.liveImage){const index=Math.floor(elapsed/210)%8;y.liveImage.style.backgroundPosition=(index%4*100/3)+'% '+(Math.floor(index/4)*100)+'%'}
  y.y=Math.max(q.t,Math.min(q.b,e.members[1].y+y.h*.65+Math.abs(Math.sin(elapsed/290))*y.h*.12));
 }
 let S=load(),root,layer,dialog,status,lineupButton,actors=[],last=0,metrics=new Map(),rebuildSerial=0;
