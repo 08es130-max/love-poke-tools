@@ -987,6 +987,10 @@ async function beginLive(manual=false){
  });
  yu.performing=true;
  yu.el.classList.add('mascot-yu-cheering');
+ const cheerSprite=document.createElement('div');
+ cheerSprite.className='mascot-yu-cheer-sprite';
+ cheerSprite.style.backgroundImage='url("./assets/mascot/live/yu-cheer-sheet.png")';
+ yu.el.appendChild(cheerSprite);yu.liveImage=cheerSprite;
  const yq=box(yu);
  yu.x=Math.max(yq.l,Math.min(yq.r,centerX-yu.w/2));
  yu.y=Math.max(yq.t,Math.min(yq.b,centerY+yu.h*.65));
@@ -1017,6 +1021,7 @@ function updateLive(now){
  const y=e.yu,q=box(y);
  y.x=Math.max(q.l,Math.min(q.r,e.centerX-y.w/2+Math.sin(elapsed/580)*y.w*1.45));
  y.frame=Math.floor(elapsed/180)%4;
+ if(y.liveImage){const index=Math.floor(elapsed/210)%12;y.liveImage.style.backgroundPosition=(index%4*100/3)+'% '+(Math.floor(index/4)*50)+'%'}
  y.y=Math.max(q.t,Math.min(q.b,e.members[1].y+y.h*.65+Math.abs(Math.sin(elapsed/290))*y.h*.12));
 }
 let S=load(),root,layer,dialog,status,lineupButton,actors=[],last=0,metrics=new Map(),rebuildSerial=0;
