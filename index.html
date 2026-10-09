@@ -546,7 +546,7 @@
         const response=await fetch('./version.json?fresh='+Date.now(),{cache:'no-store'});
         if(response.ok){
           const json=await response.json();
-          if(/^\\d+\\.\\d+\\.\\d+$/.test(json.version||''))version=json.version;
+          if(/^\d+\.\d+\.\d+$/.test(json.version||''))version=json.version;
         }
       }catch(_){}
       // Keep localStorage, saved settings, and game records untouched.
