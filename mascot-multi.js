@@ -939,6 +939,28 @@ async function getLiveFrames(id){
 }
 const LIVE_CALLS={ayumu:'みんな、ライブ始めるよ！',kasumi:'かすみんたちのライブ、始めちゃいますよ〜！',shizuku:'私たちのライブ、ぜひ見てください！',karin:'さあ、ライブを始めるわよ',ai:'みんなー！ライブやるよー！',kanata:'ライブ、始めちゃおっか〜',setsuna:'みなさん！ライブを始めますよー！',emma:'みんな、一緒に楽しもう！ライブだよ〜！',rina:'ライブ、始める。璃奈ちゃんボード「わくわく」',shioriko:'これからライブを始めます！',mia:'ライブ、始めるよ。ちゃんと見ててよね',lanzhu:'ランジュたちのライブ、始めるわよ！'};
 const YU_CHEERS=['みんな最高ー！','がんばってー！','ときめいちゃう！','1人だけなんて選べないよー！','みんな大好きー！'];
+function audienceStep(a,dt){
+ const e=liveEvent;if(!e||a.performing)return false;
+ const l=Math.min(...e.members.map(m=>m.x))-8,r=Math.max(...e.members.map(m=>m.x+m.w))+8;
+ const t=Math.min(...e.members.map(m=>m.y))-8,b=Math.max(...e.members.map(m=>m.y+m.h))+8;
+ const near=Math.hypot(a.x+a.w/2-e.centerX,a.y+a.h/2-(t+b)/2)<190;
+ if(!a.watchingLive&&!near){
+  if(a.x+a.w>l&&a.x<r&&a.y+a.h>t&&a.y<b){
+   const q=box(a),p=[{d:Math.abs(l-a.x-a.w),x:l-a.w,y:a.y},{d:Math.abs(r-a.x),x:r,y:a.y},{d:Math.abs(t-a.y-a.h),x:a.x,y:t-a.h},{d:Math.abs(b-a.y),x:a.x,y:b}].sort((u,v)=>u.d-v.d)[0];
+   a.x=Math.max(q.l,Math.min(q.r,p.x));a.y=Math.max(q.t,Math.min(q.b,p.y));setV(a,Math.atan2(a.y-t,a.x-e.centerX));
+  }
+  return false;
+ }
+ a.watchingLive=true;a.restUntil=0;a.pose=0;hideSpeech(a);
+ const audience=actors.filter(p=>!p.performing),i=audience.indexOf(a),count=audience.length;
+ const gap=Math.min(45,(innerWidth-20)/Math.max(2,count)),q=box(a);
+ const tx=Math.max(q.l,Math.min(q.r,e.centerX+(i-(count-1)/2)*gap-a.w/2));
+ const ty=Math.max(q.t,Math.min(q.b,Math.max(b+10,e.yu.y+e.yu.h+10)+Math.floor(i/7)*a.h*.5));
+ const dx=tx-a.x,dy=ty-a.y,dist=Math.hypot(dx,dy);
+ if(dist>3){const step=Math.min(dist,(speed[S.speed]||42)*1.8*dt/1000);a.x+=dx/dist*step;a.y+=dy/dist*step;a.d=dir({vx:dx,vy:dy});a.watchArrived=false}
+ else{a.x=tx;a.y=ty;a.d='up';a.watchArrived=true;a.frame=0}
+ return true;
+}
 function endLive(now=performance.now()){
  if(!liveEvent)return;
  for(const a of [...liveEvent.members,liveEvent.yu].filter(Boolean)){
@@ -947,6 +969,7 @@ function endLive(now=performance.now()){
   a.frame=0;a.lastF=now;a.pose=now+300;a.restUntil=0;
   if(actors.length>1)setV(a,Math.random()*Math.PI*2);
  }
+ actors.forEach(a=>{if(a.watchingLive){a.watchingLive=false;a.watchArrived=false;setV(a,Math.random()*Math.PI*2)}});
  liveEvent=null;
  nextLiveAt=now+5000+Math.random()*2500;
 }
@@ -1111,7 +1134,7 @@ function render(a,now){
   }let m=metrics.get(a.id)||{fw:272,fh:217},pose=(S.lineup||now<a.pose||now<(a.restUntil||0)||!S.moving)?'idle':a.d,sc=a.h/m.fh,f=a.frame%4,b=(pose==='idle'?0:[0,-4,0,-2][f]*Math.max(.65,Math.min(1.15,a.h/88)));if(S.lineup)positionLineupActor(a);a.el.style.width=a.w+'px';a.el.style.height=a.h+'px';a.el.style.setProperty('--mascot-image','url("'+sprite(a.id)+'")');a.el.style.setProperty('--mascot-sheet-width',(m.fw*4*sc)+'px');a.el.style.setProperty('--mascot-sheet-height',(m.fh*5*sc)+'px');a.el.style.setProperty('--mascot-frame-x',(-m.fw*f*sc)+'px');a.el.style.setProperty('--mascot-frame-y',(-m.fh*row(pose)*sc)+'px');a.el.style.transform='translate3d('+a.x+'px,'+(a.y+b)+'px,0)'}
 function pose(a,now,ms=800){a.pose=Math.max(a.pose,now+ms);a.frame=Math.floor(Math.random()*4);a.el.classList.remove('mascot-collision-pose');void a.el.offsetWidth;a.el.classList.add('mascot-collision-pose');setTimeout(()=>a.el&&a.el.classList.remove('mascot-collision-pose'),ms)}
 function bubble(a){if(!S.speech)return;const p=P[a.id]||[C[a.id][0]+'です！'];say(a,p[Math.floor(Math.random()*p.length)],3000)}
-function actor(id){let d=dims(id),el=document.createElement('button'),b=document.createElement('div');el.type='button';el.className='edge-mascot mascot-sprite mascot-actor';el.setAttribute('aria-label',C[id][0]+'マスコット');b.className='mascot-bubble mascot-actor-bubble';b.hidden=true;let a={id,el,b,w:d.w,h:d.h,x:0,y:0,vx:0,vy:0,d:'right',frame:0,lastF:0,pose:0,cool:0,bt:null,restUntil:0,nextRest:performance.now()+(PERSONALITY[id]?.rest||17000)*(.7+Math.random()*.6),nextTurn:performance.now()+(PERSONALITY[id]?.turn||12000)*(.7+Math.random()*.7)};el.addEventListener('click',()=>{if(a.performing){endLive(performance.now());return}let n=performance.now();pose(a,n,1100);bubble(a)});layer.append(el,b);return a}
+function actor(id){let d=dims(id),el=document.createElement('button'),b=document.createElement('div');el.type='button';el.className='edge-mascot mascot-sprite mascot-actor';el.setAttribute('aria-label',C[id][0]+'マスコット');b.className='mascot-bubble mascot-actor-bubble';b.hidden=true;let a={id,el,b,w:d.w,h:d.h,x:0,y:0,vx:0,vy:0,d:'right',frame:0,lastF:0,pose:0,cool:0,bt:null,restUntil:0,nextRest:performance.now()+(PERSONALITY[id]?.rest||17000)*(.7+Math.random()*.6),nextTurn:performance.now()+(PERSONALITY[id]?.turn||12000)*(.7+Math.random()*.7)};el.addEventListener('click',()=>{if(a.watchingLive)return;if(a.performing){endLive(performance.now());return}let n=performance.now();pose(a,n,1100);bubble(a)});layer.append(el,b);return a}
 function spriteIdleBounds(image,fw,fh){
   const fallback={cx:.5,bottom:.92,height:.76,width:.60};
   try{
@@ -1603,12 +1626,14 @@ function tick(now){
       else if(!multi)maybeSoloSpeech(now)}
       actors.forEach(a=>{
         if(a.performing){a.lastF=now;return}
+        if(liveEvent&&audienceStep(a,dt)){if(!a.watchArrived&&now-a.lastF>=190){a.frame=(a.frame+1)%4;a.lastF=now}return}
+
         updatePersonality(a,now,multi);
         const paused=now<a.pose||now<a.restUntil||!S.moving;
         if(!paused){
           if(multi){
             a.x+=a.vx*dt/1000;a.y+=a.vy*dt/1000;
-            wall(a,now);a.d=dir(a);
+            wall(a,now);a.d=dir(a);if(liveEvent)audienceStep(a,0);
           }else single(a,dist*(PERSONALITY[a.id]?.pace||1),now);
         }
         const iv=paused?520:190;
