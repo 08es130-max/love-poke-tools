@@ -940,7 +940,7 @@ async function getLiveFrames(id){
 const LIVE_CALLS={ayumu:'みんな、ライブ始めるよ！',kasumi:'かすみんたちのライブ、始めちゃいますよ〜！',shizuku:'私たちのライブ、ぜひ見てください！',karin:'さあ、ライブを始めるわよ',ai:'みんなー！ライブやるよー！',kanata:'ライブ、始めちゃおっか〜',setsuna:'みなさん！ライブを始めますよー！',emma:'みんな、一緒に楽しもう！ライブだよ〜！',rina:'ライブ、始める。璃奈ちゃんボード「わくわく」',shioriko:'これからライブを始めます！',mia:'ライブ、始めるよ。ちゃんと見ててよね',lanzhu:'ランジュたちのライブ、始めるわよ！'};
 const YU_CHEERS=['みんな最高ー！','がんばってー！','ときめいちゃう！','1人だけなんて選べないよー！','みんな大好きー！'];
 function audienceStep(a,dt){
- const e=liveEvent;if(!e||a.performing)return false;
+ const e=liveEvent;if(!e||a.performing||e.phase==='intro'&&e.members.includes(a))return false;
  const l=Math.min(...e.members.map(m=>m.x))-8,r=Math.max(...e.members.map(m=>m.x+m.w))+8;
  const t=Math.min(...e.members.map(m=>m.y))-8,b=Math.max(...e.members.map(m=>m.y+m.h))+8;
  const near=Math.hypot(a.x+a.w/2-e.centerX,a.y+a.h/2-(t+b)/2)<190;
