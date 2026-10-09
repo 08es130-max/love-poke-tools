@@ -975,7 +975,7 @@ async function beginLive(manual=false){
  const centerY=members.reduce((sum,a)=>sum+a.y+a.h/2,0)/3;
  members.forEach((a,i)=>{
   const q=box(a);
-  a.x=Math.max(q.l,Math.min(q.r,centerX+(i-1)*a.w*.82-a.w/2));
+  a.x=Math.max(q.l,Math.min(q.r,centerX+(i-1)*a.w*.56-a.w/2));
   a.y=Math.max(q.t,Math.min(q.b,centerY-a.h/2));
   const image=document.createElement('img');
   image.className='mascot-live-frame';image.alt='';image.draggable=false;
