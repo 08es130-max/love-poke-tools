@@ -618,3 +618,11 @@
  background-position:0 0;pointer-events:none;display:none;
 }
 .mascot-yu-cheer-sprite.ready{display:block}
+
+/* When a speech bubble sits below its speaker, point the tail upward. */
+.mascot-actor-bubble.mascot-bubble-below::after{
+ top:-6px;bottom:auto;
+ border-right:0;border-bottom:0;
+ border-left:1px solid #e9b0c8;
+ border-top:1px solid #e9b0c8;
+}
