@@ -966,11 +966,24 @@ function endLive(now=performance.now()){
  for(const a of [...liveEvent.members,liveEvent.yu].filter(Boolean)){
   a.performing=false;a.liveImage?.remove();a.liveImage=null;
   a.el.classList.remove('mascot-live-active','mascot-yu-cheering');hideSpeech(a);
-  a.frame=0;a.lastF=now;a.pose=now+300;a.restUntil=0;
-  if(actors.length>1)setV(a,Math.random()*Math.PI*2);
  }
- actors.forEach(a=>{if(a.watchingLive){a.watchingLive=false;a.watchArrived=false;setV(a,Math.random()*Math.PI*2)}});
  liveEvent=null;
+ // Spread everyone across the available screen immediately, instead of
+ // leaving the audience packed together at the bottom after the concert.
+ const shuffled=[...actors].sort(()=>Math.random()-.5);
+ const cols=Math.max(2,Math.ceil(Math.sqrt(shuffled.length*innerWidth/Math.max(1,innerHeight))));
+ const rows=Math.ceil(shuffled.length/cols);
+ shuffled.forEach((a,i)=>{
+  const q=box(a),col=i%cols,row=Math.floor(i/cols);
+  const cellX=q.l+(q.r-q.l)*(col+.5)/cols;
+  const cellY=q.t+(q.b-q.t)*(row+.5)/rows;
+  a.x=Math.max(q.l,Math.min(q.r,cellX+(Math.random()-.5)*(q.r-q.l)/cols*.45));
+  a.y=Math.max(q.t,Math.min(q.b,cellY+(Math.random()-.5)*(q.b-q.t)/rows*.45));
+  a.watchingLive=false;a.watchArrived=false;
+  a.frame=0;a.lastF=now;a.pose=now+250;a.restUntil=0;a.cool=now+600;
+  hideSpeech(a);
+  if(actors.length>1)setV(a,Math.random()*Math.PI*2);
+ });
  nextLiveAt=now+5000+Math.random()*2500;
 }
 async function beginLive(manual=false){
