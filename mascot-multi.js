@@ -906,7 +906,7 @@ let nextSocialAt=0;
 let recentTalkPairs=[];
 const speed={slow:24,normal:42,fast:68},size={small:68,medium:88,large:112};
 // New members can join by adding their own six-pose frame JSON file.
-const LIVE_ASSETS={shioriko:'./mini-live/shioriko-frames.json',ayumu:'./mini-live/ayumu-frames.json',kasumi:'./mini-live/kasumi-frames.json',shizuku:'./mini-live/shizuku-frames.json',karin:'./mini-live/karin-frames.json',ai:'./mini-live/ai-frames.json'};
+const LIVE_ASSETS={shioriko:'./mini-live/shioriko-frames.json',ayumu:'./mini-live/ayumu-frames.json',kasumi:'./mini-live/kasumi-frames.json',shizuku:'./mini-live/shizuku-frames.json',karin:'./mini-live/karin-frames.json',ai:'./mini-live/ai-frames.json',kanata:'./mini-live/kanata-frames.json'};
 const LIVE_INTERVALS={rare:[15*60000,25*60000],normal:[7*60000,12*60000],often:[3*60000,5*60000]};
 const liveCache=new Map();
 let liveEvent=null,nextLiveAt=Infinity,liveLoading=false,liveGeneration=0;
@@ -945,6 +945,7 @@ function endLive(now=performance.now()){
   a.liveImage=null;
   a.el.classList.remove('mascot-live-active');
   a.frame=0;a.lastF=now;a.pose=now+350;
+  a.restUntil=0;
   a.nextRest=now+(PERSONALITY[a.id]?.rest||14000);
   if(actors.length>1)setV(a,Math.random()*Math.PI*2);
   liveEvent=null;
@@ -1072,7 +1073,7 @@ function row(d){return{right:0,left:1,down:2,up:3,idle:4}[d]??4}
 function setV(a,ang=Math.atan2(a.vy,a.vx)){let v=(speed[S.speed]||42)*(PERSONALITY[a.id]?.pace||1);a.vx=Math.cos(ang)*v;a.vy=Math.sin(ang)*v;a.d=dir(a)}
 function render(a,now){
   if(a.id==='kanata'){
-    if(!S.lineup&&now<(a.restUntil||0))a.el.classList.add('mascot-napping');
+    if(!a.performing&&!S.lineup&&now<(a.restUntil||0))a.el.classList.add('mascot-napping');
     else a.el.classList.remove('mascot-napping');
   }let m=metrics.get(a.id)||{fw:272,fh:217},pose=(S.lineup||now<a.pose||now<(a.restUntil||0)||!S.moving)?'idle':a.d,sc=a.h/m.fh,f=a.frame%4,b=(pose==='idle'?0:[0,-4,0,-2][f]*Math.max(.65,Math.min(1.15,a.h/88)));if(S.lineup)positionLineupActor(a);a.el.style.width=a.w+'px';a.el.style.height=a.h+'px';a.el.style.setProperty('--mascot-image','url("'+sprite(a.id)+'")');a.el.style.setProperty('--mascot-sheet-width',(m.fw*4*sc)+'px');a.el.style.setProperty('--mascot-sheet-height',(m.fh*5*sc)+'px');a.el.style.setProperty('--mascot-frame-x',(-m.fw*f*sc)+'px');a.el.style.setProperty('--mascot-frame-y',(-m.fh*row(pose)*sc)+'px');a.el.style.transform='translate3d('+a.x+'px,'+(a.y+b)+'px,0)'}
 function pose(a,now,ms=800){a.pose=Math.max(a.pose,now+ms);a.frame=Math.floor(Math.random()*4);a.el.classList.remove('mascot-collision-pose');void a.el.offsetWidth;a.el.classList.add('mascot-collision-pose');setTimeout(()=>a.el&&a.el.classList.remove('mascot-collision-pose'),ms)}
@@ -1643,7 +1644,7 @@ function ui(){root=document.createElement('div');root.id=ROOT;root.className='ma
       <button id="mLiveNow" type="button" class="mascot-live-test-btn">♪ 今すぐライブ</button>
     </div>
   </form>
-`;status=dialog.querySelector('#mStatus');gear.addEventListener('click',()=>{sync();dialog.showModal?dialog.showModal():dialog.setAttribute('open','')});root.append(layer,lineupButton,gear,dialog);document.body.append(root);dialog.querySelector('#mLiveMode').onchange=e=>{S.liveMode=e.target.value;save();scheduleLive()};dialog.querySelector('#mLiveNow').onclick=()=>{if(!actors.some(a=>LIVE_ASSETS[a.id])){syncStatus('ライブ衣装があるキャラクター（歩夢・かすみ・しずく・果林・愛・栞子）を選んでください');return}if(S.lineup||!S.moving){syncStatus('歩行モード・動かすONでライブを開始できます');return}dialog.close();void beginLive(true)};dialog.querySelector('#mMoving').onchange=e=>{S.moving=e.target.checked;if(!S.moving){endLive(performance.now());liveGeneration++;socialEvent=null;actors.forEach(a=>{a.restUntil=0;a.b.hidden=true})}nextSocialAt=performance.now()+2300;save()};dialog.querySelector('#mSpeech').onchange=e=>{S.speech=e.target.checked;save();visible()};dialog.querySelector('#mSize').onchange=async e=>{S.size=e.target.value;save();await rebuild();sync()};dialog.querySelector('#mSpeed').onchange=e=>{S.speed=e.target.value;actors.forEach(a=>setV(a));save()};dialog.querySelectorAll('[data-char]').forEach(x=>x.onchange=async()=>{let s=selected();S.selectedCharacters=s;save();await rebuild();sync()});dialog.querySelector('#mAll').onclick=async()=>{S.selectedCharacters=Object.keys(C);save();await rebuild();sync()};dialog.querySelector('#mClear').onclick=async()=>{S.selectedCharacters=[];save();await rebuild();sync()}}
+`;status=dialog.querySelector('#mStatus');gear.addEventListener('click',()=>{sync();dialog.showModal?dialog.showModal():dialog.setAttribute('open','')});root.append(layer,lineupButton,gear,dialog);document.body.append(root);dialog.querySelector('#mLiveMode').onchange=e=>{S.liveMode=e.target.value;save();scheduleLive()};dialog.querySelector('#mLiveNow').onclick=()=>{if(!actors.some(a=>LIVE_ASSETS[a.id])){syncStatus('ライブ衣装があるキャラクター（歩夢・かすみ・しずく・果林・愛・彼方・栞子）を選んでください');return}if(S.lineup||!S.moving){syncStatus('歩行モード・動かすONでライブを開始できます');return}dialog.close();void beginLive(true)};dialog.querySelector('#mMoving').onchange=e=>{S.moving=e.target.checked;if(!S.moving){endLive(performance.now());liveGeneration++;socialEvent=null;actors.forEach(a=>{a.restUntil=0;a.b.hidden=true})}nextSocialAt=performance.now()+2300;save()};dialog.querySelector('#mSpeech').onchange=e=>{S.speech=e.target.checked;save();visible()};dialog.querySelector('#mSize').onchange=async e=>{S.size=e.target.value;save();await rebuild();sync()};dialog.querySelector('#mSpeed').onchange=e=>{S.speed=e.target.value;actors.forEach(a=>setV(a));save()};dialog.querySelectorAll('[data-char]').forEach(x=>x.onchange=async()=>{let s=selected();S.selectedCharacters=s;save();await rebuild();sync()});dialog.querySelector('#mAll').onclick=async()=>{S.selectedCharacters=Object.keys(C);save();await rebuild();sync()};dialog.querySelector('#mClear').onclick=async()=>{S.selectedCharacters=[];save();await rebuild();sync()}}
 window.lovePokeStartMascotLive=()=>beginLive(true);
 async function init(){document.querySelectorAll('#'+ROOT).forEach(x=>x.remove());ui();sync();await rebuild();scheduleLive();document.addEventListener('visibilitychange',()=>{if(document.hidden)endLive(performance.now());else if(nextLiveAt<performance.now())scheduleLive()});addEventListener('resize',()=>{
  if(S.lineup){placeLineup();return}
