@@ -996,6 +996,20 @@ async function beginLive(manual=false){
  members.forEach(a=>hideSpeech(a));hideSpeech(yu);
  const centerX=members.reduce((sum,a)=>sum+a.x+a.w/2,0)/3;
  const centerY=members.reduce((sum,a)=>sum+a.y+a.h/2,0)/3;
+ // Announce while still wearing walking outfits; change to live costumes after the call.
+ liveEvent={members,frames,yu,caller,started:now,until:now+12000,frame:-1,cheer:-1,phase:'intro',centerX};
+ say(caller,LIVE_CALLS[caller.id],1700);
+ return true;
+}
+function updateLive(now){
+ if(!liveEvent)return;
+ const e=liveEvent,elapsed=now-e.started;
+ if(now>=e.until){endLive(now);return}
+ if(elapsed<1700)return;
+ if(e.phase==='intro'){
+  e.phase='dance';hideSpeech(e.caller);
+  const members=e.members,frames=e.frames,yu=e.yu,centerX=e.centerX;
+  const centerY=members.reduce((sum,a)=>sum+a.y+a.h/2,0)/3;
  members.forEach((a,i)=>{
   const q=box(a);
   a.x=Math.max(q.l,Math.min(q.r,centerX+(i-1)*a.w*.56-a.w/2));
@@ -1021,16 +1035,9 @@ async function beginLive(manual=false){
  const yq=box(yu);
  yu.x=Math.max(yq.l,Math.min(yq.r,centerX-yu.w/2));
  yu.y=Math.max(yq.t,Math.min(yq.b,centerY+yu.h*.65));
- liveEvent={members,frames,yu,caller,started:now,until:now+12000,frame:-1,cheer:-1,phase:'intro',centerX};
- say(caller,LIVE_CALLS[caller.id],1700);
- return true;
-}
-function updateLive(now){
- if(!liveEvent)return;
- const e=liveEvent,elapsed=now-e.started;
- if(now>=e.until){endLive(now);return}
- if(elapsed<1700)return;
- if(e.phase==='intro'){e.phase='dance';hideSpeech(e.caller)}
+
+ }
+
  const step=Math.floor((elapsed-1700)/270);
  if(step!==e.frame){
   e.frame=step;
@@ -1429,6 +1436,7 @@ function bubblePlacement(a){
   }
   a.b.style.width=finalWidth+'px';
   a.b.style.maxWidth=finalWidth+'px';
+  a.b.classList.toggle('mascot-bubble-below',chosenTop>=speaker.bottom+2);
   a.b.style.left=chosen+'px';
   a.b.style.top=chosenTop+'px';
   const pointer=Math.max(11,Math.min(finalWidth-11,speaker.center-chosen));
