@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'lovepoke-';
-const CACHE_NAME = `${CACHE_PREFIX}v20261009-101`;
+const CACHE_NAME = `${CACHE_PREFIX}v20261009-102`;
 
 const ASSETS = [
   './',
@@ -23,6 +23,7 @@ const ASSETS = [
   './mini-live/ayumu-frames.json',
   './mini-live/kasumi-frames.json',
   './mini-live/shizuku-frames.json',
+  './mini-live/karin-frames.json',
   './mini-live/shioriko-test-live.html',
   './assets/mascot/ayumu-sprite.png',
   './assets/mascot/kasumi-sprite.png',
