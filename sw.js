@@ -1,126 +1,88 @@
+// Network-first PWA worker. Cache failures must NEVER override successful fetches.
 const CACHE_PREFIX = 'lovepoke-';
-const CACHE_NAME = `${CACHE_PREFIX}v20261009-102`;
+const CACHE_NAME = CACHE_PREFIX + 'v20261009-103';
 
-const ASSETS = [
+// Only essential shell assets are precached. Large optional images/data are
+// cached on successful requests so a single failed image cannot block an update.
+const CORE_ASSETS = [
   './',
   './index.html',
   './styles.css',
   './app.js',
-  './pokemon-data.js',
-  './pokemon-stats.js',
-  './pokemon-types.js',
-  './pokemon-usage.js',
-  './pokemon-sv-learnsets.js',
-  './pokemon-ui.js',
-  './loveca-card-browser.js',
-  './loveca-filter-selector.js',
-  './loveca-card-browser.css',
-  './mascot.js',
   './mascot-multi.js',
   './mascot.css',
   './mini-live/launcher.js',
-  './mini-live/shioriko-frames.json',
-  './mini-live/ayumu-frames.json',
-  './mini-live/kasumi-frames.json',
-  './mini-live/shizuku-frames.json',
-  './mini-live/karin-frames.json',
-  './mini-live/shioriko-test-live.html',
-  './assets/mascot/ayumu-sprite.png',
-  './assets/mascot/kasumi-sprite.png',
-  './assets/mascot/shizuku-sprite.png',
-  './assets/mascot/karin-sprite.png',
-  './assets/mascot/ai-sprite.png',
-  './assets/mascot/kanata-sprite.png',
-  './assets/mascot/setsuna-sprite.png',
-  './assets/mascot/emma-sprite.png',
-  './assets/mascot/rina-sprite.png',
-  './assets/mascot/shioriko-sprite.png',
-  './assets/mascot/mia-sprite.png',
-  './assets/mascot/lanzhu-sprite.png',
-  './assets/mascot/yu-sprite.png',
-  './loveca-cards.json',
-  './firebase-config.js',
-  './firebase-client.js',
-  './tournament.js',
-  './pokemon-guide.js',
-  './mahjong.js',
-  './manifest.webmanifest',
-  './version.json',
-  './icons/icon-192.png'
+  './version.json'
 ];
 
 self.addEventListener('install', event => {
   self.skipWaiting();
-
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache =>
-      cache.addAll(
-        ASSETS.map(url =>
-          new Request(url, { cache: 'reload' })
-        )
-      )
-    )
-  );
+  event.waitUntil((async () => {
+    try {
+      const cache = await caches.open(CACHE_NAME);
+      await Promise.all(CORE_ASSETS.map(async url => {
+        try {
+          const response = await fetch(new Request(url, { cache: 'reload' }));
+          if (response.ok) await cache.put(url, response);
+        } catch (_) {
+          // Offline, quota exceeded, or a temporarily missing asset: never
+          // abort the whole service-worker installation.
+        }
+      }));
+    } catch (_) {
+      // An unavailable Cache Storage must not prevent updating the application.
+    }
+  })());
 });
 
 self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys()
-      .then(keys =>
-        Promise.all(
-          keys
-            .filter(
-              key =>
-                key.startsWith(CACHE_PREFIX) &&
-                key !== CACHE_NAME
-            )
-            .map(key => caches.delete(key))
-        )
-      )
-      .then(() => self.clients.claim())
-  );
+  event.waitUntil((async () => {
+    try {
+      const keys = await caches.keys();
+      await Promise.all(keys
+        .filter(key => key.startsWith(CACHE_PREFIX) && key !== CACHE_NAME)
+        .map(key => caches.delete(key).catch(() => false)));
+    } catch (_) {}
+    await self.clients.claim();
+  })());
 });
 
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
-
   const url = new URL(event.request.url);
-
   if (url.origin !== self.location.origin) return;
 
-  event.respondWith(
-    (async () => {
+  event.respondWith((async () => {
+    let response;
+    try {
+      response = await fetch(event.request, { cache: 'no-store' });
+    } catch (_) {
+      // Use cache only when the NETWORK failed, not when writing to cache fails.
       try {
-        const response = await fetch(
-          event.request,
-          { cache: 'no-store' }
-        );
-
-        if (response.ok) {
-          const cache = await caches.open(CACHE_NAME);
-
-          await cache.put(
-            event.request,
-            response.clone()
-          );
-        }
-
-        return response;
-      } catch {
-        const cached = await caches.match(
-          event.request
-        );
-
+        const cached = await caches.match(event.request);
         if (cached) return cached;
-
         if (event.request.mode === 'navigate') {
-          return (
-            await caches.match('./index.html')
-          ) || Response.error();
+          const fallback = await caches.match('./index.html');
+          if (fallback) return fallback;
         }
+      } catch (_) {}
+      return Response.error();
+    }
 
-        return Response.error();
-      }
-    })()
-  );
+    if (response.ok) {
+      try {
+        const copy = response.clone();
+        const save = (async () => {
+          try {
+            const cache = await caches.open(CACHE_NAME);
+            await cache.put(event.request, copy);
+          } catch (_) {
+            // Ignore quota/storage errors; retain the fresh network response.
+          }
+        })();
+        event.waitUntil(save);
+      } catch (_) {}
+    }
+    return response;
+  })());
 });
