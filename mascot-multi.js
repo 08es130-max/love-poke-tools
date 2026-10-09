@@ -1039,7 +1039,7 @@ function updateLive(now){
  yu.el.classList.add('mascot-yu-cheering');
  const cheerSprite=document.createElement('div');
  cheerSprite.className='mascot-yu-cheer-sprite';
- const cheerUrl='./assets/mascot/live/yu-cheer-sheet.png';
+ const cheerUrl='./assets/mascot/live/yu-cheer-8frames-transparent-padded.png';
  const probe=new Image();
  probe.onload=()=>{cheerSprite.style.backgroundImage='url("'+cheerUrl+'")';cheerSprite.classList.add('ready')};
  probe.onerror=()=>{console.warn('Yu cheering sprite not installed:',cheerUrl)};
