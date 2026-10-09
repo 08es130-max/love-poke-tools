@@ -612,7 +612,7 @@
 .edge-mascot.mascot-yu-cheering{overflow:visible!important;z-index:909!important}
 .edge-mascot.mascot-yu-cheering:has(.mascot-yu-cheer-sprite.ready){background-image:none!important}
 .mascot-yu-cheer-sprite{
- position:absolute;left:50%;bottom:0;width:100%;height:auto;aspect-ratio:4 / 5;
+ position:absolute;left:50%;bottom:0;width:80%;height:auto;aspect-ratio:4 / 5;
  transform:translateX(-50%);
  background-repeat:no-repeat;background-size:400% 200%;
  background-position:0 0;pointer-events:none;display:none;
