@@ -25,7 +25,7 @@ btn.addEventListener('click',async()=>{
   btn.disabled=true;
   try{
     const started=await window.lovePokeStartMascotLive();
-    if(!started)notify('歩行モードで歩夢・かすみ・しずく・果林・愛・彼方・栞子を表示するとライブできます');
+    if(!started)notify('歩行モードで歩夢・かすみ・しずく・果林・愛・彼方・せつ菜・栞子を表示するとライブできます');
   }catch(_){notify('ライブ画像を読み込めませんでした')}
   finally{btn.disabled=false}
 });
