@@ -614,7 +614,7 @@
 .mascot-yu-cheer-sprite{
  position:absolute;left:50%;bottom:-7%;width:150%;height:125%;
  transform:translateX(-50%);
- background-repeat:no-repeat;background-size:400% 300%;
+ background-repeat:no-repeat;background-size:400% 200%;
  background-position:0 0;pointer-events:none;display:none;
 }
 .mascot-yu-cheer-sprite.ready{display:block}
