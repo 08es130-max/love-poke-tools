@@ -1449,7 +1449,14 @@ function bubblePlacement(a){
   }
   a.b.style.width=finalWidth+'px';
   a.b.style.maxWidth=finalWidth+'px';
-  a.b.classList.toggle('mascot-bubble-below',chosenTop>=speaker.bottom+2);
+  // Yu's cheering bubble can be placed below the stage but still above Yu's
+  // sprite. In that case the tail must point toward Yu, not toward the stage.
+  const bubbleMid=chosenTop+bubbleDimensions(a,finalWidth).h/2;
+  const tailAbove=liveEvent&&a===liveEvent.yu
+    ? bubbleMid<=speaker.top
+    : chosenTop>=speaker.bottom+2;
+  a.b.classList.toggle('mascot-bubble-below',!!tailAbove);
+  a.b.classList.toggle('mascot-bubble-tail-up',!!tailAbove);
   a.b.style.left=chosen+'px';
   a.b.style.top=chosenTop+'px';
   const pointer=Math.max(11,Math.min(finalWidth-11,speaker.center-chosen));
