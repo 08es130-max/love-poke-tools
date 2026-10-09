@@ -607,3 +607,12 @@
 @media(max-height:700px){
   .mascot-dialog-card{overflow-y:auto}
 }
+
+/* Yu cheers in front of the three performers: four columns, three rows. */
+.edge-mascot.mascot-yu-cheering{background-image:none!important;overflow:visible!important;z-index:909!important}
+.mascot-yu-cheer-sprite{
+ position:absolute;left:50%;bottom:-7%;width:150%;height:125%;
+ transform:translateX(-50%);
+ background-repeat:no-repeat;background-size:400% 300%;
+ background-position:0 0;pointer-events:none;
+}
