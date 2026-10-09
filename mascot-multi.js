@@ -989,7 +989,11 @@ async function beginLive(manual=false){
  yu.el.classList.add('mascot-yu-cheering');
  const cheerSprite=document.createElement('div');
  cheerSprite.className='mascot-yu-cheer-sprite';
- cheerSprite.style.backgroundImage='url("./assets/mascot/live/yu-cheer-sheet.png")';
+ const cheerUrl='./assets/mascot/live/yu-cheer-sheet.png';
+ const probe=new Image();
+ probe.onload=()=>{cheerSprite.style.backgroundImage='url("'+cheerUrl+'")';cheerSprite.classList.add('ready')};
+ probe.onerror=()=>{console.warn('Yu cheering sprite not installed:',cheerUrl)};
+ probe.src=cheerUrl;
  yu.el.appendChild(cheerSprite);yu.liveImage=cheerSprite;
  const yq=box(yu);
  yu.x=Math.max(yq.l,Math.min(yq.r,centerX-yu.w/2));
