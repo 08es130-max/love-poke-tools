@@ -911,7 +911,7 @@ const LIVE_INTERVALS={rare:[15*60000,25*60000],normal:[7*60000,12*60000],often:[
 const liveCache=new Map();
 let liveEvent=null,nextLiveAt=Infinity,liveLoading=false,liveGeneration=0;
 function scheduleLive(now=performance.now()){
-  const range=LIVE_INTERVALS[S.liveMode]||null;
+  const range=S.liveMode==='off'?null:[5000,7500];
   nextLiveAt=range ? now+range[0]+Math.random()*(range[1]-range[0]) : Infinity;
 }
 async function getLiveFrames(id){
@@ -937,64 +937,86 @@ async function getLiveFrames(id){
   }
   return liveCache.get(id);
 }
+const LIVE_CALLS={ayumu:'みんな、ライブ始めるよ！',kasumi:'かすみんたちのライブ、始めちゃいますよ〜！',shizuku:'私たちのライブ、ぜひ見てください！',karin:'さあ、ライブを始めるわよ',ai:'みんなー！ライブやるよー！',kanata:'ライブ、始めちゃおっか〜',setsuna:'みなさん！ライブを始めますよー！',emma:'みんな、一緒に楽しもう！ライブだよ〜！',rina:'ライブ、始める。璃奈ちゃんボード「わくわく」',shioriko:'これからライブを始めます！',mia:'ライブ、始めるよ。ちゃんと見ててよね',lanzhu:'ランジュたちのライブ、始めるわよ！'};
+const YU_CHEERS=['みんな最高ー！','がんばってー！','ときめいちゃう！','1人だけなんて選べないよー！','みんな大好きー！'];
 function endLive(now=performance.now()){
-  if(!liveEvent)return;
-  const a=liveEvent.actor;
-  a.performing=false;
-  a.liveImage?.remove();
-  a.liveImage=null;
-  a.el.classList.remove('mascot-live-active');
-  a.frame=0;a.lastF=now;a.pose=now+350;
-  a.restUntil=0;
-  a.nextRest=now+(PERSONALITY[a.id]?.rest||14000);
+ if(!liveEvent)return;
+ for(const a of [...liveEvent.members,liveEvent.yu].filter(Boolean)){
+  a.performing=false;a.liveImage?.remove();a.liveImage=null;
+  a.el.classList.remove('mascot-live-active');hideSpeech(a);
+  a.frame=0;a.lastF=now;a.pose=now+300;a.restUntil=0;
   if(actors.length>1)setV(a,Math.random()*Math.PI*2);
-  liveEvent=null;
-  scheduleLive(now);
+ }
+ liveEvent=null;
+ nextLiveAt=now+5000+Math.random()*2500;
 }
 async function beginLive(manual=false){
-  if(liveLoading||liveEvent||S.lineup||!S.moving||document.hidden ||
-     (!manual&&(!LIVE_INTERVALS[S.liveMode]||socialEvent||
-       document.querySelector('dialog[open]'))))return false;
-  const eligible=actors.filter(a=>LIVE_ASSETS[a.id]&&!a.performing);
-  if(!eligible.length){if(!manual)scheduleLive();return false}
-  const a=eligible[Math.floor(Math.random()*eligible.length)];
-  const serial=liveGeneration;
-  liveLoading=true;
-  let frames;
-  try{frames=await getLiveFrames(a.id)}
-  catch(err){console.warn('Mascot mini-live:',err);scheduleLive();return false}
-  finally{liveLoading=false}
-  if(serial!==liveGeneration||!actors.includes(a)||liveEvent||S.lineup||
-     !S.moving||document.hidden||(!manual&&(socialEvent||!LIVE_INTERVALS[S.liveMode])))return false;
-  if(manual&&socialEvent)endConversation(performance.now());
-  const now=performance.now();
-  hideSpeech(a);
+ if(liveLoading||liveEvent||S.lineup||!S.moving||document.hidden||
+    socialEvent||document.querySelector('dialog[open]'))return false;
+ const yu=actors.find(a=>a.id==='yu');
+ const eligible=actors.filter(a=>LIVE_ASSETS[a.id]&&!a.performing);
+ if(!yu||eligible.length<3||(!manual&&actors.length!==Object.keys(C).length)){
+  if(!manual)nextLiveAt=performance.now()+5000;
+  return false;
+ }
+ const caller=eligible[Math.floor(Math.random()*eligible.length)];
+ const others=eligible.filter(a=>a!==caller).sort(()=>Math.random()-.5).slice(0,2);
+ const members=[caller,...others],serial=liveGeneration;
+ liveLoading=true;
+ let frames;
+ try{frames=await Promise.all(members.map(a=>getLiveFrames(a.id)))}
+ catch(err){console.warn('Mascot mini-live:',err);nextLiveAt=performance.now()+5000;return false}
+ finally{liveLoading=false}
+ if(serial!==liveGeneration||members.some(a=>!actors.includes(a))||!actors.includes(yu)||
+    liveEvent||S.lineup||!S.moving||document.hidden)return false;
+ const now=performance.now();
+ members.forEach(a=>hideSpeech(a));hideSpeech(yu);
+ const centerX=members.reduce((sum,a)=>sum+a.x+a.w/2,0)/3;
+ const centerY=members.reduce((sum,a)=>sum+a.y+a.h/2,0)/3;
+ members.forEach((a,i)=>{
+  const q=box(a);
+  a.x=Math.max(q.l,Math.min(q.r,centerX+(i-1)*a.w*1.12-a.w/2));
+  a.y=Math.max(q.t,Math.min(q.b,centerY-a.h/2));
   const image=document.createElement('img');
-  image.className='mascot-live-frame';
-  image.alt='';
-  image.draggable=false;
-  const visualRatio=metrics.get(a.id)?.visibleRatio||.76;
-  image.style.height=(a.h*visualRatio)+'px';
-  image.style.bottom=(a.h*(1-visualRatio)*.35)+'px';
-  image.src=frames.frames[frames.sequence[0]];
-  a.el.appendChild(image);
-  a.liveImage=image;
-  a.performing=true;
-  a.el.classList.remove('mascot-napping','mascot-collision-pose');
+  image.className='mascot-live-frame';image.alt='';image.draggable=false;
+  const ratio=metrics.get(a.id)?.visibleRatio||.76;
+  image.style.height=a.h*ratio+'px';image.style.bottom=a.h*(1-ratio)*.35+'px';
+  image.src=frames[i].frames[frames[i].sequence[0]];
+  a.el.appendChild(image);a.liveImage=image;a.performing=true;
   a.el.classList.add('mascot-live-active');
-  liveEvent={actor:a,frames,started:now,until:now+15000,frame:-1};
-  return true;
+ });
+ yu.performing=true;
+ const yq=box(yu);
+ yu.x=Math.max(yq.l,Math.min(yq.r,centerX-yu.w/2));
+ yu.y=Math.max(yq.t,Math.min(yq.b,centerY+yu.h*.65));
+ liveEvent={members,frames,yu,caller,started:now,until:now+12000,frame:-1,cheer:-1,phase:'intro',centerX};
+ say(caller,LIVE_CALLS[caller.id],1700);
+ return true;
 }
 function updateLive(now){
-  if(!liveEvent)return;
-  if(now>=liveEvent.until){endLive(now);return}
-  const event=liveEvent;
-  const step=Math.floor((now-event.started)/360)%event.frames.sequence.length;
-  if(step===event.frame)return;
-  event.frame=step;
-  event.actor.liveImage.src=event.frames.frames[event.frames.sequence[step]];
+ if(!liveEvent)return;
+ const e=liveEvent,elapsed=now-e.started;
+ if(now>=e.until){endLive(now);return}
+ if(elapsed<1700)return;
+ if(e.phase==='intro'){e.phase='dance';hideSpeech(e.caller)}
+ const step=Math.floor((elapsed-1700)/270);
+ if(step!==e.frame){
+  e.frame=step;
+  e.members.forEach((a,i)=>{
+   const data=e.frames[i];
+   a.liveImage.src=data.frames[data.sequence[step%data.sequence.length]];
+  });
+ }
+ const cheer=Math.floor((elapsed-1700)/1900);
+ if(cheer!==e.cheer){
+  e.cheer=cheer;
+  const line=cheer===2?'1人だけなんて選べないよー！':YU_CHEERS[cheer%YU_CHEERS.length];
+  say(e.yu,line,1550);
+ }
+ const y=e.yu,q=box(y);
+ y.x=Math.max(q.l,Math.min(q.r,e.centerX-y.w/2+Math.sin(elapsed/580)*y.w*1.45));
+ y.frame=Math.floor(elapsed/180)%4;
 }
-
 let S=load(),root,layer,dialog,status,lineupButton,actors=[],last=0,metrics=new Map(),rebuildSerial=0;
 function valid(a){return [...new Set((Array.isArray(a)?a:[]).filter(x=>C[x]))]}
 function load(){
