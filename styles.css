@@ -648,3 +648,7 @@ button,.nav-btn,.mini-btn,.column-reset,.lock-btn{touch-action:manipulation}
 .guide-sv-map-spot{display:inline-block;max-width:100%;border:1px solid #74a88d;border-radius:14px;background:#fff;padding:3px 7px;font-size:10px;font-weight:600;color:#22563b;overflow-wrap:anywhere}
 .guide-sv-offline-map-kitakami{background:linear-gradient(145deg,#e6e0f4,#e1efd9)}
 .guide-sv-offline-map-blueberry{background:linear-gradient(145deg,#d4e7fa,#e5f1fa)}
+
+.guide-sv-dex-filter{display:flex;flex-wrap:wrap;gap:6px;padding:8px 0}
+.guide-sv-dex-filter button{border:1px solid #a8b8b1;background:#fff;color:#254d3c;border-radius:16px;padding:7px 10px;font-size:12px;cursor:pointer}
+.guide-sv-dex-filter button.active{background:#245d45;color:#fff;border-color:#245d45}
