@@ -555,3 +555,12 @@ button,.nav-btn,.mini-btn,.column-reset,.lock-btn{touch-action:manipulation}
 .loveca-history-note>div{display:grid;grid-template-columns:38px 1fr;gap:5px;margin-top:2px}
 .loveca-history-note>div>span{font-size:10px;font-weight:900;color:#8d7e84}
 @media(max-width:560px){.loveca-history-result{font-size:15px;gap:5px}.loveca-history-decks{font-size:10px}.loveca-history-card{gap:7px}}
+
+/* Pokédex six-stat overview */
+.guide-dex-stats{margin:12px 0 18px;padding:12px;border:1px solid #e4e8f0;border-radius:13px;background:var(--panel-bg,#fff)}
+.guide-dex-stats-title{display:flex;justify-content:space-between;gap:10px;margin-bottom:11px;font-size:14px}
+.guide-dex-stat-row{display:grid;grid-template-columns:74px 36px minmax(0,1fr);align-items:center;gap:8px;margin:7px 0;font-size:12px}
+.guide-dex-stat-row strong{text-align:right;font-variant-numeric:tabular-nums;font-size:13px}
+.guide-dex-stat-track{height:9px;background:#e8edf3;border-radius:20px;overflow:hidden}
+.guide-dex-stat-fill{height:100%;background:#22a67a;border-radius:20px}
+.guide-dex-stat-fill.is-speed{background:#3988e8}
