@@ -126,6 +126,7 @@ function renderPokemon(id){
   const types=typeNames(p);
   detail.classList.remove('hidden');
   detail.innerHTML=`
+    <button type="button" id="guideBackToList" class="ghost-btn guide-back-btn">← ポケモン一覧に戻る</button>
     <div class="guide-detail-head">
       <div>
         <div class="guide-dex-no">No.${String(p.id).padStart(4,'0')}</div>
@@ -146,6 +147,13 @@ function renderPokemon(id){
     ${(learn.r||[]).length?`<div class="guide-move-section"><h3>思い出し技 <span>${learn.r.length}</span></h3><div class="guide-move-grid">${reminder}</div></div>`:''}
     <p class="hint">SV Ver.3.0.0（藍の円盤込み）の内蔵データを表示しています。特殊フォームは今後個別に補正できます。</p>
   `;
+  $('#guideBackToList')?.addEventListener('click',()=>{
+    detail.classList.add('hidden');
+    const input=$('#guidePokemonSearch');
+    if(input)input.value='';
+    renderSuggestions('');
+    $('#guideDexTool')?.scrollIntoView({behavior:'smooth',block:'start'});
+  });
   const filter=$('#guideMoveFilter');
   if(filter)filter.oninput=()=>filterMoves(detail,filter.value);
   detail.scrollIntoView({behavior:'smooth',block:'start'});
