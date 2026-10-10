@@ -400,6 +400,13 @@ function renderDexWeaknesses(p){
 
 // SV encounter guide: curated, verified entries only. Missing entries are not assumed unobtainable.
 const SV_LOCATION_ENTRIES={
+  113:{both:[["paldea","北3番エリア・スター団基地付近","野生・探索候補"]]},
+  183:{both:[["paldea","オージャの湖","野生・探索候補"]]},
+  206:{both:[["paldea","南3番エリア","野生・探索候補"]]},
+  953:{both:[["paldea","南3番エリア・崖付近","野生・探索候補"]]},
+  955:{both:[["paldea","ロースト砂漠","野生・探索候補"]]},
+  956:{both:[["paldea","ロースト砂漠","野生・探索候補"]]},
+
   56:{both:[["paldea","南2番エリア","野生・探索候補"]]},
   92:{both:[["paldea","南3番エリア（夜）","野生・探索候補"]]},
   246:{both:[["paldea","北1番エリア","野生・探索候補"]]},
