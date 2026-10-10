@@ -433,7 +433,7 @@
     if(/μ|ミューズ|muse|muse's/.test(work))return 'muse';
     if(/aqours|アクア/.test(work))return 'aqours';
     if(/虹|nijigasaki/.test(work))return 'nijigasaki';
-    if(/liella|リエラ/.test(work))return 'liella';
+    if(/liella|リエラ|スーパースター|superstar/.test(work))return 'liella';
     if(/蓮|hasunosora/.test(work))return 'hasunosora';
     return '';
   }
@@ -467,7 +467,7 @@
   }
 
   function liveScore(card){
-    for(const value of [card.score,card.liveScore,card.live_score,card.livePoint,card.livePoints]){
+    for(const value of [card.score,card.liveScore,card.live_score,card.livePoint,card.livePoints,card.power]){
       const score=numberOrNull(value);if(score!==null)return score;
     }
     const text=String(card.text||'');
