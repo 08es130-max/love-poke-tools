@@ -411,6 +411,36 @@ const SV_MAP_LINKS={
  blueberry:'https://www.pokeos.com/sv/map/blueberry-academy'
 };
 const SV_REGION_LABELS={paldea:'パルデア地方',kitakami:'キタカミの里',blueberry:'ブルーベリー学園'};
+function svMemoKey(id,version){return 'lovepoke_sv_spot_'+id+'_'+version;}
+function svMemoRead(id,version){
+ try{return JSON.parse(localStorage.getItem(svMemoKey(id,version))||'[]').filter(x=>x&&typeof x.name==='string');}
+ catch(_){return [];}
+}
+function svMemoSave(id,version,region,name){
+ const list=svMemoRead(id,version);
+ if(!name.trim()||list.length>=30)return false;
+ list.push({region,name:name.trim().slice(0,80)});
+ try{localStorage.setItem(svMemoKey(id,version),JSON.stringify(list));return true;}catch(_){return false;}
+}
+function bindSVSpotMemo(p,version){
+ const region=document.querySelector('#guideSVSpotRegion');
+ const name=document.querySelector('#guideSVSpotName');
+ document.querySelector('#guideSVSpotAdd')?.addEventListener('click',()=>{
+  if(!name?.value.trim())return;
+  if(!svMemoSave(p.id,version,region.value,name.value)){alert('保存できませんでした。端末の空き容量などをご確認ください。');return;}
+  const results=document.querySelector('#guideSVLocationResults');
+  if(results){results.innerHTML=renderSVLocationResults(p,version);bindSVSpotMemo(p,version);}
+ });
+ document.querySelectorAll('[data-sv-spot-remove]').forEach(button=>button.addEventListener('click',()=>{
+  const index=Number(button.dataset.svSpotRemove);
+  const list=svMemoRead(p.id,version);
+  if(!Number.isInteger(index)||index<0||index>=list.length)return;
+  list.splice(index,1);
+  try{localStorage.setItem(svMemoKey(p.id,version),JSON.stringify(list));}catch(_){return;}
+  const results=document.querySelector('#guideSVLocationResults');
+  if(results){results.innerHTML=renderSVLocationResults(p,version);bindSVSpotMemo(p,version);}
+ }));
+}
 function renderSVLocations(p){
  const version=localStorage.getItem('lovepoke_sv_version')==='violet'?'violet':'scarlet';
  return `<section class="guide-sv-locations">
@@ -424,6 +454,7 @@ function renderSVLocations(p){
 }
 function renderSVLocationResults(p,version){
  const record=SV_LOCATION_ENTRIES[p.id];
+ const personal=svMemoRead(p.id,version);
  const locations=[...(record?.both||[]),...(record?.[version]||[])];
  const limit=SV_VERSION_LIMITED[p.id];
  const limitedMessage=limit?'<p class="guide-sv-limit">'+(limit===version?'このバージョンで入手できます。出現地点は確認中です。':'通常は'+(limit==='scarlet'?'スカーレット':'バイオレット')+'限定です。交換などで入手できる場合があります。')+'</p>':'';
@@ -443,6 +474,10 @@ function renderSVLocationResults(p,version){
  <a class="guide-sv-lookup" href="${guideSearch}" target="_blank" rel="noopener noreferrer">「${escapeHtml(p.name)}」の${version==='scarlet'?'スカーレット':'バイオレット'}出現場所を調べる ↗</a>
  ${locations.length?`<ul class="guide-sv-location-list">${locations.map(([region,name,method])=>`<li><strong>${escapeHtml(name)}</strong><small>${SV_REGION_LABELS[region]} · ${escapeHtml(method)}</small></li>`).join('')}</ul>`:
  '<p class="note">このポケモンの出現場所はまだ登録・検証できていません。野生で出現しないという意味ではありません。</p>'}
+ <div class="guide-sv-memo"><strong>自分の発見場所メモ（オフライン保存）</strong>
+ <div class="guide-sv-memo-form"><select id="guideSVSpotRegion" aria-label="地域"><option value="paldea">パルデア</option><option value="kitakami">キタカミ</option><option value="blueberry">ブルーベリー</option></select><input id="guideSVSpotName" maxlength="80" placeholder="例：南2番エリア" aria-label="見つけた場所"><button type="button" id="guideSVSpotAdd">追加</button></div>
+ ${personal.length?`<ul class="guide-sv-memo-list">${personal.map((entry,i)=>`<li><span>${escapeHtml(SV_REGION_LABELS[entry.region]||entry.region)}：${escapeHtml(entry.name)}</span><button type="button" data-sv-spot-remove="${i}" aria-label="メモを削除">削除</button></li>`).join('')}</ul>`:'<p class="note">自分で見つけた場所を記録できます。公式の出現データとは区別して表示します。</p>'}
+ </div>
  <p class="hint">地域カードの図は位置を示さない模式図です。正確な地図はオンライン時に外部リンクから確認できます。出現地点のハイライトは、位置データの検証後に追加します。</p>`;
 }
 
@@ -499,8 +534,9 @@ function renderPokemon(id){
     localStorage.setItem('lovepoke_sv_version',version);
     detail.querySelectorAll('[data-sv-version]').forEach(el=>el.classList.toggle('active',el.dataset.svVersion===version));
     const results=$('#guideSVLocationResults');
-    if(results)results.innerHTML=renderSVLocationResults(p,version);
+    if(results){results.innerHTML=renderSVLocationResults(p,version);bindSVSpotMemo(p,version);}
   }));
+  bindSVSpotMemo(p,localStorage.getItem('lovepoke_sv_version')==='violet'?'violet':'scarlet');
   const filter=$('#guideMoveFilter');
   if(filter)filter.oninput=()=>filterMoves(detail,filter.value);
   detail.scrollIntoView({behavior:'smooth',block:'start'});
