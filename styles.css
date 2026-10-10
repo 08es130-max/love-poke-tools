@@ -617,3 +617,11 @@ button,.nav-btn,.mini-btn,.column-reset,.lock-btn{touch-action:manipulation}
 .guide-sv-location-list{list-style:none;padding:0;margin:10px 0}
 .guide-sv-location-list li{display:flex;flex-direction:column;gap:3px;padding:9px 0;border-bottom:1px solid #eceef3}
 .guide-sv-location-list small{color:#64748b}
+
+.guide-sv-region-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin:12px 0}
+.guide-sv-region-card{border:1px solid #dce3f0;border-radius:11px;padding:11px;background:#f9fbff;min-width:0}
+.guide-sv-region-card-top{display:flex;flex-direction:column;gap:2px}
+.guide-sv-region-card-top strong{font-size:13px}
+.guide-sv-region-card-top small{font-size:11px;color:#64748b}
+.guide-sv-region-status{font-size:11px;color:#64748b;margin:7px 0}
+.guide-sv-lookup{display:block;padding:11px 12px;background:#fff3f7;border:1px solid #f3cddd;border-radius:10px;color:#9b2e63;text-decoration:none;font-size:13px;font-weight:700;overflow-wrap:anywhere}
