@@ -1,0 +1,2 @@
+/* Manually checked acquisition methods against GameWith Paldea Pokedex index (2026-10-10). These are not wild spawn coordinates. */
+window.POKEMON_SV_ACQUISITION={"906":[["starter","最初のパートナーとして選択"]],"907":[["evolution","ニャオハをレベル16で進化"]],"908":[["evolution","ニャローテをレベル36で進化"]],"909":[["starter","最初のパートナーとして選択"]],"910":[["evolution","ホゲータをレベル16で進化"]],"911":[["evolution","アチゲータをレベル36で進化"]],"912":[["starter","最初のパートナーとして選択"]],"913":[["evolution","クワッスをレベル16で進化"]],"914":[["evolution","ウェルカモをレベル36で進化"]],"923":[["evolution","パモットをレッツゴーで1000歩連れ歩き、レベルアップ"],["raid","パルデアのテラレイドバトル"]]};
