@@ -484,6 +484,7 @@ function renderSVLocationResults(p,version){
  const record=SV_LOCATION_ENTRIES[p.id];
  const acquisition=window.POKEMON_SV_ACQUISITION?.[p.id]||[];
  const sourcedLocations=window.POKEMON_SV_LOCATION_SUMMARIES?.[version]?.[p.id]||{};
+ const hasAreaReference=Object.values(sourcedLocations).some(Boolean);
  const species=(window.POKEMON_DATA||[]).filter(x=>!x.formKey&&x.id>=1&&x.id<=1025);
  const evoFamily=p.evo?species.filter(x=>x.evo===p.evo):[];
  const evoFamilyHtml=evoFamily.length>1?'<div class="guide-sv-acquisition"><strong>進化系統（進化条件は別途確認）</strong><p>'+evoFamily.map(x=>'<span>'+escapeHtml(x.name)+' (No.'+x.id+')</span>').join(' ／ ')+'</p></div>':'';
@@ -494,7 +495,7 @@ function renderSVLocationResults(p,version){
  const svDataAvailable=!!window.POKEMON_SV_LEARNSETS?.[p.id];
  const dex=window.POKEMON_SV_REGIONAL_DEX?.[p.id]||{};
  const dexMessage=Object.keys(dex).length?Object.entries(dex).map(([region,num])=>SV_REGION_LABELS[region]+'図鑑 No.'+String(num).padStart(3,'0')).join(' ／ '):'SV地域図鑑への掲載なし（HOME・特別な入手方法の可否は別途確認）';
- const limitedMessage=limit?'<p class="guide-sv-limit">'+(limit===version?'このバージョンで入手できます。出現地点は確認中です。':'通常は'+(limit==='scarlet'?'スカーレット':'バイオレット')+'限定です。交換などで入手できる場合があります。')+'</p>':'';
+ const limitedMessage=limit?'<p class="guide-sv-limit">'+(limit===version?'このバージョン限定として登録されています。入手方法・地点は個別に確認してください。':'通常は'+(limit==='scarlet'?'スカーレット':'バイオレット')+'限定です。交換などで入手できる場合があります。')+'</p>':'';
  const searchQuery=encodeURIComponent(`ポケモンSV ${p.name} ${version==='scarlet'?'スカーレット':'バイオレット'} 出現場所 マップ`);
  const guideSearch='https://www.google.com/search?q='+searchQuery;
  const gamewithSearch='https://www.google.com/search?q='+encodeURIComponent('site:gamewith.jp/pokemon-sv/article/show/ '+p.name+' 出現場所 入手方法');
@@ -517,7 +518,7 @@ function renderSVLocationResults(p,version){
  <div class="guide-sv-source-links"><a class="guide-sv-lookup" href="${gamewithSearch}" target="_blank" rel="noopener noreferrer">GameWithで「${escapeHtml(p.name)}」の出現場所・入手方法を確認 ↗</a><a class="guide-sv-lookup" href="https://gamewith.jp/pokemon-sv/article/show/373315" target="_blank" rel="noopener noreferrer">GameWith パルデア図鑑一覧 ↗</a></div>
  <a class="guide-sv-lookup" href="${guideSearch}" target="_blank" rel="noopener noreferrer">「${escapeHtml(p.name)}」の${version==='scarlet'?'スカーレット':'バイオレット'}出現場所を調べる ↗</a>
  ${locations.length?`<ul class="guide-sv-location-list">${locations.map(([region,name,method])=>`<li><strong>${escapeHtml(name)}</strong><small>${SV_REGION_LABELS[region]} · ${escapeHtml(method)}</small></li>`).join('')}</ul>`:
- '<p class="note">'+(acquisition.length?'野生の出現地点は未登録です。上記の入手方法をご確認ください。':'このポケモンの出現場所・入手方法はまだ登録・検証できていません。野生で出現しないという意味ではありません。')+'</p>'}
+ '<p class="note">'+(hasAreaReference?'参考エリアは上記に表示しています。詳細な出現地点は未検証です。':acquisition.length?'野生の出現地点は未登録です。上記の入手方法をご確認ください。':'このポケモンの出現場所・入手方法はまだ登録・検証できていません。野生で出現しないという意味ではありません。')+'</p>'}
  <div class="guide-sv-memo"><strong>自分の発見場所メモ（オフライン保存）</strong>
  <div class="guide-sv-memo-form"><select id="guideSVSpotRegion" aria-label="地域"><option value="paldea">パルデア</option><option value="kitakami">キタカミ</option><option value="blueberry">ブルーベリー</option></select><input id="guideSVSpotName" maxlength="80" placeholder="例：南2番エリア" aria-label="見つけた場所"><button type="button" id="guideSVSpotAdd">追加</button></div>
  ${personal.length?`<ul class="guide-sv-memo-list">${personal.map((entry,i)=>`<li><span>${escapeHtml(SV_REGION_LABELS[entry.region]||entry.region)}：${escapeHtml(entry.name)}</span><button type="button" data-sv-spot-remove="${i}" aria-label="メモを削除">削除</button></li>`).join('')}</ul>`:'<p class="note">自分で見つけた場所を記録できます。公式の出現データとは区別して表示します。</p>'}
