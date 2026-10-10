@@ -426,6 +426,16 @@ const SV_MAP_LINKS={
  blueberry:'https://www.pokeos.com/sv/map/blueberry-academy'
 };
 const SV_REGION_LABELS={paldea:'パルデア地方',kitakami:'キタカミの里',blueberry:'ブルーベリー学園'};
+const SV_AREA_TRANSLATIONS={
+ 'Asado Desert':'ロースト砂漠','Cabo Poco':'コサジタウン','Casseroya Lake':'オージャの湖','East Paldean Sea':'パルデア東海','Glaseado Mountain':'ナッペ山','North Paldean Sea':'パルデア北海','Poco Path':'コサジの小道','Socarrat Trail':'しるしの木立ち','South Paldean Sea':'パルデア南海','Tagtree Thicket':'しるしの木立ち','The Great Crater of Paldea':'パルデアの大穴','The Pokémon League':'ポケモンリーグ','West Paldean Sea':'パルデア西海',
+ 'East Province (Area One)':'東1番エリア','East Province (Area Two)':'東2番エリア','East Province (Area Three)':'東3番エリア',
+ 'North Province (Area One)':'北1番エリア','North Province (Area Two)':'北2番エリア','North Province (Area Three)':'北3番エリア',
+ 'South Province (Area One)':'南1番エリア','South Province (Area Two)':'南2番エリア','South Province (Area Three)':'南3番エリア','South Province (Area Four)':'南4番エリア','South Province (Area Five)':'南5番エリア','South Province (Area Six)':'南6番エリア',
+ 'West Province (Area One)':'西1番エリア','West Province (Area Two)':'西2番エリア','West Province (Area Three)':'西3番エリア'
+};
+function svTranslateAreas(text){
+ return String(text||'').split(', ').map(s=>SV_AREA_TRANSLATIONS[s]||s).join('、');
+}
 function svMemoKey(id,version){return 'lovepoke_sv_spot_'+id+'_'+version;}
 function svMemoRead(id,version){
  try{return JSON.parse(localStorage.getItem(svMemoKey(id,version))||'[]').filter(x=>x&&typeof x.name==='string');}
@@ -496,7 +506,7 @@ function renderSVLocationResults(p,version){
   const offlineMap='<div class="guide-sv-offline-map guide-sv-offline-map-'+id+'" role="group" aria-label="'+label+'の出現エリア一覧（地理的な位置は表していません）"><div class="guide-sv-map-land"><span>'+label+'</span><div class="guide-sv-map-spots">'+spotMarkup+'</div></div></div>';
   return `<div class="guide-sv-region-card">
    <div class="guide-sv-region-card-top"><strong>${label}</strong><small>${dex[id]?'図鑑No.'+String(dex[id]).padStart(3,'0'):subtitle}</small></div>
-   ${offlineMap}${sourcedSummary?'<p class="guide-sv-source-summary"><strong>参考エリア（英語表記）</strong> '+escapeHtml(sourcedSummary)+'</p>':''}<div class="guide-sv-region-status">${matches.length?`登録済み ${matches.length}件`:sourcedSummary?'参考エリア情報あり（地点未検証）':'出現情報を確認中'}</div>
+   ${offlineMap}${sourcedSummary?'<p class="guide-sv-source-summary"><strong>参考エリア（日本語）</strong> '+escapeHtml(svTranslateAreas(sourcedSummary))+'</p>':''}<div class="guide-sv-region-status">${matches.length?`登録済み ${matches.length}件`:sourcedSummary?'参考エリア情報あり（地点未検証）':'出現情報を確認中'}</div>
    <a href="${SV_MAP_LINKS[id]}" target="_blank" rel="noopener noreferrer" class="guide-sv-map-link">エリアマップを見る ↗</a>
    </div>`;
  }).join('');
