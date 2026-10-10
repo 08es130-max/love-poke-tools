@@ -340,18 +340,63 @@ function renderDexNavigation(p){
  const btn=(target,label,arrow)=>target?`<button type="button" class="guide-neighbor-btn" data-guide-result="${target.id}"><span>${arrow} ${label}</span><strong>No.${String(target.id).padStart(4,'0')} ${escapeHtml(target.name)}</strong></button>`:`<span class="guide-neighbor-placeholder"></span>`;
  return `<nav class="guide-dex-navigation" aria-label="前後のポケモン">${btn(previous,'前のポケモン','←')}${btn(next,'次のポケモン','→')}</nav>`;
 }
-function renderDexWeaknesses(p){
+const DEX_ABILITY_DEFENSE={
+ 'ちょすい':{immune:['Water']},
+ 'よびみず':{immune:['Water']},
+ 'かんそうはだ':{immune:['Water'],factor:{Fire:1.25}},
+ 'もらいび':{immune:['Fire']},
+ 'こんがりボディ':{immune:['Fire']},
+ 'ちくでん':{immune:['Electric']},
+ 'ひらいしん':{immune:['Electric']},
+ 'でんきエンジン':{immune:['Electric']},
+ 'そうしょく':{immune:['Grass']},
+ 'ふゆう':{immune:['Ground']},
+ 'どしょく':{immune:['Ground']},
+ 'ぼうおん':{immune:['Sound']},
+ 'あついしぼう':{factor:{Fire:.5,Ice:.5}},
+ 'たいねつ':{factor:{Fire:.5}},
+ 'きよめのしお':{factor:{Ghost:.5}},
+ 'フィルター':{superEffective:.75},
+ 'ハードロック':{superEffective:.75},
+ 'プリズムアーマー':{superEffective:.75},
+ 'もふもふ':{factor:{Fire:2}},
+ 'ふしぎなまもり':{wonderGuard:true}
+};
+function dexDefenseRows(p,abilityName=''){
  const key=p?.formKey?`${p.id}-${p.formKey}`:String(p?.id||'');
  const defenders=window.POKEMON_TYPES?.[key]||window.POKEMON_TYPES?.[String(p?.id)]||[];
- if(!defenders.length)return '';
- const grouped=new Map([[4,[]],[2,[]],[.5,[]],[.25,[]],[0,[]]]);
+ if(!defenders.length)return '<p class="note">タイプデータなし</p>';
+ const ability=DEX_ABILITY_DEFENSE[abilityName]||{};
+ const rows=[];
  for(const attack of TYPE_ORDER){
-  const multiplier=defenders.reduce((n,defense)=>n*(TYPE_CHART[attack]?.[defense]??1),1);
-  if(grouped.has(multiplier))grouped.get(multiplier).push(attack);
+  const base=defenders.reduce((n,defense)=>n*(TYPE_CHART[attack]?.[defense]??1),1);
+  let multiplier=base,reason='';
+  if(base>0&&ability.immune?.includes(attack)){
+   multiplier=0;reason=abilityName;
+  }else if(base>0&&ability.wonderGuard&&base<=1){
+   multiplier=0;reason=abilityName;
+  }else if(base>0){
+   const factor=ability.factor?.[attack]??(ability.superEffective&&base>1?ability.superEffective:1);
+   if(factor!==1){multiplier=base*factor;reason=abilityName}
+  }
+  rows.push({attack,multiplier,reason});
  }
- const row=(multiplier,label)=>grouped.get(multiplier).length?`<div class="guide-weakness-row"><strong>${label}</strong><div class="guide-weakness-types">${grouped.get(multiplier).map(type=>`<span class="guide-type-chip">${escapeHtml(TYPE_JA[type]||type)}</span>`).join('')}</div></div>`:'';
- return `<section class="guide-dex-weakness"><h3>タイプ相性（受けるダメージ）</h3>${row(4,'×4 弱点')}${row(2,'×2 弱点')}${row(.5,'×0.5 半減')}${row(.25,'×0.25 1/4')}${row(0,'×0 無効')}<p class="hint">タイプのみで計算。特性・持ち物・テラスタルは反映していません。</p></section>`;
+ const groups=[[4,'×4 弱点'],[3,'×3 弱点'],[2,'×2 弱点'],[1.5,'×1.5 弱点'],[1,'×1 等倍'],[.75,'×0.75 軽減'],[.625,'×0.625 軽減'],[.5,'×0.5 半減'],[.375,'×0.375 軽減'],[.25,'×0.25 1/4'],[0,'×0 無効']];
+ const known=new Set(groups.map(x=>x[0]));
+ const extra=[...new Set(rows.filter(x=>!known.has(x.multiplier)).map(x=>x.multiplier))].sort((x,y)=>y-x).map(x=>[x,`×${x}`]);
+ return [...groups,...extra].map(([value,label])=>{
+  const items=rows.filter(x=>Math.abs(x.multiplier-value)<1e-9);
+  if(!items.length||value===1&&!items.some(x=>x.reason))return '';
+  return `<div class="guide-weakness-row"><strong>${label}</strong><div class="guide-weakness-types">${items.map(({attack,reason})=>`<span class="guide-weakness-entry"><span class="guide-type-chip">${escapeHtml(TYPE_JA[attack]||attack)}</span>${reason?`<small>（${escapeHtml(reason)}）</small>`:''}</span>`).join('')}</div></div>`;
+ }).join('');
 }
+function renderDexWeaknesses(p){
+ const abilities=window.LOVEPOKE_DEX_EXTRA?.abilities?.[String(p.id)]||[];
+ const unique=[...new Set(abilities.map(x=>x.name))];
+ const initial=unique[0]||'';
+ return `<section class="guide-dex-weakness"><h3>タイプ相性（受けるダメージ）</h3><label class="guide-weakness-select-label" for="guideWeaknessAbility">反映する特性</label><select id="guideWeaknessAbility" class="guide-weakness-select"><option value="">特性なし（タイプのみ）</option>${unique.map(name=>`<option value="${escapeHtml(name)}" ${name===initial?'selected':''}>${escapeHtml(name)}${abilities.some(x=>x.name===name&&x.hidden)?'（隠れ特性）':''}</option>`).join('')}</select><div id="guideWeaknessRows">${dexDefenseRows(p,initial)}</div><p class="hint">選択した特性によるタイプ技の無効・倍率変化を反映。特性の発動条件、技固有の例外、持ち物・テラスタルは反映していません。対応外の特性はタイプ相性のみ表示します。</p></section>`;
+}
+
 function renderPokemon(id){
   const p=pokemonById(id);
   const detail=$('#guidePokemonDetail');
@@ -394,6 +439,10 @@ function renderPokemon(id){
     if(input)input.value='';
     renderSuggestions('');
     $('#guideDexTool')?.scrollIntoView({behavior:'smooth',block:'start'});
+  });
+  $('#guideWeaknessAbility')?.addEventListener('change',event=>{
+    const rows=$('#guideWeaknessRows');
+    if(rows)rows.innerHTML=dexDefenseRows(p,event.target.value);
   });
   const filter=$('#guideMoveFilter');
   if(filter)filter.oninput=()=>filterMoves(detail,filter.value);
