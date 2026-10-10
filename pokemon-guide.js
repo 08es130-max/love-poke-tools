@@ -415,9 +415,7 @@ const SV_LOCATION_ENTRIES={
   932:{both:[["paldea","東1番エリア","野生・探索候補"]]},
   935:{both:[["paldea","南5番エリア","野生・探索候補"]]},
 
-  906:{both:[['paldea','最初のパートナーとして選択','入手']]},
-  909:{both:[['paldea','最初のパートナーとして選択','入手']]},
-  912:{both:[['paldea','最初のパートナーとして選択','入手']]}
+
 };
 const SV_VERSION_LIMITED={"200":"violet","246":"scarlet","247":"scarlet","316":"violet","317":"violet","371":"violet","372":"violet","425":"scarlet","426":"scarlet","429":"violet","434":"scarlet","435":"scarlet","633":"scarlet","634":"scarlet","690":"scarlet","691":"scarlet","692":"violet","693":"violet","765":"scarlet","766":"violet","874":"scarlet","875":"violet","885":"violet","886":"violet","984":"scarlet","985":"scarlet","986":"scarlet","987":"scarlet","988":"scarlet","989":"scarlet","990":"violet","991":"violet","992":"violet","993":"violet","994":"violet","995":"violet","1005":"scarlet","1006":"violet","1007":"scarlet","1008":"violet"};
 const SV_MAP_LINKS={
