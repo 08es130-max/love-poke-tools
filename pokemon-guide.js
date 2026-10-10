@@ -100,7 +100,7 @@ function renderPreEvolutionMoves(p){
  const ancestors=preEvolutionIds(p).filter(id=>window.POKEMON_SV_LEARNSETS?.[id]);
  if(!ancestors.length)return '';
  const current=window.POKEMON_SV_LEARNSETS?.[p.id]||{};
- const known=new Set([...(current.l||[]).map(x=>Number(x[0])),...(current.t||[]).map(x=>Number(x[0])),...(current.e||[]).map(Number),...(current.r||[]).map(Number)]);
+ const known=new Set([...(current.l||[]).map(x=>Number(x[0])),...(current.t||[]).filter(x=>String(x[1]??'').trim()!=='').map(x=>Number(x[0])),...(current.e||[]).map(Number),...(current.r||[]).map(Number)]);
  const moves=new Map();
  for(const id of ancestors){
   const previous=window.POKEMON_SV_LEARNSETS?.[id]||{};
