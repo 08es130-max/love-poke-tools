@@ -424,6 +424,20 @@ const SV_LOCATION_ENTRIES={
   438:{both:[["kitakami","楽土の荒地","野生"],["kitakami","鬼が山・鬼歯空洞","野生"]]},
   299:{both:[["kitakami","楽土の荒地","野生"],["kitakami","フジが原","野生"]]},
 
+  85:{both:[["blueberry","サバンナエリア・サバンナ休憩所1付近","野生"]]},
+  112:{both:[["blueberry","サバンナエリア西の沼地","野生"]]},
+  161:{both:[["kitakami","キタカミ街道・アップルヒルズ・舞出参道","野生／スイリョクタウン南東の草原"]]},
+  162:{both:[["kitakami","キタカミ街道・舞出参道","野生／スイリョクタウン南東の草原"]]},
+  163:{both:[["kitakami","舞出参道・鬼が山・フジが原・落合河原・鬼角峡谷・キタカミ原生地域・とこしえの森","野生／夕方〜夜・キタカミセンター東の川沿い"]]},
+  164:{both:[["kitakami","フジが原・落合河原・鬼角峡谷・キタカミ原生地域・とこしえの森","野生／夕方〜夜・キタカミセンター東の川沿い"]]},
+  194:{both:[["kitakami","キタカミ街道・舞出山道・ひやみず洞・落合河原・鬼角峡谷・キタカミ原生地域・とこしえの森","野生／スイリョクタウン東の川など水辺"]]},
+  273:{both:[["kitakami","キタカミ原生地域の川沿い","野生／進化前も生息"]]},
+  274:{both:[["kitakami","落合河原・キタカミ原生地域・とこしえの森","野生／キタカミ原生地域の川沿い"]]},
+  328:{both:[["blueberry","サバンナエリア","野生／荒野地帯に固定シンボル"]]},
+  329:{both:[["blueberry","サバンナエリア","野生／中央の荒野地帯に固定シンボル"]]},
+  708:{both:[["kitakami","とこしえの森・木の近く","野生／夕方〜夜"]]},
+  709:{both:[["kitakami","とこしえの森","野生／夕方〜夜・低確率"]]},
+  876:{both:[["kitakami","キタカミ原生地域・とこしえの森","野生／北部"]]},
 
 };
 const SV_VERSION_LIMITED={"200":"violet","246":"scarlet","247":"scarlet","316":"violet","317":"violet","371":"violet","372":"violet","425":"scarlet","426":"scarlet","429":"violet","434":"scarlet","435":"scarlet","633":"scarlet","634":"scarlet","690":"scarlet","691":"scarlet","692":"violet","693":"violet","765":"scarlet","766":"violet","874":"scarlet","875":"violet","885":"violet","886":"violet","984":"scarlet","985":"scarlet","986":"scarlet","987":"scarlet","988":"scarlet","989":"scarlet","990":"violet","991":"violet","992":"violet","993":"violet","994":"violet","995":"violet","1005":"scarlet","1006":"violet","1007":"scarlet","1008":"violet"};
