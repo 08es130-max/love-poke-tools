@@ -615,7 +615,7 @@
     results.sort((a,b)=>(b.score??-1)-(a.score??-1)||a.calc.neededBlade-b.calc.neededBlade||b.picks.length-a.picks.length);
     if(!results.length){out.textContent='この盤面では、全エールをALLと仮定しても成功できる組み合わせはありません。';return}
     out.replaceChildren();
-    results.slice(0,3).forEach((entry,i)=>{
+    results.slice(0,5).forEach((entry,i)=>{
       const item=document.createElement('div');item.className='loveca-opt-result';
       const head=document.createElement('strong');
       head.textContent=`${i+1}位　${entry.score===null?'点数未取得':entry.score+'点'} ／ ${entry.picks.length}枚`;
