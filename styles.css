@@ -601,3 +601,8 @@ button,.nav-btn,.mini-btn,.column-reset,.lock-btn{touch-action:manipulation}
 .guide-weakness-types{display:flex;flex-wrap:wrap;gap:5px}
 .guide-dex-weakness .guide-type-chip{font-size:12px;padding:4px 8px}
 .guide-dex-weakness .hint{margin:10px 0 0;font-size:11px}
+
+.guide-weakness-select-label{display:block;margin:0 0 5px;font-size:12px;font-weight:700}
+.guide-weakness-select{display:block;width:100%;max-width:100%;min-height:40px;padding:7px 10px;margin-bottom:12px;border:1px solid #dce3ee;border-radius:9px;background:#fff;color:inherit;font:inherit}
+.guide-weakness-entry{display:inline-flex;align-items:center;gap:2px;flex-wrap:wrap}
+.guide-weakness-entry small{font-size:11px;font-weight:700;color:#a23d66}
