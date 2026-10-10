@@ -576,3 +576,5 @@ button,.nav-btn,.mini-btn,.column-reset,.lock-btn{touch-action:manipulation}
 .guide-pre-evo>.hint,.guide-pre-evo>.guide-move-grid,.guide-pre-evo>.note{margin:8px 12px}
 
 .guide-back-btn{display:inline-flex;align-items:center;justify-content:center;margin:0 0 14px;min-height:38px;padding:8px 14px;font-weight:700}
+
+.guide-pre-evo>h3{margin:0;padding:12px;font-size:15px}.guide-pre-evo>h3 span{font-size:12px;opacity:.7;margin-left:6px}
