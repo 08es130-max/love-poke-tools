@@ -430,11 +430,13 @@
   const liveWorkFilters=['all','all','all'];
   function liveWork(card){
     const work=String(card.work||'').toLowerCase();
-    if(/μ|ミューズ|muse|muse's/.test(work))return 'muse';
-    if(/aqours|アクア/.test(work))return 'aqours';
-    if(/虹|nijigasaki/.test(work))return 'nijigasaki';
-    if(/liella|リエラ|スーパースター|superstar/.test(work))return 'liella';
-    if(/蓮|hasunosora/.test(work))return 'hasunosora';
+    const no=String(card.cardNo||'').toUpperCase();
+    // The official database stores series titles, not always group names.
+    if(/^(PL!SP-)/.test(no)||/liella|リエラ|スーパースター|superstar/.test(work))return 'liella';
+    if(/^(PL!HS-)/.test(no)||/蓮|hasunosora/.test(work))return 'hasunosora';
+    if(/^(PL!N-)/.test(no)||/虹|nijigasaki/.test(work))return 'nijigasaki';
+    if(/^(PL!S-)/.test(no)||/aqours|アクア|サンシャイン|sunshine/.test(work))return 'aqours';
+    if(/^(PL!-)/.test(no)||/μ|ミューズ|muse|ラブライブ！$/.test(work))return 'muse';
     return '';
   }
   function setupLiveWorkFilters(){
