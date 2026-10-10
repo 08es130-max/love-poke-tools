@@ -403,7 +403,7 @@ const SV_LOCATION_ENTRIES={
   113:{both:[["paldea","北3番エリア・スター団基地付近","野生・探索候補"]]},
   184:{both:[["paldea","オージャの湖","野生・探索候補"]]},
   206:{both:[["paldea","南3番エリア","野生・探索候補"]]},
-  953:{both:[["paldea","南3番エリア・崖付近","野生・探索候補"]]},
+  950:{both:[["paldea","南3番エリア・崖付近","野生・探索候補"]]},
   955:{both:[["paldea","ロースト砂漠","野生・探索候補"]]},
   956:{both:[["paldea","ロースト砂漠","野生・探索候補"]]},
 
@@ -478,6 +478,7 @@ function renderSVLocationResults(p,version){
  const limitedMessage=limit?'<p class="guide-sv-limit">'+(limit===version?'このバージョンで入手できます。出現地点は確認中です。':'通常は'+(limit==='scarlet'?'スカーレット':'バイオレット')+'限定です。交換などで入手できる場合があります。')+'</p>':'';
  const searchQuery=encodeURIComponent(`ポケモンSV ${p.name} ${version==='scarlet'?'スカーレット':'バイオレット'} 出現場所 マップ`);
  const guideSearch='https://www.google.com/search?q='+searchQuery;
+ const gamewithSearch='https://www.google.com/search?q='+encodeURIComponent('site:gamewith.jp/pokemon-sv/article/show/ '+p.name+' 出現場所 入手方法');
  const regions=[['paldea','パルデア地方','本編'],['kitakami','キタカミの里','碧の仮面'],['blueberry','ブルーベリー学園','藍の円盤']];
  const regionCards=regions.map(([id,label,subtitle])=>{
   const matches=locations.filter(([region])=>region===id);
@@ -492,6 +493,7 @@ function renderSVLocationResults(p,version){
    </div>`;
  }).join('');
  return `<p class="guide-sv-data-status">${escapeHtml(dexMessage)}</p><p class="guide-sv-data-status">${svDataAvailable?'SV技データ収録済み（出現の保証ではありません）':'SV技データ未収録（入手不可の確定ではありません）'}</p>${limitedMessage}<div class="guide-sv-region-grid">${regionCards}</div>
+ <div class="guide-sv-source-links"><a class="guide-sv-lookup" href="${gamewithSearch}" target="_blank" rel="noopener noreferrer">GameWithで「${escapeHtml(p.name)}」の出現場所・入手方法を確認 ↗</a><a class="guide-sv-lookup" href="https://gamewith.jp/pokemon-sv/article/show/373315" target="_blank" rel="noopener noreferrer">GameWith パルデア図鑑一覧 ↗</a></div>
  <a class="guide-sv-lookup" href="${guideSearch}" target="_blank" rel="noopener noreferrer">「${escapeHtml(p.name)}」の${version==='scarlet'?'スカーレット':'バイオレット'}出現場所を調べる ↗</a>
  ${locations.length?`<ul class="guide-sv-location-list">${locations.map(([region,name,method])=>`<li><strong>${escapeHtml(name)}</strong><small>${SV_REGION_LABELS[region]} · ${escapeHtml(method)}</small></li>`).join('')}</ul>`:
  '<p class="note">このポケモンの出現場所はまだ登録・検証できていません。野生で出現しないという意味ではありません。</p>'}
