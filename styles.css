@@ -632,3 +632,11 @@ button,.nav-btn,.mini-btn,.column-reset,.lock-btn{touch-action:manipulation}
 .guide-sv-map-land span,.guide-sv-map-land small{transform:rotate(8deg)}
 .guide-sv-map-land span{font-size:12px;font-weight:700;color:#285a3e}
 .guide-sv-map-land small{font-size:9px;color:#355e47}
+
+.guide-sv-memo{margin:12px 0;padding:12px;border:1px solid #dce3ed;border-radius:10px;background:#f8fafc}
+.guide-sv-memo>strong{display:block;font-size:13px;margin-bottom:9px}
+.guide-sv-memo-form{display:grid;grid-template-columns:minmax(85px,1fr) minmax(0,2fr) auto;gap:5px}
+.guide-sv-memo-form select,.guide-sv-memo-form input{width:100%;min-width:0;border:1px solid #d0d9e5;border-radius:7px;padding:8px 5px;font-size:12px;background:white}
+.guide-sv-memo-form button,.guide-sv-memo-list button{border:1px solid #cf8dad;border-radius:7px;background:#fff;color:#9b2e63;padding:7px;font-size:12px}
+.guide-sv-memo-list{list-style:none;padding:0;margin:10px 0 0}
+.guide-sv-memo-list li{display:flex;justify-content:space-between;align-items:center;gap:7px;border-bottom:1px solid #e2e8f0;padding:7px 0;font-size:12px;overflow-wrap:anywhere}
