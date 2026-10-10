@@ -618,7 +618,7 @@
     results.slice(0,3).forEach((entry,i)=>{
       const item=document.createElement('div');item.className='loveca-opt-result';
       const head=document.createElement('strong');
-      head.textContent=`#${i+1}  ${entry.score===null?'点数未取得':entry.score+'点'} ／ ${entry.picks.length}枚`;
+      head.textContent=`${i+1}位　${entry.score===null?'点数未取得':entry.score+'点'} ／ ${entry.picks.length}枚`;
       const names=document.createElement('div');names.textContent=entry.picks.map(x=>x.name).join(' ＋ ');
       const detail=document.createElement('small');
       const missing=Object.entries(entry.calc.missing).filter(([,v])=>v>0).map(([key,v])=>`${optimizerColors.find(x=>x[0]===key)?.[1]||'無色'}♥${v}`).join(' ');
