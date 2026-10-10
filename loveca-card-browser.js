@@ -191,6 +191,35 @@
     if(badge){badge.textContent=text;badge.dataset.state=state;}
   }
 
+  // The official listing currently omits live scores. Supplement only from
+  // the independent LLOCG_DB dataset, keyed by printed card number.
+  async function loadLiveScores(){
+    try{
+      const response=await fetch('https://raw.githubusercontent.com/wlt233/llocg_db/master/json/cards.json',{cache:'no-store'});
+      if(!response.ok)throw new Error('score HTTP '+response.status);
+      const source=await response.json();
+      if(!source||typeof source!=='object')throw new Error('invalid score dataset');
+      const normalize=no=>String(no||'').trim().replace(/＋/g,'+').toUpperCase();
+      const scores=new Map();
+      for(const [no,entry] of Object.entries(source)){
+        if(!entry||typeof entry!=='object'||entry.score===undefined||entry.score===null)continue;
+        const value=numberOrNull(entry.score);
+        if(value!==null)scores.set(normalize(no),value);
+      }
+      let matched=0;
+      for(const card of cards){
+        if(!card.isLive)continue;
+        const score=scores.get(normalize(card.cardNo));
+        if(score!==undefined){card.score=score;matched++}
+      }
+      syncFavoriteOptions();
+      battleStatus(`カードデータ：読込完了 ／ ライブスコア ${matched}枚取得`,'ok');
+    }catch(error){
+      console.warn('Live score supplement unavailable',error);
+      battleStatus('カードデータ：読込完了 ／ スコア取得失敗','error');
+    }
+  }
+
   async function loadCards(){
     if(loaded)return;
     if(loading)return loading;
@@ -208,7 +237,8 @@
         populateFilters();
         applyFilters();
         syncFavoriteOptions();
-        battleStatus('カードデータ：読込完了 ／ お気に入りライブ反映済み','ok');
+        battleStatus('カードデータ：読込完了 ／ ライブスコア取得中…','loading');
+        void loadLiveScores();
         if(badge){badge.textContent=`${cards.length.toLocaleString()}枚`;badge.className='badge ok'}
         const date=data.updatedAt?new Date(data.updatedAt):null;
         const hint=document.querySelector('.loveca-browser-head .hint');
@@ -469,7 +499,7 @@
   }
 
   function liveScore(card){
-    for(const value of [card.score,card.liveScore,card.live_score,card.livePoint,card.livePoints,card.power]){
+    for(const value of [card.score,card.liveScore,card.live_score,card.livePoint,card.livePoints]){
       const score=numberOrNull(value);if(score!==null)return score;
     }
     const text=String(card.text||'');
