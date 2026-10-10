@@ -400,20 +400,9 @@ function renderDexWeaknesses(p){
 
 // SV encounter guide: curated, verified entries only. Missing entries are not assumed unobtainable.
 const SV_LOCATION_ENTRIES={
-  1:{both:[['paldea','南2番エリア','野生']]},
-  4:{both:[]},
-  25:{both:[['paldea','南2番エリア','野生'],['paldea','東1番エリア','野生']]},
-  129:{both:[['paldea','各地の水辺','野生']]},
-  133:{both:[['paldea','西3番エリア（チャンプルタウン周辺）','野生']]},
-  280:{both:[['paldea','南1番エリア','野生']]},
-  285:{both:[['paldea','南5番エリア','野生']]},
-  371:{both:[['paldea','南5番エリア','野生']]},
-  443:{both:[['paldea','西1番エリア','野生']]},
-  906:{scarlet:[['paldea','最初のパートナーとして選択','入手']],violet:[['paldea','最初のパートナーとして選択','入手']]},
+  906:{both:[['paldea','最初のパートナーとして選択','入手']]},
   909:{both:[['paldea','最初のパートナーとして選択','入手']]},
-  912:{both:[['paldea','最初のパートナーとして選択','入手']]},
-  1007:{scarlet:[['paldea','エリアゼロ（ストーリー進行）','イベント']]},
-  1008:{violet:[['paldea','エリアゼロ（ストーリー進行）','イベント']]}
+  912:{both:[['paldea','最初のパートナーとして選択','入手']]}
 };
 const SV_MAP_LINKS={
  paldea:'https://yakkun.com/sv/map.htm',
@@ -435,7 +424,6 @@ function renderSVLocations(p){
 function renderSVLocationResults(p,version){
  const record=SV_LOCATION_ENTRIES[p.id];
  const locations=[...(record?.both||[]),...(record?.[version]||[])];
- const region=localStorage.getItem('lovepoke_sv_region')||'paldea';
  const links=Object.entries(SV_MAP_LINKS).map(([id,url])=>`<a href="${url}" target="_blank" rel="noopener noreferrer" class="guide-sv-map-link">${SV_REGION_LABELS[id]}のマップ ↗</a>`).join('');
  return `<div class="guide-sv-region-maps">${links}</div>
  ${locations.length?`<ul class="guide-sv-location-list">${locations.map(([region,name,method])=>`<li><strong>${escapeHtml(name)}</strong><small>${SV_REGION_LABELS[region]} · ${escapeHtml(method)}</small></li>`).join('')}</ul>`:
