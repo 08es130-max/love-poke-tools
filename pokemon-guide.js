@@ -330,7 +330,7 @@ function renderPreEvolutionMoves(p){
  return `<div class="guide-pre-evo"><h3>進化前のみ覚える技（レベル習得） <span>${moves.size}件</span></h3><p class="hint">進化前のレベルアップで覚える技のうち、進化後のレベル習得・有効なわざマシン・タマゴ技にはない技です。思い出し技に掲載されていても、進化前での習得が必要な場合があります。</p><div class="guide-move-grid">${[...moves].map(([mid,source])=>moveButton(moveName(mid),[...new Set(source)].join(' / '))).join('')||'<p class="note">該当する技はありません。</p>'}</div></div>`;
 }
 function guideDexEntries(){
- return (window.POKEMON_DATA||[]).filter(p=>!p.formKey&&window.POKEMON_SV_LEARNSETS?.[p.id]).sort((a,b)=>a.id-b.id);
+ return (window.POKEMON_DATA||[]).filter(p=>!p.formKey&&p.id>=1&&p.id<=1025).sort((a,b)=>a.id-b.id);
 }
 function renderDexNavigation(p){
  const entries=guideDexEntries();
@@ -472,6 +472,7 @@ function renderSVLocationResults(p,version){
  const personal=svMemoRead(p.id,version);
  const locations=[...(record?.both||[]),...(record?.[version]||[])].filter(()=>!SV_VERSION_LIMITED[p.id]||SV_VERSION_LIMITED[p.id]===version);
  const limit=SV_VERSION_LIMITED[p.id];
+ const svDataAvailable=!!window.POKEMON_SV_LEARNSETS?.[p.id];
  const limitedMessage=limit?'<p class="guide-sv-limit">'+(limit===version?'このバージョンで入手できます。出現地点は確認中です。':'通常は'+(limit==='scarlet'?'スカーレット':'バイオレット')+'限定です。交換などで入手できる場合があります。')+'</p>':'';
  const searchQuery=encodeURIComponent(`ポケモンSV ${p.name} ${version==='scarlet'?'スカーレット':'バイオレット'} 出現場所 マップ`);
  const guideSearch='https://www.google.com/search?q='+searchQuery;
@@ -488,7 +489,7 @@ function renderSVLocationResults(p,version){
    <a href="${SV_MAP_LINKS[id]}" target="_blank" rel="noopener noreferrer" class="guide-sv-map-link">エリアマップを見る ↗</a>
    </div>`;
  }).join('');
- return `${limitedMessage}<div class="guide-sv-region-grid">${regionCards}</div>
+ return `<p class="guide-sv-data-status">${svDataAvailable?'SV技データ収録済み（出現の保証ではありません）':'SV技データ未収録（入手不可の確定ではありません）'}</p>${limitedMessage}<div class="guide-sv-region-grid">${regionCards}</div>
  <a class="guide-sv-lookup" href="${guideSearch}" target="_blank" rel="noopener noreferrer">「${escapeHtml(p.name)}」の${version==='scarlet'?'スカーレット':'バイオレット'}出現場所を調べる ↗</a>
  ${locations.length?`<ul class="guide-sv-location-list">${locations.map(([region,name,method])=>`<li><strong>${escapeHtml(name)}</strong><small>${SV_REGION_LABELS[region]} · ${escapeHtml(method)}</small></li>`).join('')}</ul>`:
  '<p class="note">このポケモンの出現場所はまだ登録・検証できていません。野生で出現しないという意味ではありません。</p>'}
@@ -564,9 +565,9 @@ function renderSuggestions(query=''){
   if(!root)return;
   const q=query.trim();
   const data=(window.POKEMON_DATA||[]).filter(p=>!p.formKey&&window.POKEMON_SV_LEARNSETS?.[p.id]);
-  const found=(q?data.filter(p=>p.name.includes(q)):data)
+  const found=(q?data.filter(p=>p.name.includes(q)||String(p.id)===q||String(p.id).padStart(4,'0')===q):data)
     .sort((a,b)=>(q?(b.name.startsWith(q)-a.name.startsWith(q)):0)||a.id-b.id);
-  root.innerHTML=found.map(p=>`<button type="button" data-guide-result="${p.id}"><span>No.${String(p.id).padStart(4,'0')}</span><strong>${escapeHtml(p.name)}</strong></button>`).join('')||'<p class="note">該当するポケモンが見つかりません。</p>';
+  root.innerHTML=found.slice(0,80).map(p=>`<button type="button" data-guide-result="${p.id}"><span>No.${String(p.id).padStart(4,'0')}</span><strong>${escapeHtml(p.name)}</strong></button>`).join('')||'<p class="note">該当するポケモンが見つかりません。</p>';
 }
 function activateGuide(){
   document.querySelectorAll('.poke-tab').forEach(x=>x.classList.toggle('active',x.dataset.pokePane==='guide'));
