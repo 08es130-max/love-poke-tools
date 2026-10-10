@@ -1708,11 +1708,17 @@ function collide(now){for(let i=0;i<actors.length;i++)for(let j=i+1;j<actors.len
 function single(a,dist,now){let q=box(a);if(a.d==='right'){a.x+=dist;if(a.x>=q.r){a.x=q.r;a.d='down';pose(a,now)}}else if(a.d==='down'){a.y+=dist;if(a.y>=q.b){a.y=q.b;a.d='left';pose(a,now)}}else if(a.d==='left'){a.x-=dist;if(a.x<=q.l){a.x=q.l;a.d='up';pose(a,now)}}else{a.y-=dist;if(a.y<=q.t){a.y=q.t;a.d='right';pose(a,now)}}}
 function tick(now){
   const dt=Math.min(50,now-(last||now));last=now;
-  if(!liveEvent&&now>=nextLiveAt&&!liveLoading&&S.moving&&!S.lineup){
-    // Keep the due time until a conversation finishes, rather than skipping a show.
+  if(!liveEvent&&now>=nextLiveAt&&!liveLoading){
     if(!document.hidden&&!document.querySelector('dialog[open]')){
+      // Automatic concerts follow the same preparation path as the working manual button.
+      if(S.lineup){S.lineup=false;place();syncStatus();save()}
+      if(!S.moving){S.moving=true;sync();save()}
       if(socialEvent)endConversation(now);
-      void beginLive(false);
+      // Advance the deadline before the asynchronous load to prevent repeated starts.
+      nextLiveAt=now+15000;
+      void beginLive(false).then(started=>{
+        if(!started&&nextLiveAt<=performance.now())nextLiveAt=performance.now()+15000;
+      }).catch(err=>{console.warn('Automatic mini-live:',err);nextLiveAt=performance.now()+15000});
     }
   }
   updateLive(now);
