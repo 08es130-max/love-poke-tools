@@ -147,6 +147,29 @@ function renderPreEvolutionMoves(p){
  }
  return `<div class="guide-pre-evo"><h3>進化前のみ覚える技（レベル習得） <span>${moves.size}件</span></h3><p class="hint">進化前のレベルアップで覚える技のうち、進化後のレベル習得・有効なわざマシン・タマゴ技にはない技です。思い出し技に掲載されていても、進化前での習得が必要な場合があります。</p><div class="guide-move-grid">${[...moves].map(([mid,source])=>moveButton(moveName(mid),[...new Set(source)].join(' / '))).join('')||'<p class="note">該当する技はありません。</p>'}</div></div>`;
 }
+function guideDexEntries(){
+ return (window.POKEMON_DATA||[]).filter(p=>!p.formKey&&window.POKEMON_SV_LEARNSETS?.[p.id]).sort((a,b)=>a.id-b.id);
+}
+function renderDexNavigation(p){
+ const entries=guideDexEntries();
+ const index=entries.findIndex(x=>x.id===p.id);
+ const previous=index>0?entries[index-1]:null;
+ const next=index>=0&&index<entries.length-1?entries[index+1]:null;
+ const btn=(target,label,arrow)=>target?`<button type="button" class="guide-neighbor-btn" data-guide-result="${target.id}"><span>${arrow} ${label}</span><strong>No.${String(target.id).padStart(4,'0')} ${escapeHtml(target.name)}</strong></button>`:`<span class="guide-neighbor-placeholder"></span>`;
+ return `<nav class="guide-dex-navigation" aria-label="前後のポケモン">${btn(previous,'前のポケモン','←')}${btn(next,'次のポケモン','→')}</nav>`;
+}
+function renderDexWeaknesses(p){
+ const key=p?.formKey?`${p.id}-${p.formKey}`:String(p?.id||'');
+ const defenders=window.POKEMON_TYPES?.[key]||window.POKEMON_TYPES?.[String(p?.id)]||[];
+ if(!defenders.length)return '';
+ const grouped=new Map([[4,[]],[2,[]],[.5,[]],[.25,[]],[0,[]]]);
+ for(const attack of TYPE_ORDER){
+  const multiplier=defenders.reduce((n,defense)=>n*(TYPE_CHART[attack]?.[defense]??1),1);
+  if(grouped.has(multiplier))grouped.get(multiplier).push(attack);
+ }
+ const row=(multiplier,label)=>grouped.get(multiplier).length?`<div class="guide-weakness-row"><strong>${label}</strong><div class="guide-weakness-types">${grouped.get(multiplier).map(type=>`<span class="guide-type-chip">${escapeHtml(TYPE_JA[type]||type)}</span>`).join('')}</div></div>`:'';
+ return `<section class="guide-dex-weakness"><h3>タイプ相性（受けるダメージ）</h3>${row(4,'×4 弱点')}${row(2,'×2 弱点')}${row(.5,'×0.5 半減')}${row(.25,'×0.25 1/4')}${row(0,'×0 無効')}<p class="hint">タイプのみで計算。特性・持ち物・テラスタルは反映していません。</p></section>`;
+}
 function renderPokemon(id){
   const p=pokemonById(id);
   const detail=$('#guidePokemonDetail');
@@ -161,6 +184,7 @@ function renderPokemon(id){
   detail.classList.remove('hidden');
   detail.innerHTML=`
     <button type="button" id="guideBackToList" class="ghost-btn guide-back-btn">← ポケモン一覧に戻る</button>
+    ${renderDexNavigation(p)}
     <div class="guide-detail-head">
       <div>
         <div class="guide-dex-no">No.${String(p.id).padStart(4,'0')}</div>
@@ -169,6 +193,7 @@ function renderPokemon(id){
       </div>
       
     </div>
+    ${renderDexWeaknesses(p)}
     ${renderDexStats(p)}
     ${renderDexAbilities(p)}
     <label class="block-label">このポケモンの技を絞り込み
