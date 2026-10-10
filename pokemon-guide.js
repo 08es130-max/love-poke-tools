@@ -498,7 +498,7 @@ function renderSVLocationResults(p,version){
  const guideSearch='https://www.google.com/search?q='+searchQuery;
  const gamewithDlcIndex="https://gamewith.jp/pokemon-sv/article/show/390244";
  const gamewithSearch='https://www.google.com/search?q='+encodeURIComponent('site:gamewith.jp/pokemon-sv/article/show/ '+p.name+' 出現場所 入手方法');
- const acquisitionHtml=acquisition.length?'<div class="guide-sv-acquisition"><strong>確認済みの入手方法</strong><ul>'+acquisition.map(([kind,detail])=>'<li><strong>'+escapeHtml(acquisitionLabels[kind]||kind)+'</strong> '+escapeHtml(detail)+'</li>').join('')+'</ul><small>参考：GameWith パルデア図鑑。野生の出現地点とは別の情報です。</small></div>':'';
+ const acquisitionHtml=acquisition.length?'<div class="guide-sv-acquisition"><strong>入手方法（アプリ内保存）</strong><ul>'+acquisition.map(([kind,detail])=>'<li><strong>'+escapeHtml(acquisitionLabels[kind]||kind)+'</strong> '+escapeHtml(detail)+'</li>').join('')+'</ul><small>進化・イベント等の入手条件を端末内に保存しています。姿違い・特殊条件は別途確認してください。</small></div>':'';
  const regions=[['paldea','パルデア地方','本編'],['kitakami','キタカミの里','碧の仮面'],['blueberry','ブルーベリー学園','藍の円盤']];
  const regionCards=regions.map(([id,label,subtitle])=>{
   const matches=locations.filter(([region])=>region===id);
