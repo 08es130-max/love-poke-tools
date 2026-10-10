@@ -470,6 +470,9 @@ function renderSVLocations(p){
 function renderSVLocationResults(p,version){
  const record=SV_LOCATION_ENTRIES[p.id];
  const acquisition=window.POKEMON_SV_ACQUISITION?.[p.id]||[];
+ const species=(window.POKEMON_DATA||[]).filter(x=>!x.formKey&&x.id>=1&&x.id<=1025);
+ const evoFamily=p.evo?species.filter(x=>x.evo===p.evo):[];
+ const evoFamilyHtml=evoFamily.length>1?'<div class="guide-sv-acquisition"><strong>進化系統（進化条件は別途確認）</strong><p>'+evoFamily.map(x=>'<span>'+escapeHtml(x.name)+' (No.'+x.id+')</span>').join(' → ')+'</p></div>':'';
  const acquisitionLabels={starter:'最初のパートナー',evolution:'進化',raid:'テラレイド',wild:'野生',trade:'交換',special:'特別な入手方法'};
  const personal=svMemoRead(p.id,version);
  const locations=[...(record?.both||[]),...(record?.[version]||[])].filter(()=>!SV_VERSION_LIMITED[p.id]||SV_VERSION_LIMITED[p.id]===version);
@@ -495,7 +498,7 @@ function renderSVLocationResults(p,version){
    <a href="${SV_MAP_LINKS[id]}" target="_blank" rel="noopener noreferrer" class="guide-sv-map-link">エリアマップを見る ↗</a>
    </div>`;
  }).join('');
- return `<p class="guide-sv-data-status">${escapeHtml(dexMessage)}</p><p class="guide-sv-data-status">${svDataAvailable?'SV技データ収録済み（出現の保証ではありません）':'SV技データ未収録（入手不可の確定ではありません）'}</p>${limitedMessage}${acquisitionHtml}<div class="guide-sv-region-grid">${regionCards}</div>
+ return `<p class="guide-sv-data-status">${escapeHtml(dexMessage)}</p><p class="guide-sv-data-status">${svDataAvailable?'SV技データ収録済み（出現の保証ではありません）':'SV技データ未収録（入手不可の確定ではありません）'}</p>${limitedMessage}${acquisitionHtml}${evoFamilyHtml}<div class="guide-sv-region-grid">${regionCards}</div>
  <div class="guide-sv-source-links"><a class="guide-sv-lookup" href="${gamewithSearch}" target="_blank" rel="noopener noreferrer">GameWithで「${escapeHtml(p.name)}」の出現場所・入手方法を確認 ↗</a><a class="guide-sv-lookup" href="https://gamewith.jp/pokemon-sv/article/show/373315" target="_blank" rel="noopener noreferrer">GameWith パルデア図鑑一覧 ↗</a></div>
  <a class="guide-sv-lookup" href="${guideSearch}" target="_blank" rel="noopener noreferrer">「${escapeHtml(p.name)}」の${version==='scarlet'?'スカーレット':'バイオレット'}出現場所を調べる ↗</a>
  ${locations.length?`<ul class="guide-sv-location-list">${locations.map(([region,name,method])=>`<li><strong>${escapeHtml(name)}</strong><small>${SV_REGION_LABELS[region]} · ${escapeHtml(method)}</small></li>`).join('')}</ul>`:
