@@ -473,6 +473,8 @@ function renderSVLocationResults(p,version){
  const locations=[...(record?.both||[]),...(record?.[version]||[])].filter(()=>!SV_VERSION_LIMITED[p.id]||SV_VERSION_LIMITED[p.id]===version);
  const limit=SV_VERSION_LIMITED[p.id];
  const svDataAvailable=!!window.POKEMON_SV_LEARNSETS?.[p.id];
+ const dex=window.POKEMON_SV_REGIONAL_DEX?.[p.id]||{};
+ const dexMessage=Object.keys(dex).length?Object.entries(dex).map(([region,num])=>SV_REGION_LABELS[region]+'図鑑 No.'+String(num).padStart(3,'0')).join(' ／ '):'SV地域図鑑への掲載なし（HOME・特別な入手方法の可否は別途確認）';
  const limitedMessage=limit?'<p class="guide-sv-limit">'+(limit===version?'このバージョンで入手できます。出現地点は確認中です。':'通常は'+(limit==='scarlet'?'スカーレット':'バイオレット')+'限定です。交換などで入手できる場合があります。')+'</p>':'';
  const searchQuery=encodeURIComponent(`ポケモンSV ${p.name} ${version==='scarlet'?'スカーレット':'バイオレット'} 出現場所 マップ`);
  const guideSearch='https://www.google.com/search?q='+searchQuery;
@@ -484,12 +486,12 @@ function renderSVLocationResults(p,version){
   const spotMarkup=displaySpots.length?displaySpots.map(spot=>'<span class="guide-sv-map-spot" title="'+escapeHtml(spot.source)+'">'+escapeHtml(spot.name)+'</span>').join(''):'<small>この地域の出現地点は未登録です</small>';
   const offlineMap='<div class="guide-sv-offline-map guide-sv-offline-map-'+id+'" role="group" aria-label="'+label+'の出現エリア一覧（地理的な位置は表していません）"><div class="guide-sv-map-land"><span>'+label+'</span><div class="guide-sv-map-spots">'+spotMarkup+'</div></div></div>';
   return `<div class="guide-sv-region-card">
-   <div class="guide-sv-region-card-top"><strong>${label}</strong><small>${subtitle}</small></div>
+   <div class="guide-sv-region-card-top"><strong>${label}</strong><small>${dex[id]?'図鑑No.'+String(dex[id]).padStart(3,'0'):subtitle}</small></div>
    ${offlineMap}<div class="guide-sv-region-status">${matches.length?`登録済み ${matches.length}件`:'出現情報を確認中'}</div>
    <a href="${SV_MAP_LINKS[id]}" target="_blank" rel="noopener noreferrer" class="guide-sv-map-link">エリアマップを見る ↗</a>
    </div>`;
  }).join('');
- return `<p class="guide-sv-data-status">${svDataAvailable?'SV技データ収録済み（出現の保証ではありません）':'SV技データ未収録（入手不可の確定ではありません）'}</p>${limitedMessage}<div class="guide-sv-region-grid">${regionCards}</div>
+ return `<p class="guide-sv-data-status">${escapeHtml(dexMessage)}</p><p class="guide-sv-data-status">${svDataAvailable?'SV技データ収録済み（出現の保証ではありません）':'SV技データ未収録（入手不可の確定ではありません）'}</p>${limitedMessage}<div class="guide-sv-region-grid">${regionCards}</div>
  <a class="guide-sv-lookup" href="${guideSearch}" target="_blank" rel="noopener noreferrer">「${escapeHtml(p.name)}」の${version==='scarlet'?'スカーレット':'バイオレット'}出現場所を調べる ↗</a>
  ${locations.length?`<ul class="guide-sv-location-list">${locations.map(([region,name,method])=>`<li><strong>${escapeHtml(name)}</strong><small>${SV_REGION_LABELS[region]} · ${escapeHtml(method)}</small></li>`).join('')}</ul>`:
  '<p class="note">このポケモンの出現場所はまだ登録・検証できていません。野生で出現しないという意味ではありません。</p>'}
