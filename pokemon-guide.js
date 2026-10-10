@@ -53,6 +53,66 @@ function inheritedEggMoves(p){
   }
   return [...ids];
 }
+const DEX_ABILITY_JA={
+ 'さめはだ':'接触技を受けると、攻撃した相手に相手の最大HPの1/8のダメージを与える。',
+ 'すながくれ':'すなあらしの間、相手の技の命中率が0.8倍になる。すなあらしのダメージも受けない。',
+ 'いかく':'場に出たとき、相手の攻撃ランクを1段階下げる。特性などで防がれる場合がある。',
+ 'ふゆう':'じめんタイプの攻撃技を受けない。ただし、かたやぶりなどの影響を受ける場合がある。',
+ 'マルチスケイル':'HPが満タンのとき、受けるダメージを半分にする。',
+ 'がんじょう':'HPが満タンなら一撃で倒されるダメージを受けてもHP1で耐える。一撃必殺技も無効。',
+ 'てんねん':'相手の攻撃・防御などの能力ランク変化を、自分が受ける技・与える技のダメージ計算で無視する。',
+ 'へんげんじざい':'技を出す直前に自分のタイプがその技のタイプに変わる。SVでは場に出るたび1回のみ。',
+ 'リベロ':'技を出す直前に自分のタイプがその技のタイプに変わる。SVでは場に出るたび1回のみ。',
+ 'かたやぶり':'相手の一部の特性を無視して技を使える。',
+ 'いたずらごころ':'変化技の優先度が1上がる。相手のあくタイプへの変化技は失敗する場合がある。',
+ 'じしんかじょう':'相手を倒すと攻撃ランクが1段階上がる。',
+ 'ちからもち':'物理攻撃のダメージ計算で攻撃が2倍になる。',
+ 'ヨガパワー':'物理攻撃のダメージ計算で攻撃が2倍になる。',
+ 'てきおうりょく':'タイプ一致技のダメージ補正が通常の1.5倍から2倍になる。',
+ 'こんじょう':'状態異常のとき、物理攻撃の威力に関わる攻撃が1.5倍になる。やけどによる物理ダメージ低下を受けない。',
+ 'ふしぎなまもり':'効果抜群の攻撃技以外による攻撃ダメージを受けない。状態異常や天候などのダメージは防げない。',
+ 'さいせいりょく':'手持ちに戻ると最大HPの1/3を回復する。',
+ 'プレッシャー':'相手が自分を対象とする技を使うと、PPを通常より1多く消費させる。',
+ 'クリアボディ':'相手の技や特性による能力ランク低下を防ぐ。',
+ 'きもったま':'ノーマル・かくとうタイプの技がゴーストタイプにも当たる。いかくの効果も受けない。',
+ 'おやこあい':'単体を対象とする攻撃技を2回攻撃する。2回目の威力は通常の25%。',
+ 'ばけのかわ':'最初に受ける攻撃技のダメージを無効化するが、最大HPの1/8のダメージを受けて姿が変わる。',
+ 'クォークチャージ':'ブーストエナジー所持時またはエレキフィールドで、最も高い能力が上昇する。',
+ 'こだいかっせい':'ブーストエナジー所持時または晴れのとき、最も高い能力が上昇する。'
+};
+function renderDexAbilities(p){
+ const list=window.LOVEPOKE_DEX_EXTRA?.abilities?.[String(p.id)]||[];
+ if(!list.length)return '<section class="guide-dex-abilities"><h3>特性</h3><p class="note">特性データなし</p></section>';
+ return `<section class="guide-dex-abilities"><h3>特性</h3>${list.map(a=>`<details class="guide-dex-ability"><summary><strong>${escapeHtml(a.name)}</strong><span>${a.hidden?'隠れ特性':'通常特性'}</span></summary><p>${escapeHtml(DEX_ABILITY_JA[a.name]||a.description||'詳細データなし')}</p>${!DEX_ABILITY_JA[a.name]&&a.description?'<small>効果説明は英語の原文です。</small>':''}</details>`).join('')}</section>`;
+}
+function preEvolutionIds(p){
+ const parents=window.LOVEPOKE_DEX_EXTRA?.parents||{};
+ const ids=[],seen=new Set([Number(p.id)]);
+ let id=Number(p.id);
+ while(parents[String(id)]&&ids.length<8){
+  const parent=Number(parents[String(id)]);
+  if(seen.has(parent))break;
+  seen.add(parent);ids.unshift(parent);id=parent;
+ }
+ return ids;
+}
+function renderPreEvolutionMoves(p){
+ const ancestors=preEvolutionIds(p).filter(id=>window.POKEMON_SV_LEARNSETS?.[id]);
+ if(!ancestors.length)return '';
+ const current=window.POKEMON_SV_LEARNSETS?.[p.id]||{};
+ const known=new Set([...(current.l||[]).map(x=>Number(x[0])),...(current.t||[]).map(x=>Number(x[0])),...(current.e||[]).map(Number),...(current.r||[]).map(Number)]);
+ const moves=new Map();
+ for(const id of ancestors){
+  const previous=window.POKEMON_SV_LEARNSETS?.[id]||{};
+  const name=pokemonById(id)?.name||'進化前';
+  for(const [mid,level] of previous.l||[]){
+   const n=Number(mid);if(known.has(n))continue;
+   if(!moves.has(n))moves.set(n,[]);
+   moves.get(n).push(`${name} ${levelLabel(level)}`);
+  }
+ }
+ return `<details class="guide-pre-evo"><summary>進化前のみ覚える技（レベル習得） <span>${moves.size}件</span></summary><p class="hint">進化前の段階でレベルアップ習得し、現在のポケモンの習得技一覧にない技です。進化前で覚えてから進化させる必要があります。</p><div class="guide-move-grid">${[...moves].map(([mid,source])=>moveButton(moveName(mid),[...new Set(source)].join(' / '))).join('')||'<p class="note">該当する技はありません。</p>'}</div></details>`;
+}
 function renderPokemon(id){
   const p=pokemonById(id);
   const detail=$('#guidePokemonDetail');
@@ -75,9 +135,11 @@ function renderPokemon(id){
       
     </div>
     ${renderDexStats(p)}
+    ${renderDexAbilities(p)}
     <label class="block-label">このポケモンの技を絞り込み
       <input id="guideMoveFilter" type="search" placeholder="例：じしん">
     </label>
+    ${renderPreEvolutionMoves(p)}
     <div class="guide-move-section"><h3>レベルで覚える技 <span>${(learn.l||[]).length}</span></h3><div class="guide-move-grid">${level||'<p class="note">データなし</p>'}</div></div>
     <div class="guide-move-section"><h3>わざマシン <span>${(learn.t||[]).length}</span></h3><div class="guide-move-grid">${tm||'<p class="note">データなし</p>'}</div></div>
     <div class="guide-move-section"><h3>タマゴ技 <span>${eggMoves.length}</span></h3><div class="guide-move-grid">${egg||'<p class="note">なし</p>'}</div></div>
