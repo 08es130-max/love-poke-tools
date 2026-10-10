@@ -574,3 +574,5 @@ button,.nav-btn,.mini-btn,.column-reset,.lock-btn{touch-action:manipulation}
 .guide-dex-ability small{display:block;padding:0 12px 12px;opacity:.7}
 .guide-pre-evo{border:1px solid #dce3ee;border-radius:12px;padding:0 0 8px}
 .guide-pre-evo>.hint,.guide-pre-evo>.guide-move-grid,.guide-pre-evo>.note{margin:8px 12px}
+
+.guide-back-btn{display:inline-flex;align-items:center;justify-content:center;margin:0 0 14px;min-height:38px;padding:8px 14px;font-weight:700}
