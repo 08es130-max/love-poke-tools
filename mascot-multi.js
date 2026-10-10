@@ -994,7 +994,7 @@ async function beginLive(manual=false){
     socialEvent||document.querySelector('dialog[open]'))return false;
  const yu=actors.find(a=>a.id==='yu');
  const eligible=actors.filter(a=>LIVE_ASSETS[a.id]&&!a.performing);
- if(!yu||eligible.length<3||(!manual&&actors.length!==Object.keys(C).length)){
+ if(!yu||eligible.length<3){
   if(!manual)nextLiveAt=performance.now()+5000;
   return false;
  }
