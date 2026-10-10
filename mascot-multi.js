@@ -1024,7 +1024,7 @@ function updateLive(now){
   const members=e.members,frames=e.frames,yu=e.yu,centerX=e.centerX;
   const centerY=members.reduce((sum,a)=>sum+a.y+a.h/2,0)/3;
  const stageWidth=Math.max(...members.map(a=>a.w));
- const stageGap=stageWidth*0.92;
+ const stageGap=stageWidth*0.62;
  const stageCenter=Math.max(Math.max(...members.map(a=>box(a).l+a.w/2))+stageGap,Math.min(centerX,Math.min(...members.map(a=>box(a).r+a.w/2))-stageGap));
  const stageBottom=Math.max(...members.map(a=>box(a).t+a.h),Math.min(centerY+Math.max(...members.map(a=>a.h))*.5,Math.min(...members.map(a=>box(a).b+a.h))));
  members.forEach((a,i)=>{
@@ -1033,7 +1033,28 @@ function updateLive(now){
   a.y=Math.max(q.t,Math.min(q.b,stageBottom-a.h));
   const image=document.createElement('img');
   image.className='mascot-live-frame';image.alt='';image.draggable=false;
-  image.style.height=a.h*.78+'px';image.style.bottom='0px';
+  // Match visible character height, independent of transparent PNG padding.
+  const targetVisible=Math.min(...members.map(m=>m.h))*.72;
+  image.style.height=targetVisible+'px';image.style.bottom='0px';
+  image.onload=()=>{
+   try{
+    const iw=image.naturalWidth,ih=image.naturalHeight;
+    const canvas=document.createElement('canvas');canvas.width=iw;canvas.height=ih;
+    const ctx=canvas.getContext('2d',{willReadFrequently:true});
+    ctx.drawImage(image,0,0);
+    const rgba=ctx.getImageData(0,0,iw,ih).data;
+    let top=ih,bottom=-1;
+    for(let py=0;py<ih;py+=2)for(let px=0;px<iw;px+=2){
+     if(rgba[(py*iw+px)*4+3]>85){top=Math.min(top,py);bottom=Math.max(bottom,py)}
+    }
+    if(bottom>=top){
+     const scale=targetVisible/(bottom-top+2);
+     image.style.height=(ih*scale)+'px';
+     image.style.bottom=(-(ih-1-bottom)*scale)+'px';
+    }
+   }catch(err){console.warn('Mini-live sprite normalization:',err)}
+   image.onload=null;
+  };
   image.src=frames[i].frames[frames[i].sequence[0]];
   a.el.appendChild(image);a.liveImage=image;a.performing=true;
   a.el.classList.add('mascot-live-active');
