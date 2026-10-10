@@ -399,158 +399,22 @@ function renderDexWeaknesses(p){
 
 
 // SV encounter guide: curated, verified entries only. Missing entries are not assumed unobtainable.
-const SV_LOCATION_ENTRIES={
-  113:{both:[["paldea","北3番エリア・スター団基地付近","野生・探索候補"]]},
-  184:{both:[["paldea","オージャの湖","野生・探索候補"]]},
-  206:{both:[["paldea","南3番エリア","野生・探索候補"]]},
-  950:{both:[["paldea","南3番エリア・崖付近","野生・探索候補"]]},
-  955:{both:[["paldea","ロースト砂漠","野生・探索候補"]]},
-  956:{both:[["paldea","ロースト砂漠","野生・探索候補"]]},
-
-  56:{both:[["paldea","南2番エリア","野生・探索候補"]]},
-  92:{both:[["paldea","南3番エリア（夜）","野生・探索候補"]]},
-  246:{scarlet:[["paldea","北1番エリア","野生・探索候補"]]},
-  371:{violet:[["paldea","コサジの小道","野生・探索候補"]]},
-  915:{both:[["paldea","南1番エリア","野生・探索候補"]]},
-  932:{both:[["paldea","東1番エリア","野生・探索候補"]]},
-  935:{both:[["paldea","南5番エリア","野生・探索候補"]]},
-  1012:{both:[["kitakami","キタカミセンター東の竹林","野生（マガイモノ・タカイモノ）"]]},
-  884:{both:[["blueberry","ポーラエリア・雪山の山肌","野生"]]},
-  1014:{both:[["kitakami","楽土の荒地","碧の仮面クリア後・固定Lv70"]]},
-  1015:{both:[["kitakami","フジが原・南西の池","碧の仮面クリア後・固定Lv70"]]},
-  1016:{both:[["kitakami","鬼が山・東側","碧の仮面クリア後・固定Lv70"]]},
-  624:{both:[["kitakami","とこしえの森","野生（森・洞窟周辺）"],["kitakami","フジが原・キタカミ原生地域","野生"]]},
-  625:{both:[["kitakami","とこしえの森付近の洞窟","野生"]]},
-  438:{both:[["kitakami","楽土の荒地","野生"],["kitakami","鬼が山・鬼歯空洞","野生"]]},
-  299:{both:[["kitakami","楽土の荒地","野生"],["kitakami","フジが原","野生"]]},
-
-  85:{both:[["blueberry","サバンナエリア・サバンナ休憩所1付近","野生"]]},
-  112:{both:[["blueberry","サバンナエリア西の沼地","野生"]]},
-  161:{both:[["kitakami","キタカミ街道・アップルヒルズ・舞出参道","野生／スイリョクタウン南東の草原"]]},
-  162:{both:[["kitakami","キタカミ街道・舞出参道","野生／スイリョクタウン南東の草原"]]},
-  163:{both:[["kitakami","舞出参道・鬼が山・フジが原・落合河原・鬼角峡谷・キタカミ原生地域・とこしえの森","野生／夕方〜夜・キタカミセンター東の川沿い"]]},
-  164:{both:[["kitakami","フジが原・落合河原・鬼角峡谷・キタカミ原生地域・とこしえの森","野生／夕方〜夜・キタカミセンター東の川沿い"]]},
-  194:{both:[["kitakami","キタカミ街道・舞出山道・ひやみず洞・落合河原・鬼角峡谷・キタカミ原生地域・とこしえの森","野生／スイリョクタウン東の川など水辺"]]},
-  273:{both:[["kitakami","キタカミ原生地域の川沿い","野生／進化前も生息"]]},
-  274:{both:[["kitakami","落合河原・キタカミ原生地域・とこしえの森","野生／キタカミ原生地域の川沿い"]]},
-  328:{both:[["blueberry","サバンナエリア","野生／荒野地帯に固定シンボル"]]},
-  329:{both:[["blueberry","サバンナエリア","野生／中央の荒野地帯に固定シンボル"]]},
-  708:{both:[["kitakami","とこしえの森・木の近く","野生／夕方〜夜"]]},
-  709:{both:[["kitakami","とこしえの森","野生／夕方〜夜・低確率"]]},
-  876:{both:[["kitakami","キタカミ原生地域・とこしえの森","野生／北部"]]},
-  193:{both:[["kitakami","キタカミ街道・フジが原・てらす池・キタカミ原生地域","野生／スイリョクタウン南のバス停付近が目印"]]},
-  355:{both:[["kitakami","とこしえの森南の丘上","野生／夕方〜夜"]]},
-  356:{both:[["kitakami","キタカミ原生地域・とこしえの森南の丘上","野生／夕方〜夜・低確率"],["kitakami","とこしえの森南の洞窟","野生テラスタル固定シンボル"]]},
-
-};
-const SV_VERSION_LIMITED={"200":"violet","246":"scarlet","247":"scarlet","316":"violet","317":"violet","371":"violet","372":"violet","425":"scarlet","426":"scarlet","429":"violet","434":"scarlet","435":"scarlet","633":"scarlet","634":"scarlet","690":"scarlet","691":"scarlet","692":"violet","693":"violet","765":"scarlet","766":"violet","874":"scarlet","875":"violet","885":"violet","886":"violet","984":"scarlet","985":"scarlet","986":"scarlet","987":"scarlet","988":"scarlet","989":"scarlet","990":"violet","991":"violet","992":"violet","993":"violet","994":"violet","995":"violet","1005":"scarlet","1006":"violet","1007":"scarlet","1008":"violet"};
-const SV_MAP_LINKS={
- paldea:'https://yakkun.com/sv/map.htm',
- kitakami:'https://yakkun.com/sv/pokemon_list.htm?mode=midori',
- blueberry:'https://yakkun.com/sv/pokemon_list.htm?mode=ao'
-};
 const SV_REGION_LABELS={paldea:'パルデア地方',kitakami:'キタカミの里',blueberry:'ブルーベリー学園'};
-const SV_AREA_TRANSLATIONS={
- 'Asado Desert':'ロースト砂漠','Cabo Poco':'コサジタウン','Casseroya Lake':'オージャの湖','East Paldean Sea':'パルデア東海','Glaseado Mountain':'ナッペ山','North Paldean Sea':'パルデア北海','Poco Path':'コサジの小道','Socarrat Trail':'オコゲ林道','South Paldean Sea':'パルデア南海','Tagtree Thicket':'しるしの木立ち','The Great Crater of Paldea':'パルデアの大穴','The Pokémon League':'ポケモンリーグ','West Paldean Sea':'パルデア西海',
- 'East Province (Area One)':'東1番エリア','East Province (Area Two)':'東2番エリア','East Province (Area Three)':'東3番エリア',
- 'North Province (Area One)':'北1番エリア','North Province (Area Two)':'北2番エリア','North Province (Area Three)':'北3番エリア',
- 'South Province (Area One)':'南1番エリア','South Province (Area Two)':'南2番エリア','South Province (Area Three)':'南3番エリア','South Province (Area Four)':'南4番エリア','South Province (Area Five)':'南5番エリア','South Province (Area Six)':'南6番エリア',
- 'West Province (Area One)':'西1番エリア','West Province (Area Two)':'西2番エリア','West Province (Area Three)':'西3番エリア'
-};
-function svTranslateAreas(text){
- return String(text||'').split(', ').map(s=>SV_AREA_TRANSLATIONS[s]||s).join('、');
-}
-function svAreaChips(text){
- return String(text||'').split(', ').filter(Boolean).map(s=>'<span class="guide-sv-map-spot">'+escapeHtml(SV_AREA_TRANSLATIONS[s]||s)+'</span>').join('');
-}
-function svMemoKey(id,version){return 'lovepoke_sv_spot_'+id+'_'+version;}
-function svMemoRead(id,version){
- try{return JSON.parse(localStorage.getItem(svMemoKey(id,version))||'[]').filter(x=>x&&typeof x.name==='string');}
- catch(_){return [];}
-}
-function svMemoSave(id,version,region,name){
- const list=svMemoRead(id,version);
- if(!name.trim()||list.length>=30)return false;
- list.push({region,name:name.trim().slice(0,80)});
- try{localStorage.setItem(svMemoKey(id,version),JSON.stringify(list));return true;}catch(_){return false;}
-}
-function bindSVSpotMemo(p,version){
- const region=document.querySelector('#guideSVSpotRegion');
- const name=document.querySelector('#guideSVSpotName');
- document.querySelector('#guideSVSpotAdd')?.addEventListener('click',()=>{
-  if(!name?.value.trim())return;
-  if(!svMemoSave(p.id,version,region.value,name.value)){alert('保存できませんでした。端末の空き容量などをご確認ください。');return;}
-  const results=document.querySelector('#guideSVLocationResults');
-  if(results){results.innerHTML=renderSVLocationResults(p,version);bindSVSpotMemo(p,version);}
- });
- document.querySelectorAll('[data-sv-spot-remove]').forEach(button=>button.addEventListener('click',()=>{
-  const index=Number(button.dataset.svSpotRemove);
-  const list=svMemoRead(p.id,version);
-  if(!Number.isInteger(index)||index<0||index>=list.length)return;
-  list.splice(index,1);
-  try{localStorage.setItem(svMemoKey(p.id,version),JSON.stringify(list));}catch(_){return;}
-  const results=document.querySelector('#guideSVLocationResults');
-  if(results){results.innerHTML=renderSVLocationResults(p,version);bindSVSpotMemo(p,version);}
- }));
-}
 function renderSVLocations(p){
  const version=localStorage.getItem('lovepoke_sv_version')==='violet'?'violet':'scarlet';
- return `<section class="guide-sv-locations">
- <h3>SV 出現場所・入手方法</h3>
- <div class="guide-sv-version" role="group" aria-label="ゲームバージョン">
- <button type="button" data-sv-version="scarlet" class="${version==='scarlet'?'active':''}">スカーレット</button>
- <button type="button" data-sv-version="violet" class="${version==='violet'?'active':''}">バイオレット</button>
- </div>
- <div id="guideSVLocationResults">${renderSVLocationResults(p,version)}</div>
- </section>`;
+ return `<section class="guide-sv-locations"><h3>SV 入手方法</h3><div class="guide-sv-version" role="group" aria-label="ゲームバージョン"><button type="button" data-sv-version="scarlet" class="${version==='scarlet'?'active':''}">スカーレット</button><button type="button" data-sv-version="violet" class="${version==='violet'?'active':''}">バイオレット</button></div><div id="guideSVLocationResults">${renderSVLocationResults(p,version)}</div></section>`;
 }
 function renderSVLocationResults(p,version){
- const record=SV_LOCATION_ENTRIES[p.id];
  const acquisition=window.POKEMON_SV_ACQUISITION?.[p.id]||[];
- const sourcedLocations=window.POKEMON_SV_LOCATION_SUMMARIES?.[version]?.[p.id]||{};
- const hasAreaReference=Object.values(sourcedLocations).some(Boolean);
- const species=(window.POKEMON_DATA||[]).filter(x=>!x.formKey&&x.id>=1&&x.id<=1025);
- const evoFamily=p.evo?species.filter(x=>x.evo===p.evo):[];
- const evoFamilyHtml=evoFamily.length>1?'<div class="guide-sv-acquisition"><strong>進化系統（進化条件は別途確認）</strong><p>'+evoFamily.map(x=>'<span>'+escapeHtml(x.name)+' (No.'+x.id+')</span>').join(' ／ ')+'</p></div>':'';
- const acquisitionLabels={starter:'最初のパートナー',evolution:'進化',raid:'テラレイド',wild:'野生',trade:'交換',special:'特別な入手方法'};
- const personal=svMemoRead(p.id,version);
- const locations=[...(record?.both||[]),...(record?.[version]||[])].filter(()=>!SV_VERSION_LIMITED[p.id]||SV_VERSION_LIMITED[p.id]===version);
- const limit=SV_VERSION_LIMITED[p.id];
- const svDataAvailable=!!window.POKEMON_SV_LEARNSETS?.[p.id];
  const dex=window.POKEMON_SV_REGIONAL_DEX?.[p.id]||{};
- const regionStatus=['paldea','kitakami','blueberry'].filter(r=>dex[r]).map(r=>SV_REGION_LABELS[r]+': '+(locations.some(x=>x[0]===r)?'出現地点登録済み':sourcedLocations[r]?'参考エリア登録済み':'出現地点未調査')).join(' ／ ');
- const coverageHtml='<p class="guide-sv-data-status">出現地点：'+(locations.length?'アプリ内に'+locations.length+'件登録済み':'未登録')+' ／ 正確な地図座標：未検証</p><p class="guide-sv-data-status">'+escapeHtml(regionStatus||'SV地域図鑑掲載なし')+'</p>';
- const dexMessage=Object.keys(dex).length?Object.entries(dex).map(([region,num])=>SV_REGION_LABELS[region]+'図鑑 No.'+String(num).padStart(3,'0')).join(' ／ '):'SV地域図鑑への掲載なし（HOME・特別な入手方法の可否は別途確認）';
- const limitedMessage=limit?'<p class="guide-sv-limit">'+(limit===version?'このバージョン限定として登録されています。入手方法・地点は個別に確認してください。':'通常は'+(limit==='scarlet'?'スカーレット':'バイオレット')+'限定です。交換などで入手できる場合があります。')+'</p>':'';
- const searchQuery=encodeURIComponent(`ポケモンSV ${p.name} ${version==='scarlet'?'スカーレット':'バイオレット'} 出現場所 マップ`);
- const guideSearch='https://www.google.com/search?q='+searchQuery;
- const gamewithDlcIndex="https://gamewith.jp/pokemon-sv/article/show/390244";
- const gamewithSearch='https://www.google.com/search?q='+encodeURIComponent('site:gamewith.jp/pokemon-sv/article/show/ '+p.name+' 出現場所 入手方法');
- const acquisitionHtml=acquisition.length?'<div class="guide-sv-acquisition"><strong>入手方法（アプリ内保存）</strong><ul>'+acquisition.map(([kind,detail])=>'<li><strong>'+escapeHtml(acquisitionLabels[kind]||kind)+'</strong> '+escapeHtml(detail)+'</li>').join('')+'</ul><small>進化・イベント等の入手条件を端末内に保存しています。姿違い・特殊条件は別途確認してください。</small></div>':'';
- const regions=[['paldea','パルデア地方','本編'],['kitakami','キタカミの里','碧の仮面'],['blueberry','ブルーベリー学園','藍の円盤']];
- const regionCards=regions.map(([id,label,subtitle])=>{
-  const matches=locations.filter(([region])=>region===id);
-  const personalMatches=personal.filter(entry=>entry.region===id);
-  const sourcedSummary=sourcedLocations[id];
-  const displaySpots=[...matches.map(([,name])=>({name,source:'収録データ'})),...personalMatches.map(entry=>({name:entry.name,source:'自分のメモ'}))];
-  const spotMarkup=displaySpots.length?displaySpots.map(spot=>'<span class="guide-sv-map-spot" title="'+escapeHtml(spot.source)+'">'+escapeHtml(spot.name)+'</span>').join(''):'<small>この地域の出現地点は未登録です</small>';
-  const offlineMap='<div class="guide-sv-offline-map guide-sv-offline-map-'+id+'" role="group" aria-label="'+label+'の出現エリア一覧（地理的な位置は表していません）"><div class="guide-sv-map-land"><span>'+label+'</span><div class="guide-sv-map-spots">'+spotMarkup+'</div></div></div>';
-  return `<div class="guide-sv-region-card">
-   <div class="guide-sv-region-card-top"><strong>${label}</strong><small>${dex[id]?'図鑑No.'+String(dex[id]).padStart(3,'0'):subtitle}</small></div>
-   ${offlineMap}${sourcedSummary?'<div class="guide-sv-source-summary"><strong>パルデアの参考エリア（位置未検証）</strong><div class="guide-sv-map-spots">'+svAreaChips(sourcedSummary)+'</div><small>PokémonDB由来の参考情報。DLCの出現場所ではありません。</small></div>':''}<div class="guide-sv-region-status">${matches.length?`登録済み ${matches.length}件`:sourcedSummary?'参考エリア情報あり（地点未検証）':'出現情報を確認中'}</div>
-   <a href="${SV_MAP_LINKS[id]}" target="_blank" rel="noopener noreferrer" class="guide-sv-map-link">エリアマップを見る ↗</a>
-   </div>`;
- }).join('');
- return `<p class="guide-sv-data-status">${escapeHtml(dexMessage)}</p><p class="guide-sv-data-status">${svDataAvailable?'SV技データ収録済み（出現の保証ではありません）':'SV技データ未収録（入手不可の確定ではありません）'}</p>${limitedMessage}${coverageHtml}${acquisitionHtml}${evoFamilyHtml}<div class="guide-sv-region-grid">${regionCards}</div>
- <div class="guide-sv-source-links"><a class="guide-sv-lookup" href="${gamewithSearch}" target="_blank" rel="noopener noreferrer">GameWithで「${escapeHtml(p.name)}」の出現場所・入手方法を確認 ↗</a><a class="guide-sv-lookup" href="https://gamewith.jp/pokemon-sv/article/show/373315" target="_blank" rel="noopener noreferrer">GameWith パルデア図鑑一覧 ↗</a><a class="guide-sv-lookup" href="${gamewithDlcIndex}" target="_blank" rel="noopener noreferrer">GameWith DLC追加ポケモン一覧 ↗</a></div>
- <a class="guide-sv-lookup" href="${guideSearch}" target="_blank" rel="noopener noreferrer">「${escapeHtml(p.name)}」の${version==='scarlet'?'スカーレット':'バイオレット'}出現場所を調べる ↗</a>
- ${locations.length?`<ul class="guide-sv-location-list">${locations.map(([region,name,method])=>`<li><strong>${escapeHtml(name)}</strong><small>${SV_REGION_LABELS[region]} · ${escapeHtml(method)}</small></li>`).join('')}</ul>`:
- '<p class="note">'+(hasAreaReference?'参考エリアは上記に表示しています。詳細な出現地点は未検証です。':acquisition.length?'野生の出現地点は未登録です。上記の入手方法をご確認ください。':'このポケモンの出現場所・入手方法はまだ登録・検証できていません。野生で出現しないという意味ではありません。')+'</p>'}
- <div class="guide-sv-memo"><strong>自分の発見場所メモ（オフライン保存）</strong>
- <div class="guide-sv-memo-form"><select id="guideSVSpotRegion" aria-label="地域"><option value="paldea">パルデア</option><option value="kitakami">キタカミ</option><option value="blueberry">ブルーベリー</option></select><input id="guideSVSpotName" maxlength="80" placeholder="例：南2番エリア" aria-label="見つけた場所"><button type="button" id="guideSVSpotAdd">追加</button></div>
- ${personal.length?`<ul class="guide-sv-memo-list">${personal.map((entry,i)=>`<li><span>${escapeHtml(SV_REGION_LABELS[entry.region]||entry.region)}：${escapeHtml(entry.name)}</span><button type="button" data-sv-spot-remove="${i}" aria-label="メモを削除">削除</button></li>`).join('')}</ul>`:'<p class="note">自分で見つけた場所を記録できます。公式の出現データとは区別して表示します。</p>'}
- </div>
- <p class="hint">野生の探索候補は公開されている育成スポット情報を参考にした一例で、全出現地点の網羅ではありません。地域カードの図には収録地点と自分のメモを表示しますが、地理的な位置を表すものではありません。正確な地図はオンライン時に外部リンクから確認できます。出現地点のハイライトは、位置データの検証後に追加します。</p>`;
+ const dexMessage=Object.keys(dex).length?Object.entries(dex).map(([region,num])=>SV_REGION_LABELS[region]+'図鑑 No.'+String(num).padStart(3,'0')).join(' ／ '):'SV地域図鑑への掲載なし';
+ const labels={starter:'最初のパートナー',evolution:'進化',raid:'テラレイド',wild:'野生',trade:'交換',special:'特別な入手方法'};
+ const species=(window.POKEMON_DATA||[]).filter(x=>!x.formKey&&x.id>=1&&x.id<=1025);
+ const family=p.evo?species.filter(x=>x.evo===p.evo):[];
+ const familyHtml=family.length>1?'<div class="guide-sv-acquisition"><strong>進化系統</strong><p>'+family.map(x=>escapeHtml(x.name)+' (No.'+x.id+')').join(' ／ ')+'</p></div>':'';
+ const methods=acquisition.filter(x=>Array.isArray(x)&&x[0]!=='wild');
+ const methodHtml=methods.length?'<ul class="guide-sv-location-list">'+methods.map(x=>'<li><strong>'+escapeHtml(labels[x[0]]||x[0])+'</strong><small>'+escapeHtml(x.slice(1).join(' ／ '))+'</small></li>').join('')+'</ul>':'<p class="note">進化・交換・イベント等の入手方法は未登録です。</p>';
+ return '<p class="note">'+escapeHtml(dexMessage)+'</p>'+familyHtml+methodHtml;
 }
 
 function renderPokemon(id){
@@ -606,9 +470,8 @@ function renderPokemon(id){
     localStorage.setItem('lovepoke_sv_version',version);
     detail.querySelectorAll('[data-sv-version]').forEach(el=>el.classList.toggle('active',el.dataset.svVersion===version));
     const results=$('#guideSVLocationResults');
-    if(results){results.innerHTML=renderSVLocationResults(p,version);bindSVSpotMemo(p,version);}
+    if(results){results.innerHTML=renderSVLocationResults(p,version);}
   }));
-  bindSVSpotMemo(p,localStorage.getItem('lovepoke_sv_version')==='violet'?'violet':'scarlet');
   const filter=$('#guideMoveFilter');
   if(filter)filter.oninput=()=>filterMoves(detail,filter.value);
   detail.scrollIntoView({behavior:'smooth',block:'start'});
@@ -620,13 +483,11 @@ function renderSuggestions(query=''){
   const data=(window.POKEMON_DATA||[]).filter(p=>!p.formKey&&p.id>=1&&p.id<=1025);
   const selected=localStorage.getItem('lovepoke_sv_dex_region')||'all';
   const dex=window.POKEMON_SV_REGIONAL_DEX||{};
-  const regions={all:'全国図鑑',paldea:'パルデア',kitakami:'キタカミ',blueberry:'ブルーベリー',unlisted:'SV地域図鑑に未掲載',located:'出現候補の登録あり',memo:'自分の発見メモあり'};
-  const candidates=data.filter(p=>selected==='all'||(selected==='unlisted'?!dex[p.id]:selected==='located'?(!!SV_LOCATION_ENTRIES[p.id]||!!window.POKEMON_SV_LOCATION_SUMMARIES?.scarlet?.[p.id]||!!window.POKEMON_SV_LOCATION_SUMMARIES?.violet?.[p.id]):selected==='memo'?['scarlet','violet'].some(v=>svMemoRead(p.id,v).length>0):!!dex[p.id]?.[selected]));
-  const found=(q?candidates.filter(p=>p.name.includes(q)||String(p.id)===q||String(p.id).padStart(4,'0')===q):candidates)
-    .sort((a,b)=>(q?(b.name.startsWith(q)-a.name.startsWith(q)):0)||a.id-b.id);
-  const recorded=data.filter(p=>!!SV_LOCATION_ENTRIES[p.id]||!!window.POKEMON_SV_LOCATION_SUMMARIES?.scarlet?.[p.id]||!!window.POKEMON_SV_LOCATION_SUMMARIES?.violet?.[p.id]).length;
+  const regions={all:'全国図鑑',paldea:'パルデア',kitakami:'キタカミ',blueberry:'ブルーベリー',unlisted:'SV地域図鑑に未掲載'};
+  const candidates=data.filter(p=>selected==='all'||(selected==='unlisted'?!dex[p.id]:!!dex[p.id]?.[selected]));
+  const found=(q?candidates.filter(p=>p.name.includes(q)||String(p.id)===q||String(p.id).padStart(4,'0')===q):candidates).sort((a,b)=>a.id-b.id);
   root.innerHTML='<div class="guide-sv-dex-filter" role="group" aria-label="地域図鑑で絞り込み">'+Object.entries(regions).map(([id,label])=>'<button type="button" data-guide-region="'+id+'" class="'+(id===selected?'active':'')+'">'+label+'</button>').join('')+'</div>'+
-   '<p class="note">出現候補・参考エリアの収録 '+recorded+'匹 ／ 全国図鑑 '+data.length+'匹。地域図鑑掲載は出現の保証ではありません。</p><p class="note">該当 '+found.length+'匹'+(found.length>80?'（最初の80匹を表示。名前で絞り込めます）':'')+' · 地域図鑑の掲載は野生出現を意味しません。</p>'+
+   '<p class="note">該当 '+found.length+'匹'+(found.length>80?'（最初の80匹を表示）':'')+'</p>'+
    (found.slice(0,80).map(p=>`<button type="button" data-guide-result="${p.id}"><span>No.${String(p.id).padStart(4,'0')}</span><strong>${escapeHtml(p.name)}</strong></button>`).join('')||'<p class="note">該当するポケモンが見つかりません。</p>');
 }
 
