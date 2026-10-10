@@ -911,7 +911,7 @@ const LIVE_INTERVALS={rare:[15*60000,25*60000],normal:[7*60000,12*60000],often:[
 const liveCache=new Map();
 let liveEvent=null,nextLiveAt=Infinity,liveLoading=false,liveGeneration=0;
 function scheduleLive(now=performance.now()){
-  const range=LIVE_INTERVALS.normal;
+  const range=[2*60000,4*60000];
   nextLiveAt=range ? now+range[0]+Math.random()*(range[1]-range[0]) : Infinity;
 }
 async function getLiveFrames(id){
@@ -1698,8 +1698,10 @@ function tick(now){
   const dt=Math.min(50,now-(last||now));last=now;
   if(!liveEvent&&now>=nextLiveAt&&!liveLoading&&S.moving&&!S.lineup){
     // Keep the due time until a conversation finishes, rather than skipping a show.
-    if(!socialEvent&&!document.hidden&&!document.querySelector('dialog[open]'))
+    if(!document.hidden&&!document.querySelector('dialog[open]')){
+      if(socialEvent)endConversation(now);
       void beginLive(false);
+    }
   }
   updateLive(now);
   if(actors.length){
