@@ -569,12 +569,13 @@ function renderSuggestions(query=''){
   const data=(window.POKEMON_DATA||[]).filter(p=>!p.formKey&&p.id>=1&&p.id<=1025);
   const selected=localStorage.getItem('lovepoke_sv_dex_region')||'all';
   const dex=window.POKEMON_SV_REGIONAL_DEX||{};
-  const regions={all:'全国図鑑',paldea:'パルデア',kitakami:'キタカミ',blueberry:'ブルーベリー',unlisted:'SV地域図鑑に未掲載'};
-  const candidates=data.filter(p=>selected==='all'||(selected==='unlisted'?!dex[p.id]:!!dex[p.id]?.[selected]));
+  const regions={all:'全国図鑑',paldea:'パルデア',kitakami:'キタカミ',blueberry:'ブルーベリー',unlisted:'SV地域図鑑に未掲載',located:'出現候補の登録あり',memo:'自分の発見メモあり'};
+  const candidates=data.filter(p=>selected==='all'||(selected==='unlisted'?!dex[p.id]:selected==='located'?!!SV_LOCATION_ENTRIES[p.id]:selected==='memo'?['scarlet','violet'].some(v=>svMemoRead(p.id,v).length>0):!!dex[p.id]?.[selected]));
   const found=(q?candidates.filter(p=>p.name.includes(q)||String(p.id)===q||String(p.id).padStart(4,'0')===q):candidates)
     .sort((a,b)=>(q?(b.name.startsWith(q)-a.name.startsWith(q)):0)||a.id-b.id);
+  const recorded=data.filter(p=>!!SV_LOCATION_ENTRIES[p.id]).length;
   root.innerHTML='<div class="guide-sv-dex-filter" role="group" aria-label="地域図鑑で絞り込み">'+Object.entries(regions).map(([id,label])=>'<button type="button" data-guide-region="'+id+'" class="'+(id===selected?'active':'')+'">'+label+'</button>').join('')+'</div>'+
-   '<p class="note">該当 '+found.length+'匹'+(found.length>80?'（最初の80匹を表示。名前で絞り込めます）':'')+' · 地域図鑑の掲載は野生出現を意味しません。</p>'+
+   '<p class="note">出現・入手候補の登録済み '+recorded+'匹 ／ 全国図鑑 '+data.length+'匹。地域図鑑掲載は出現の保証ではありません。</p><p class="note">該当 '+found.length+'匹'+(found.length>80?'（最初の80匹を表示。名前で絞り込めます）':'')+' · 地域図鑑の掲載は野生出現を意味しません。</p>'+
    (found.slice(0,80).map(p=>`<button type="button" data-guide-result="${p.id}"><span>No.${String(p.id).padStart(4,'0')}</span><strong>${escapeHtml(p.name)}</strong></button>`).join('')||'<p class="note">該当するポケモンが見つかりません。</p>');
 }
 
