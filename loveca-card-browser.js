@@ -473,6 +473,8 @@
     ensureCss();
     setupLoveTabs();
     setupLiveSelectIntegration();
+    // Populate saved favorite live cards on the battle screen without opening card search.
+    void loadCards();
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});
