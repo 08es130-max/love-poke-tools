@@ -911,7 +911,7 @@ const LIVE_INTERVALS={rare:[15*60000,25*60000],normal:[7*60000,12*60000],often:[
 const liveCache=new Map();
 let liveEvent=null,nextLiveAt=Infinity,liveLoading=false,liveGeneration=0;
 function scheduleLive(now=performance.now()){
-  const range=S.liveMode==='off'?null:[5000,7500];
+  const range=LIVE_INTERVALS.normal;
   nextLiveAt=range ? now+range[0]+Math.random()*(range[1]-range[0]) : Infinity;
 }
 async function getLiveFrames(id){
@@ -987,7 +987,7 @@ function endLive(now=performance.now()){
   hideSpeech(a);
   if(actors.length>1)setV(a,Math.random()*Math.PI*2);
  });
- nextLiveAt=now+5000+Math.random()*2500;
+ scheduleLive(now);
 }
 async function beginLive(manual=false){
  if(liveLoading||liveEvent||S.lineup||!S.moving||document.hidden||
@@ -1747,7 +1747,7 @@ function syncStatus(msg=''){
     lineupButton.setAttribute('aria-pressed',S.lineup?'true':'false');
   }
 }
-function sync(){dialog.querySelector('#mLiveMode').value=LIVE_INTERVALS[S.liveMode]?S.liveMode:'off';dialog.querySelector('#mMoving').checked=S.moving;dialog.querySelector('#mSpeech').checked=S.speech;dialog.querySelector('#mSize').value=S.size;dialog.querySelector('#mSpeed').value=S.speed;let set=new Set(S.selectedCharacters);dialog.querySelectorAll('[data-char]').forEach(x=>x.checked=set.has(x.value));syncStatus()}
+function sync(){dialog.querySelector('#mMoving').checked=S.moving;dialog.querySelector('#mSpeech').checked=S.speech;dialog.querySelector('#mSize').value=S.size;dialog.querySelector('#mSpeed').value=S.speed;let set=new Set(S.selectedCharacters);dialog.querySelectorAll('[data-char]').forEach(x=>x.checked=set.has(x.value));syncStatus()}
 function ui(){root=document.createElement('div');root.id=ROOT;root.className='mascot-root';layer=document.createElement('div');layer.className='mascot-layer';let gear=document.createElement('button');gear.type='button';gear.className='mascot-settings-btn';gear.textContent='⚙';
   lineupButton=document.createElement('button');
   lineupButton.type='button';
@@ -1757,6 +1757,10 @@ function ui(){root=document.createElement('div');root.id=ROOT;root.className='ma
     endLive(performance.now());liveGeneration++;if(socialEvent)endConversation(performance.now());S.lineup=!S.lineup;nextSocialAt=performance.now()+2400;save();place();syncStatus();
     actors.forEach(a=>render(a,performance.now()));
   });
+  const liveButton=document.createElement('button');
+  liveButton.type='button';liveButton.className='mascot-live-test-btn';liveButton.textContent='♪';
+  liveButton.setAttribute('aria-label','テストライブ');liveButton.title='テストライブ';
+  liveButton.addEventListener('click',()=>{void beginLive(true)});
   dialog=document.createElement('dialog');dialog.className='mascot-dialog';dialog.innerHTML=`
   <form method="dialog" class="mascot-dialog-card">
     <header class="mascot-dialog-head">
@@ -1789,11 +1793,9 @@ function ui(){root=document.createElement('div');root.id=ROOT;root.className='ma
       <label class="mascot-switch"><span>セリフを表示</span><input id="mSpeech" type="checkbox"></label>
       <label><span>大きさ</span><select id="mSize"><option value="small">小</option><option value="medium">中</option><option value="large">大</option></select></label>
       <label><span>速度</span><select id="mSpeed"><option value="slow">ゆっくり</option><option value="normal">普通</option><option value="fast">速い</option></select></label>
-      <label><span>ランダムライブ</span><select id="mLiveMode"><option value="off">OFF</option><option value="rare">少なめ（15〜25分）</option><option value="normal">普通（7〜12分）</option><option value="often">多め（3〜5分）</option></select></label>
-      <button id="mLiveNow" type="button" class="mascot-live-test-btn">♪ 今すぐライブ</button>
     </div>
   </form>
-`;status=dialog.querySelector('#mStatus');gear.addEventListener('click',()=>{sync();dialog.showModal?dialog.showModal():dialog.setAttribute('open','')});root.append(layer,lineupButton,gear,dialog);document.body.append(root);dialog.querySelector('#mLiveMode').onchange=e=>{S.liveMode=e.target.value;save();scheduleLive()};dialog.querySelector('#mLiveNow').onclick=()=>{if(!actors.some(a=>LIVE_ASSETS[a.id])){syncStatus('ライブ衣装があるキャラクター（歩夢・かすみ・しずく・果林・愛・彼方・せつ菜・エマ・璃奈・ミア・ランジュ・栞子）を選んでください');return}if(S.lineup||!S.moving){syncStatus('歩行モード・動かすONでライブを開始できます');return}dialog.close();void beginLive(true)};dialog.querySelector('#mMoving').onchange=e=>{S.moving=e.target.checked;if(!S.moving){endLive(performance.now());liveGeneration++;socialEvent=null;actors.forEach(a=>{a.restUntil=0;a.b.hidden=true})}nextSocialAt=performance.now()+2300;save()};dialog.querySelector('#mSpeech').onchange=e=>{S.speech=e.target.checked;save();visible()};dialog.querySelector('#mSize').onchange=async e=>{S.size=e.target.value;save();await rebuild();sync()};dialog.querySelector('#mSpeed').onchange=e=>{S.speed=e.target.value;actors.forEach(a=>setV(a));save()};dialog.querySelectorAll('[data-char]').forEach(x=>x.onchange=async()=>{let s=selected();S.selectedCharacters=s;save();await rebuild();sync()});dialog.querySelector('#mAll').onclick=async()=>{S.selectedCharacters=Object.keys(C);save();await rebuild();sync()};dialog.querySelector('#mClear').onclick=async()=>{S.selectedCharacters=[];save();await rebuild();sync()}}
+`;status=dialog.querySelector('#mStatus');gear.addEventListener('click',()=>{sync();dialog.showModal?dialog.showModal():dialog.setAttribute('open','')});root.append(layer,liveButton,lineupButton,gear,dialog);document.body.append(root);dialog.addEventListener('click',event=>{if(event.target===dialog)dialog.close()});dialog.querySelector('#mMoving').onchange=e=>{S.moving=e.target.checked;if(!S.moving){endLive(performance.now());liveGeneration++;socialEvent=null;actors.forEach(a=>{a.restUntil=0;a.b.hidden=true})}nextSocialAt=performance.now()+2300;save()};dialog.querySelector('#mSpeech').onchange=e=>{S.speech=e.target.checked;save();visible()};dialog.querySelector('#mSize').onchange=async e=>{S.size=e.target.value;save();await rebuild();sync()};dialog.querySelector('#mSpeed').onchange=e=>{S.speed=e.target.value;actors.forEach(a=>setV(a));save()};dialog.querySelectorAll('[data-char]').forEach(x=>x.onchange=async()=>{let s=selected();S.selectedCharacters=s;save();await rebuild();sync()});dialog.querySelector('#mAll').onclick=async()=>{S.selectedCharacters=Object.keys(C);save();await rebuild();sync()};dialog.querySelector('#mClear').onclick=async()=>{S.selectedCharacters=[];save();await rebuild();sync()}}
 window.lovePokeStartMascotLive=()=>beginLive(true);
 async function init(){document.querySelectorAll('#'+ROOT).forEach(x=>x.remove());ui();sync();await rebuild();scheduleLive();document.addEventListener('visibilitychange',()=>{if(document.hidden)endLive(performance.now());else if(nextLiveAt<performance.now())scheduleLive()});addEventListener('resize',()=>{
  if(S.lineup){placeLineup();return}
