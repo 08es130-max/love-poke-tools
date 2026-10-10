@@ -470,6 +470,7 @@ function renderSVLocations(p){
 function renderSVLocationResults(p,version){
  const record=SV_LOCATION_ENTRIES[p.id];
  const acquisition=window.POKEMON_SV_ACQUISITION?.[p.id]||[];
+ const sourcedLocations=window.POKEMON_SV_LOCATION_SUMMARIES?.[version]?.[p.id]||{};
  const species=(window.POKEMON_DATA||[]).filter(x=>!x.formKey&&x.id>=1&&x.id<=1025);
  const evoFamily=p.evo?species.filter(x=>x.evo===p.evo):[];
  const evoFamilyHtml=evoFamily.length>1?'<div class="guide-sv-acquisition"><strong>進化系統（進化条件は別途確認）</strong><p>'+evoFamily.map(x=>'<span>'+escapeHtml(x.name)+' (No.'+x.id+')</span>').join(' ／ ')+'</p></div>':'';
@@ -489,12 +490,13 @@ function renderSVLocationResults(p,version){
  const regionCards=regions.map(([id,label,subtitle])=>{
   const matches=locations.filter(([region])=>region===id);
   const personalMatches=personal.filter(entry=>entry.region===id);
+  const sourcedSummary=sourcedLocations[id];
   const displaySpots=[...matches.map(([,name])=>({name,source:'収録データ'})),...personalMatches.map(entry=>({name:entry.name,source:'自分のメモ'}))];
   const spotMarkup=displaySpots.length?displaySpots.map(spot=>'<span class="guide-sv-map-spot" title="'+escapeHtml(spot.source)+'">'+escapeHtml(spot.name)+'</span>').join(''):'<small>この地域の出現地点は未登録です</small>';
   const offlineMap='<div class="guide-sv-offline-map guide-sv-offline-map-'+id+'" role="group" aria-label="'+label+'の出現エリア一覧（地理的な位置は表していません）"><div class="guide-sv-map-land"><span>'+label+'</span><div class="guide-sv-map-spots">'+spotMarkup+'</div></div></div>';
   return `<div class="guide-sv-region-card">
    <div class="guide-sv-region-card-top"><strong>${label}</strong><small>${dex[id]?'図鑑No.'+String(dex[id]).padStart(3,'0'):subtitle}</small></div>
-   ${offlineMap}<div class="guide-sv-region-status">${matches.length?`登録済み ${matches.length}件`:'出現情報を確認中'}</div>
+   ${offlineMap}${sourcedSummary?'<p class="guide-sv-source-summary"><strong>参考エリア（英語表記）</strong> '+escapeHtml(sourcedSummary)+'</p>':''}<div class="guide-sv-region-status">${matches.length?`登録済み ${matches.length}件`:sourcedSummary?'参考エリア情報あり（地点未検証）':'出現情報を確認中'}</div>
    <a href="${SV_MAP_LINKS[id]}" target="_blank" rel="noopener noreferrer" class="guide-sv-map-link">エリアマップを見る ↗</a>
    </div>`;
  }).join('');
@@ -578,12 +580,12 @@ function renderSuggestions(query=''){
   const selected=localStorage.getItem('lovepoke_sv_dex_region')||'all';
   const dex=window.POKEMON_SV_REGIONAL_DEX||{};
   const regions={all:'全国図鑑',paldea:'パルデア',kitakami:'キタカミ',blueberry:'ブルーベリー',unlisted:'SV地域図鑑に未掲載',located:'出現候補の登録あり',memo:'自分の発見メモあり'};
-  const candidates=data.filter(p=>selected==='all'||(selected==='unlisted'?!dex[p.id]:selected==='located'?!!SV_LOCATION_ENTRIES[p.id]:selected==='memo'?['scarlet','violet'].some(v=>svMemoRead(p.id,v).length>0):!!dex[p.id]?.[selected]));
+  const candidates=data.filter(p=>selected==='all'||(selected==='unlisted'?!dex[p.id]:selected==='located'?(!!SV_LOCATION_ENTRIES[p.id]||!!window.POKEMON_SV_LOCATION_SUMMARIES?.scarlet?.[p.id]||!!window.POKEMON_SV_LOCATION_SUMMARIES?.violet?.[p.id]):selected==='memo'?['scarlet','violet'].some(v=>svMemoRead(p.id,v).length>0):!!dex[p.id]?.[selected]));
   const found=(q?candidates.filter(p=>p.name.includes(q)||String(p.id)===q||String(p.id).padStart(4,'0')===q):candidates)
     .sort((a,b)=>(q?(b.name.startsWith(q)-a.name.startsWith(q)):0)||a.id-b.id);
-  const recorded=data.filter(p=>!!SV_LOCATION_ENTRIES[p.id]).length;
+  const recorded=data.filter(p=>!!SV_LOCATION_ENTRIES[p.id]||!!window.POKEMON_SV_LOCATION_SUMMARIES?.scarlet?.[p.id]||!!window.POKEMON_SV_LOCATION_SUMMARIES?.violet?.[p.id]).length;
   root.innerHTML='<div class="guide-sv-dex-filter" role="group" aria-label="地域図鑑で絞り込み">'+Object.entries(regions).map(([id,label])=>'<button type="button" data-guide-region="'+id+'" class="'+(id===selected?'active':'')+'">'+label+'</button>').join('')+'</div>'+
-   '<p class="note">出現・入手候補の登録済み '+recorded+'匹 ／ 全国図鑑 '+data.length+'匹。地域図鑑掲載は出現の保証ではありません。</p><p class="note">該当 '+found.length+'匹'+(found.length>80?'（最初の80匹を表示。名前で絞り込めます）':'')+' · 地域図鑑の掲載は野生出現を意味しません。</p>'+
+   '<p class="note">出現候補・参考エリアの収録 '+recorded+'匹 ／ 全国図鑑 '+data.length+'匹。地域図鑑掲載は出現の保証ではありません。</p><p class="note">該当 '+found.length+'匹'+(found.length>80?'（最初の80匹を表示。名前で絞り込めます）':'')+' · 地域図鑑の掲載は野生出現を意味しません。</p>'+
    (found.slice(0,80).map(p=>`<button type="button" data-guide-result="${p.id}"><span>No.${String(p.id).padStart(4,'0')}</span><strong>${escapeHtml(p.name)}</strong></button>`).join('')||'<p class="note">該当するポケモンが見つかりません。</p>');
 }
 
