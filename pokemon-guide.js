@@ -501,7 +501,8 @@ function renderSVLocationResults(p,version){
  const limit=SV_VERSION_LIMITED[p.id];
  const svDataAvailable=!!window.POKEMON_SV_LEARNSETS?.[p.id];
  const dex=window.POKEMON_SV_REGIONAL_DEX?.[p.id]||{};
- const coverageHtml='<p class="guide-sv-data-status">出現地点：'+(locations.length?'アプリ内に'+locations.length+'件登録済み':'未登録')+' ／ 正確な地図座標：未検証</p>';
+ const regionStatus=['paldea','kitakami','blueberry'].filter(r=>dex[r]).map(r=>SV_REGION_LABELS[r]+': '+(locations.some(x=>x[0]===r)?'出現地点登録済み':sourcedLocations[r]?'参考エリア登録済み':'出現地点未調査')).join(' ／ ');
+ const coverageHtml='<p class="guide-sv-data-status">出現地点：'+(locations.length?'アプリ内に'+locations.length+'件登録済み':'未登録')+' ／ 正確な地図座標：未検証</p><p class="guide-sv-data-status">'+escapeHtml(regionStatus||'SV地域図鑑掲載なし')+'</p>';
  const dexMessage=Object.keys(dex).length?Object.entries(dex).map(([region,num])=>SV_REGION_LABELS[region]+'図鑑 No.'+String(num).padStart(3,'0')).join(' ／ '):'SV地域図鑑への掲載なし（HOME・特別な入手方法の可否は別途確認）';
  const limitedMessage=limit?'<p class="guide-sv-limit">'+(limit===version?'このバージョン限定として登録されています。入手方法・地点は個別に確認してください。':'通常は'+(limit==='scarlet'?'スカーレット':'バイオレット')+'限定です。交換などで入手できる場合があります。')+'</p>':'';
  const searchQuery=encodeURIComponent(`ポケモンSV ${p.name} ${version==='scarlet'?'スカーレット':'バイオレット'} 出現場所 マップ`);
