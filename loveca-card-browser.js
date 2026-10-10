@@ -426,6 +426,45 @@
       .sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'ja',{numeric:true}));
   }
 
+  const LIVE_WORK_FILTERS=[['all','全'],['muse','μ’s'],['aqours','Aq'],['nijigasaki','虹'],['liella','Li'],['hasunosora','蓮']];
+  const liveWorkFilters=['all','all','all'];
+  function liveWork(card){
+    const work=String(card.work||'').toLowerCase();
+    if(/μ|ミューズ|muse|muse's/.test(work))return 'muse';
+    if(/aqours|アクア/.test(work))return 'aqours';
+    if(/虹|nijigasaki/.test(work))return 'nijigasaki';
+    if(/liella|リエラ/.test(work))return 'liella';
+    if(/蓮|hasunosora/.test(work))return 'hasunosora';
+    return '';
+  }
+  function setupLiveWorkFilters(){
+    for(let i=0;i<3;i++){
+      const select=document.querySelector(`#livePreset${i+1}Select`);
+      if(!select||select.parentElement.querySelector('.loveca-live-work-filters'))continue;
+      const row=document.createElement('div');
+      row.className='loveca-live-select-row';
+      select.parentNode.insertBefore(row,select);
+      row.append(select);
+      const filters=document.createElement('div');filters.className='loveca-live-work-filters';
+      filters.setAttribute('aria-label',`ライブ${i+1} 作品絞り込み`);
+      LIVE_WORK_FILTERS.forEach(([key,label])=>{
+        const button=document.createElement('button');button.type='button';
+        button.className='loveca-live-work-btn';button.textContent=label;
+        button.dataset.active=String(key===liveWorkFilters[i]);
+        button.setAttribute('aria-pressed',String(key===liveWorkFilters[i]));
+        button.onclick=()=>{
+          liveWorkFilters[i]=key;
+          filters.querySelectorAll('button').forEach(btn=>{
+            const active=btn===button;btn.dataset.active=String(active);btn.setAttribute('aria-pressed',String(active));
+          });
+          syncFavoriteOptions();
+        };
+        filters.append(button);
+      });
+      row.append(filters);
+    }
+  }
+
   function syncFavoriteOptions(){
     if(!loaded||favoriteSyncing)return;
     favoriteSyncing=true;
@@ -435,19 +474,21 @@
         const select=document.querySelector(`#livePreset${i+1}Select`);if(!select)continue;
         const current=select.value;
         select.querySelectorAll('optgroup[data-loveca-favorites]').forEach(node=>node.remove());
-        if(favCards.length){
+        const shown=favCards.filter(card=>liveWorkFilters[i]==='all'||liveWork(card)===liveWorkFilters[i]);
+        if(shown.length){
           const group=document.createElement('optgroup');
-          group.label='★ お気に入りライブ';
-          group.dataset.lovecaFavorites='1';
-          for(const card of favCards){
+          group.label='★ お気に入りライブ';group.dataset.lovecaFavorites='1';
+          for(const card of shown){
             const option=document.createElement('option');
             option.value=`__loveca_fav__${card.id}`;
-            option.textContent=`★ ${card.name}${card.cardNo?`（${card.cardNo}）`:''}`;
+            const score=numberOrNull(card.score);
+            option.textContent=`★ ${card.name}${score===null?'':` ${score}点`}`;
             group.append(option);
           }
           select.append(group);
         }
         if([...select.options].some(option=>option.value===current))select.value=current;
+        else if(current.startsWith('__loveca_fav__'))select.value='';
       }
     }finally{favoriteSyncing=false}
   }
@@ -485,6 +526,7 @@
   function init(){
     ensureCss();
     setupLoveTabs();
+    setupLiveWorkFilters();
     setupLiveSelectIntegration();
     // Populate saved favorite live cards on the battle screen without opening card search.
     void loadCards();
