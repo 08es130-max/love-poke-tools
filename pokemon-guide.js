@@ -438,6 +438,9 @@ const SV_LOCATION_ENTRIES={
   708:{both:[["kitakami","とこしえの森・木の近く","野生／夕方〜夜"]]},
   709:{both:[["kitakami","とこしえの森","野生／夕方〜夜・低確率"]]},
   876:{both:[["kitakami","キタカミ原生地域・とこしえの森","野生／北部"]]},
+  193:{both:[["kitakami","キタカミ街道・フジが原・てらす池・キタカミ原生地域","野生／スイリョクタウン南のバス停付近が目印"]]},
+  355:{both:[["kitakami","とこしえの森南の丘上","野生／夕方〜夜"]]},
+  356:{both:[["kitakami","キタカミ原生地域・とこしえの森南の丘上","野生／夕方〜夜・低確率"],["kitakami","とこしえの森南の洞窟","野生テラスタル固定シンボル"]]},
 
 };
 const SV_VERSION_LIMITED={"200":"violet","246":"scarlet","247":"scarlet","316":"violet","317":"violet","371":"violet","372":"violet","425":"scarlet","426":"scarlet","429":"violet","434":"scarlet","435":"scarlet","633":"scarlet","634":"scarlet","690":"scarlet","691":"scarlet","692":"violet","693":"violet","765":"scarlet","766":"violet","874":"scarlet","875":"violet","885":"violet","886":"violet","984":"scarlet","985":"scarlet","986":"scarlet","987":"scarlet","988":"scarlet","989":"scarlet","990":"violet","991":"violet","992":"violet","993":"violet","994":"violet","995":"violet","1005":"scarlet","1006":"violet","1007":"scarlet","1008":"violet"};
