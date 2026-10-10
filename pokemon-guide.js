@@ -498,6 +498,7 @@ function renderSVLocationResults(p,version){
  const limitedMessage=limit?'<p class="guide-sv-limit">'+(limit===version?'このバージョン限定として登録されています。入手方法・地点は個別に確認してください。':'通常は'+(limit==='scarlet'?'スカーレット':'バイオレット')+'限定です。交換などで入手できる場合があります。')+'</p>':'';
  const searchQuery=encodeURIComponent(`ポケモンSV ${p.name} ${version==='scarlet'?'スカーレット':'バイオレット'} 出現場所 マップ`);
  const guideSearch='https://www.google.com/search?q='+searchQuery;
+ const gamewithDlcIndex="https://gamewith.jp/pokemon-sv/article/show/390244";
  const gamewithSearch='https://www.google.com/search?q='+encodeURIComponent('site:gamewith.jp/pokemon-sv/article/show/ '+p.name+' 出現場所 入手方法');
  const acquisitionHtml=acquisition.length?'<div class="guide-sv-acquisition"><strong>確認済みの入手方法</strong><ul>'+acquisition.map(([kind,detail])=>'<li><strong>'+escapeHtml(acquisitionLabels[kind]||kind)+'</strong> '+escapeHtml(detail)+'</li>').join('')+'</ul><small>参考：GameWith パルデア図鑑。野生の出現地点とは別の情報です。</small></div>':'';
  const regions=[['paldea','パルデア地方','本編'],['kitakami','キタカミの里','碧の仮面'],['blueberry','ブルーベリー学園','藍の円盤']];
@@ -515,7 +516,7 @@ function renderSVLocationResults(p,version){
    </div>`;
  }).join('');
  return `<p class="guide-sv-data-status">${escapeHtml(dexMessage)}</p><p class="guide-sv-data-status">${svDataAvailable?'SV技データ収録済み（出現の保証ではありません）':'SV技データ未収録（入手不可の確定ではありません）'}</p>${limitedMessage}${acquisitionHtml}${evoFamilyHtml}<div class="guide-sv-region-grid">${regionCards}</div>
- <div class="guide-sv-source-links"><a class="guide-sv-lookup" href="${gamewithSearch}" target="_blank" rel="noopener noreferrer">GameWithで「${escapeHtml(p.name)}」の出現場所・入手方法を確認 ↗</a><a class="guide-sv-lookup" href="https://gamewith.jp/pokemon-sv/article/show/373315" target="_blank" rel="noopener noreferrer">GameWith パルデア図鑑一覧 ↗</a></div>
+ <div class="guide-sv-source-links"><a class="guide-sv-lookup" href="${gamewithSearch}" target="_blank" rel="noopener noreferrer">GameWithで「${escapeHtml(p.name)}」の出現場所・入手方法を確認 ↗</a><a class="guide-sv-lookup" href="https://gamewith.jp/pokemon-sv/article/show/373315" target="_blank" rel="noopener noreferrer">GameWith パルデア図鑑一覧 ↗</a><a class="guide-sv-lookup" href="${gamewithDlcIndex}" target="_blank" rel="noopener noreferrer">GameWith DLC追加ポケモン一覧 ↗</a></div>
  <a class="guide-sv-lookup" href="${guideSearch}" target="_blank" rel="noopener noreferrer">「${escapeHtml(p.name)}」の${version==='scarlet'?'スカーレット':'バイオレット'}出現場所を調べる ↗</a>
  ${locations.length?`<ul class="guide-sv-location-list">${locations.map(([region,name,method])=>`<li><strong>${escapeHtml(name)}</strong><small>${SV_REGION_LABELS[region]} · ${escapeHtml(method)}</small></li>`).join('')}</ul>`:
  '<p class="note">'+(hasAreaReference?'参考エリアは上記に表示しています。詳細な出現地点は未検証です。':acquisition.length?'野生の出現地点は未登録です。上記の入手方法をご確認ください。':'このポケモンの出現場所・入手方法はまだ登録・検証できていません。野生で出現しないという意味ではありません。')+'</p>'}
