@@ -451,6 +451,7 @@
         const button=document.createElement('button');button.type='button';
         button.className='loveca-live-work-btn';button.textContent=label;
         button.dataset.active=String(key===liveWorkFilters[i]);
+        button.title=label+'のライブを表示';
         button.setAttribute('aria-pressed',String(key===liveWorkFilters[i]));
         button.onclick=()=>{
           liveWorkFilters[i]=key;
@@ -463,6 +464,15 @@
       });
       row.append(filters);
     }
+  }
+
+  function liveScore(card){
+    for(const value of [card.score,card.liveScore,card.live_score,card.livePoint,card.livePoints]){
+      const score=numberOrNull(value);if(score!==null)return score;
+    }
+    const text=String(card.text||'');
+    const match=text.match(/(?:ライブスコア|スコア)[：:\\s]*(\\d+)\\s*点?/);
+    return match?Number(match[1]):null;
   }
 
   function syncFavoriteOptions(){
@@ -481,7 +491,7 @@
           for(const card of shown){
             const option=document.createElement('option');
             option.value=`__loveca_fav__${card.id}`;
-            const score=numberOrNull(card.score);
+            const score=liveScore(card);
             option.textContent=`★ ${card.name}${score===null?'':` ${score}点`}`;
             group.append(option);
           }
