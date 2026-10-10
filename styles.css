@@ -606,3 +606,14 @@ button,.nav-btn,.mini-btn,.column-reset,.lock-btn{touch-action:manipulation}
 .guide-weakness-select{display:block;width:100%;max-width:100%;min-height:40px;padding:7px 10px;margin-bottom:12px;border:1px solid #dce3ee;border-radius:9px;background:#fff;color:inherit;font:inherit}
 .guide-weakness-entry{display:inline-flex;align-items:center;gap:2px;flex-wrap:wrap}
 .guide-weakness-entry small{font-size:11px;font-weight:700;color:#a23d66}
+
+.guide-sv-locations{margin:14px 0;padding:14px;border:1px solid #e1e5ef;border-radius:12px;background:#fff}
+.guide-sv-locations h3{margin:0 0 10px}
+.guide-sv-version{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.guide-sv-version button{min-height:42px;border:1px solid #d9dce6;border-radius:9px;background:#f7f8fb;color:#444;font-weight:700}
+.guide-sv-version button.active{background:#fce8f0;border-color:#d56796;color:#a02b61}
+.guide-sv-region-maps{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0}
+.guide-sv-map-link{display:inline-block;padding:8px 10px;border-radius:9px;background:#eff5ff;color:#28518e;font-size:12px;text-decoration:none}
+.guide-sv-location-list{list-style:none;padding:0;margin:10px 0}
+.guide-sv-location-list li{display:flex;flex-direction:column;gap:3px;padding:9px 0;border-bottom:1px solid #eceef3}
+.guide-sv-location-list small{color:#64748b}
