@@ -404,6 +404,7 @@ const SV_LOCATION_ENTRIES={
   909:{both:[['paldea','最初のパートナーとして選択','入手']]},
   912:{both:[['paldea','最初のパートナーとして選択','入手']]}
 };
+const SV_VERSION_LIMITED={"200":"violet","246":"scarlet","247":"scarlet","316":"violet","317":"violet","371":"violet","372":"violet","425":"scarlet","426":"scarlet","429":"violet","434":"scarlet","435":"scarlet","633":"scarlet","634":"scarlet","690":"scarlet","691":"scarlet","692":"violet","693":"violet","765":"scarlet","766":"violet","874":"scarlet","875":"violet","885":"violet","886":"violet","984":"scarlet","985":"scarlet","986":"scarlet","987":"scarlet","988":"scarlet","989":"scarlet","990":"violet","991":"violet","992":"violet","993":"violet","994":"violet","995":"violet","1005":"scarlet","1006":"violet","1007":"scarlet","1008":"violet"};
 const SV_MAP_LINKS={
  paldea:'https://yakkun.com/sv/map.htm',
  kitakami:'https://yakkun.com/sv/map.htm?list=midori',
@@ -424,6 +425,8 @@ function renderSVLocations(p){
 function renderSVLocationResults(p,version){
  const record=SV_LOCATION_ENTRIES[p.id];
  const locations=[...(record?.both||[]),...(record?.[version]||[])];
+ const limit=SV_VERSION_LIMITED[p.id];
+ const limitedMessage=limit?'<p class="guide-sv-limit">'+(limit===version?'このバージョンで入手できます。出現地点は確認中です。':'通常は'+(limit==='scarlet'?'スカーレット':'バイオレット')+'限定です。交換などで入手できる場合があります。')+'</p>':'';
  const searchQuery=encodeURIComponent(`ポケモンSV ${p.name} ${version==='scarlet'?'スカーレット':'バイオレット'} 出現場所 マップ`);
  const guideSearch='https://www.google.com/search?q='+searchQuery;
  const regions=[['paldea','パルデア地方','本編'],['kitakami','キタカミの里','碧の仮面'],['blueberry','ブルーベリー学園','藍の円盤']];
@@ -435,7 +438,7 @@ function renderSVLocationResults(p,version){
    <a href="${SV_MAP_LINKS[id]}" target="_blank" rel="noopener noreferrer" class="guide-sv-map-link">エリアマップを見る ↗</a>
    </div>`;
  }).join('');
- return `<div class="guide-sv-region-grid">${regionCards}</div>
+ return `${limitedMessage}<div class="guide-sv-region-grid">${regionCards}</div>
  <a class="guide-sv-lookup" href="${guideSearch}" target="_blank" rel="noopener noreferrer">「${escapeHtml(p.name)}」の${version==='scarlet'?'スカーレット':'バイオレット'}出現場所を調べる ↗</a>
  ${locations.length?`<ul class="guide-sv-location-list">${locations.map(([region,name,method])=>`<li><strong>${escapeHtml(name)}</strong><small>${SV_REGION_LABELS[region]} · ${escapeHtml(method)}</small></li>`).join('')}</ul>`:
  '<p class="note">このポケモンの出現場所はまだ登録・検証できていません。野生で出現しないという意味ではありません。</p>'}
