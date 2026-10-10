@@ -111,7 +111,7 @@ function renderPreEvolutionMoves(p){
    moves.get(n).push(`${name} ${levelLabel(level)}`);
   }
  }
- return `<details class="guide-pre-evo"><summary>進化前のみ覚える技（レベル習得） <span>${moves.size}件</span></summary><p class="hint">進化前の段階でレベルアップ習得し、現在のポケモンの習得技一覧にない技です。進化前で覚えてから進化させる必要があります。</p><div class="guide-move-grid">${[...moves].map(([mid,source])=>moveButton(moveName(mid),[...new Set(source)].join(' / '))).join('')||'<p class="note">該当する技はありません。</p>'}</div></details>`;
+ return `<div class="guide-pre-evo"><h3>進化前のみ覚える技（レベル習得） <span>${moves.size}件</span></h3><p class="hint">進化前の段階でレベルアップ習得し、現在のポケモンの習得技一覧にない技です。進化前で覚えてから進化させる必要があります。</p><div class="guide-move-grid">${[...moves].map(([mid,source])=>moveButton(moveName(mid),[...new Set(source)].join(' / '))).join('')||'<p class="note">該当する技はありません。</p>'}</div></div>`;
 }
 function renderPokemon(id){
   const p=pokemonById(id);
