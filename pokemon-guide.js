@@ -429,8 +429,8 @@ const SV_LOCATION_ENTRIES={
 const SV_VERSION_LIMITED={"200":"violet","246":"scarlet","247":"scarlet","316":"violet","317":"violet","371":"violet","372":"violet","425":"scarlet","426":"scarlet","429":"violet","434":"scarlet","435":"scarlet","633":"scarlet","634":"scarlet","690":"scarlet","691":"scarlet","692":"violet","693":"violet","765":"scarlet","766":"violet","874":"scarlet","875":"violet","885":"violet","886":"violet","984":"scarlet","985":"scarlet","986":"scarlet","987":"scarlet","988":"scarlet","989":"scarlet","990":"violet","991":"violet","992":"violet","993":"violet","994":"violet","995":"violet","1005":"scarlet","1006":"violet","1007":"scarlet","1008":"violet"};
 const SV_MAP_LINKS={
  paldea:'https://yakkun.com/sv/map.htm',
- kitakami:'https://yakkun.com/sv/map.htm?list=midori',
- blueberry:'https://www.pokeos.com/sv/map/blueberry-academy'
+ kitakami:'https://yakkun.com/sv/pokemon_list.htm?mode=midori',
+ blueberry:'https://yakkun.com/sv/pokemon_list.htm?mode=ao'
 };
 const SV_REGION_LABELS={paldea:'パルデア地方',kitakami:'キタカミの里',blueberry:'ブルーベリー学園'};
 const SV_AREA_TRANSLATIONS={
