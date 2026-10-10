@@ -397,6 +397,52 @@ function renderDexWeaknesses(p){
  return `<section class="guide-dex-weakness"><h3>タイプ相性（受けるダメージ）</h3><label class="guide-weakness-select-label" for="guideWeaknessAbility">反映する特性</label><select id="guideWeaknessAbility" class="guide-weakness-select"><option value="">特性なし（タイプのみ）</option>${unique.map(name=>`<option value="${escapeHtml(name)}" ${name===initial?'selected':''}>${escapeHtml(name)}${abilities.some(x=>x.name===name&&x.hidden)?'（隠れ特性）':''}</option>`).join('')}</select><div id="guideWeaknessRows">${dexDefenseRows(p,initial)}</div><p class="hint">選択した特性によるタイプ技の無効・倍率変化を反映。特性の発動条件、技固有の例外、持ち物・テラスタルは反映していません。対応外の特性はタイプ相性のみ表示します。</p></section>`;
 }
 
+
+// SV encounter guide: curated, verified entries only. Missing entries are not assumed unobtainable.
+const SV_LOCATION_ENTRIES={
+  1:{both:[['paldea','南2番エリア','野生']]},
+  4:{both:[]},
+  25:{both:[['paldea','南2番エリア','野生'],['paldea','東1番エリア','野生']]},
+  129:{both:[['paldea','各地の水辺','野生']]},
+  133:{both:[['paldea','西3番エリア（チャンプルタウン周辺）','野生']]},
+  280:{both:[['paldea','南1番エリア','野生']]},
+  285:{both:[['paldea','南5番エリア','野生']]},
+  371:{both:[['paldea','南5番エリア','野生']]},
+  443:{both:[['paldea','西1番エリア','野生']]},
+  906:{scarlet:[['paldea','最初のパートナーとして選択','入手']],violet:[['paldea','最初のパートナーとして選択','入手']]},
+  909:{both:[['paldea','最初のパートナーとして選択','入手']]},
+  912:{both:[['paldea','最初のパートナーとして選択','入手']]},
+  1007:{scarlet:[['paldea','エリアゼロ（ストーリー進行）','イベント']]},
+  1008:{violet:[['paldea','エリアゼロ（ストーリー進行）','イベント']]}
+};
+const SV_MAP_LINKS={
+ paldea:'https://yakkun.com/sv/map.htm',
+ kitakami:'https://yakkun.com/sv/map.htm?list=midori',
+ blueberry:'https://www.pokeos.com/sv/map/blueberry-academy'
+};
+const SV_REGION_LABELS={paldea:'パルデア地方',kitakami:'キタカミの里',blueberry:'ブルーベリー学園'};
+function renderSVLocations(p){
+ const version=localStorage.getItem('lovepoke_sv_version')==='violet'?'violet':'scarlet';
+ return `<section class="guide-sv-locations">
+ <h3>SV 出現場所・入手方法</h3>
+ <div class="guide-sv-version" role="group" aria-label="ゲームバージョン">
+ <button type="button" data-sv-version="scarlet" class="${version==='scarlet'?'active':''}">スカーレット</button>
+ <button type="button" data-sv-version="violet" class="${version==='violet'?'active':''}">バイオレット</button>
+ </div>
+ <div id="guideSVLocationResults">${renderSVLocationResults(p,version)}</div>
+ </section>`;
+}
+function renderSVLocationResults(p,version){
+ const record=SV_LOCATION_ENTRIES[p.id];
+ const locations=[...(record?.both||[]),...(record?.[version]||[])];
+ const region=localStorage.getItem('lovepoke_sv_region')||'paldea';
+ const links=Object.entries(SV_MAP_LINKS).map(([id,url])=>`<a href="${url}" target="_blank" rel="noopener noreferrer" class="guide-sv-map-link">${SV_REGION_LABELS[id]}のマップ ↗</a>`).join('');
+ return `<div class="guide-sv-region-maps">${links}</div>
+ ${locations.length?`<ul class="guide-sv-location-list">${locations.map(([region,name,method])=>`<li><strong>${escapeHtml(name)}</strong><small>${SV_REGION_LABELS[region]} · ${escapeHtml(method)}</small></li>`).join('')}</ul>`:
+ '<p class="note">このポケモンの出現場所はまだ登録・検証できていません。野生で出現しないという意味ではありません。</p>'}
+ <p class="hint">出現場所データは現在一部のみ収録しています。マップは外部のSVエリア地図が開きます。地図上にこのポケモンの出現地点を示す機能は未対応です。</p>`;
+}
+
 function renderPokemon(id){
   const p=pokemonById(id);
   const detail=$('#guidePokemonDetail');
@@ -421,6 +467,7 @@ function renderPokemon(id){
       
     </div>
     ${renderDexWeaknesses(p)}
+    ${renderSVLocations(p)}
     ${renderDexStats(p)}
     ${renderDexAbilities(p)}
     <label class="block-label">このポケモンの技を絞り込み
@@ -444,6 +491,13 @@ function renderPokemon(id){
     const rows=$('#guideWeaknessRows');
     if(rows)rows.innerHTML=dexDefenseRows(p,event.target.value);
   });
+  detail.querySelectorAll('[data-sv-version]').forEach(button=>button.addEventListener('click',()=>{
+    const version=button.dataset.svVersion;
+    localStorage.setItem('lovepoke_sv_version',version);
+    detail.querySelectorAll('[data-sv-version]').forEach(el=>el.classList.toggle('active',el.dataset.svVersion===version));
+    const results=$('#guideSVLocationResults');
+    if(results)results.innerHTML=renderSVLocationResults(p,version);
+  }));
   const filter=$('#guideMoveFilter');
   if(filter)filter.oninput=()=>filterMoves(detail,filter.value);
   detail.scrollIntoView({behavior:'smooth',block:'start'});
