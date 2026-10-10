@@ -35,8 +35,42 @@ function levelLabel(level){
   if(level<=1)return 'Lv.1';
   return `Lv.${level}`;
 }
+const MOVE_TYPE_LABELS=['','ノーマル','かくとう','ひこう','どく','じめん','いわ','むし','ゴースト','はがね','ほのお','みず','くさ','でんき','エスパー','こおり','ドラゴン','あく','フェアリー'];
+const MOVE_CLASS_LABELS={1:'変化',2:'物理',3:'特殊'};
+const MOVE_EFFECT_JA={
+ 147:'相手をねむり状態にする。くさタイプ、ぼうじん、そうしょくなどには無効になる場合がある。',
+ 89:'地面を揺らして攻撃する。あなをほる中の相手にも当たる。',
+ 85:'電撃で攻撃する。相手をまひ状態にすることがある。',
+ 53:'炎で攻撃する。相手をやけど状態にすることがある。',
+ 57:'大量の水を発射して攻撃する。',
+ 58:'冷気で攻撃する。相手をこおり状態にすることがある。',
+ 182:'そのターン、相手の攻撃から身を守る。連続で使うと失敗しやすくなる。',
+ 156:'HPと状態異常を回復して2ターンねむる。',
+ 14:'自分の攻撃を2段階上げる。',
+ 97:'自分の素早さを2段階上げる。',
+ 105:'自分のHPを最大HPの半分回復する。',
+ 92:'相手をもうどく状態にする。',
+ 164:'相手の攻撃を受けたときに、そのダメージを返す。',
+ 33:'通常の物理攻撃。',
+ 94:'強い念力で攻撃する。相手の特防を下げることがある。'
+};
+function moveIdFromName(name){
+ const names=window.POKEMON_SV_MOVE_NAMES||{};
+ if(!window.__lovepokeMoveNameIds)window.__lovepokeMoveNameIds=Object.fromEntries(Object.entries(names).map(([id,label])=>[label,id]));
+ return window.__lovepokeMoveNameIds[name];
+}
 function moveButton(name,sub=''){
-  return `<div class="guide-move"><strong>${escapeHtml(name)}</strong>${sub?`<span>${escapeHtml(sub)}</span>`:''}</div>`;
+ const id=moveIdFromName(name);
+ const d=id&&window.LOVEPOKE_MOVE_DETAILS?.[id];
+ if(!d)return `<div class="guide-move"><strong>${escapeHtml(name)}</strong>${sub?`<span>${escapeHtml(sub)}</span>`:''}</div>`;
+ const type=MOVE_TYPE_LABELS[d.t]||'不明';
+ const category=MOVE_CLASS_LABELS[d.c]||'不明';
+ const desc=MOVE_EFFECT_JA[id]||d.e||'説明データなし';
+ const note=!MOVE_EFFECT_JA[id]&&d.e?'（効果説明は英語の原文です）':'';
+ const tags=[`タイプ：${type}`,`分類：${category}`,`威力：${d.p??'—'}`,`命中：${d.a??'—'}`,`PP：${d.pp??'—'}`];
+ if(d.pr)tags.push(`優先度：${d.pr>0?'+':''}${d.pr}`);
+ if(d.hits)tags.push(`連続攻撃：${d.hits.join('～')}回`);
+ return `<details class="guide-move guide-move-expand"><summary><strong>${escapeHtml(name)}</strong>${sub?`<span>${escapeHtml(sub)}</span>`:''}<span class="guide-move-chevron">詳細</span></summary><div class="guide-move-info"><div class="guide-move-tags">${tags.map(t=>`<span>${escapeHtml(t)}</span>`).join('')}</div><p>${escapeHtml(desc)}</p>${note?`<small>${note}</small>`:''}</div></details>`;
 }
 function filterMoves(root,query){
   const q=query.trim();
