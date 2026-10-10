@@ -592,17 +592,16 @@
   object-fit:contain;
 }
 .mascot-live-test-btn{
-  align-self:end;
-  min-height:39px;
-  padding:6px 10px;
-  border:1px solid #d79bc0;
-  border-radius:10px;
-  background:#fff1f9;
-  color:#a73678;
-  font-size:12px;
-  font-weight:700;
-  cursor:pointer;
-  touch-action:manipulation;
+  position:fixed;
+  right:max(122px,calc(env(safe-area-inset-right,0px) + 120px));
+  bottom:max(15px,calc(env(safe-area-inset-bottom,0px) + 13px));
+  z-index:920;
+  width:36px;height:36px;padding:0;
+  border:1px solid #d79bc0;border-radius:50%;
+  background:rgba(255,241,249,.96);color:#a73678;
+  font-size:20px;font-weight:700;line-height:1;
+  cursor:pointer;touch-action:manipulation;pointer-events:auto;
+  box-shadow:0 3px 12px rgba(0,0,0,.12);
 }
 @media(max-height:700px){
   .mascot-dialog-card{overflow-y:auto}
