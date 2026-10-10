@@ -564,3 +564,13 @@ button,.nav-btn,.mini-btn,.column-reset,.lock-btn{touch-action:manipulation}
 .guide-dex-stat-track{height:9px;background:#e8edf3;border-radius:20px;overflow:hidden}
 .guide-dex-stat-fill{height:100%;background:#22a67a;border-radius:20px}
 .guide-dex-stat-fill.is-speed{background:#3988e8}
+
+.guide-dex-abilities,.guide-pre-evo{margin:14px 0}
+.guide-dex-abilities h3{margin:0 0 8px}
+.guide-dex-ability{border:1px solid #dce3ee;border-radius:10px;margin:7px 0;overflow:hidden}
+.guide-dex-ability summary,.guide-pre-evo summary{cursor:pointer;padding:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:14px}
+.guide-dex-ability summary span,.guide-pre-evo summary span{font-size:11px;opacity:.7}
+.guide-dex-ability p{margin:0;padding:2px 12px 12px;font-size:13px;line-height:1.65;overflow-wrap:anywhere}
+.guide-dex-ability small{display:block;padding:0 12px 12px;opacity:.7}
+.guide-pre-evo{border:1px solid #dce3ee;border-radius:12px;padding:0 0 8px}
+.guide-pre-evo>.hint,.guide-pre-evo>.guide-move-grid,.guide-pre-evo>.note{margin:8px 12px}
