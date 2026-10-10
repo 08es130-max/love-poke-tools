@@ -472,7 +472,7 @@ function renderSVLocationResults(p,version){
  const acquisition=window.POKEMON_SV_ACQUISITION?.[p.id]||[];
  const species=(window.POKEMON_DATA||[]).filter(x=>!x.formKey&&x.id>=1&&x.id<=1025);
  const evoFamily=p.evo?species.filter(x=>x.evo===p.evo):[];
- const evoFamilyHtml=evoFamily.length>1?'<div class="guide-sv-acquisition"><strong>進化系統（進化条件は別途確認）</strong><p>'+evoFamily.map(x=>'<span>'+escapeHtml(x.name)+' (No.'+x.id+')</span>').join(' → ')+'</p></div>':'';
+ const evoFamilyHtml=evoFamily.length>1?'<div class="guide-sv-acquisition"><strong>進化系統（進化条件は別途確認）</strong><p>'+evoFamily.map(x=>'<span>'+escapeHtml(x.name)+' (No.'+x.id+')</span>').join(' ／ ')+'</p></div>':'';
  const acquisitionLabels={starter:'最初のパートナー',evolution:'進化',raid:'テラレイド',wild:'野生',trade:'交換',special:'特別な入手方法'};
  const personal=svMemoRead(p.id,version);
  const locations=[...(record?.both||[]),...(record?.[version]||[])].filter(()=>!SV_VERSION_LIMITED[p.id]||SV_VERSION_LIMITED[p.id]===version);
