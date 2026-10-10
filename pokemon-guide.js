@@ -22,6 +22,14 @@ function statText(p){
   const s=window.POKEMON_STATS?.[String(p?.id)]||null;
   return s?`BST ${s.bst??'—'} ／ S ${s.speed??'—'}`:'種族値データなし';
 }
+function renderDexStats(p){
+  const key=p?.formKey?`${p.id}-${p.formKey}`:String(p?.id||'');
+  const s=window.POKEMON_STATS?.[key]||window.POKEMON_STATS?.[String(p?.id)];
+  if(!s)return '<p class="note">種族値データなし</p>';
+  const fields=[['HP','hp'],['こうげき','attack'],['ぼうぎょ','defense'],['とくこう','spAttack'],['とくぼう','spDefense'],['すばやさ','speed']];
+  return `<section class="guide-dex-stats" aria-label="種族値"><div class="guide-dex-stats-title"><strong>種族値</strong><strong>合計 ${escapeHtml(s.bst??'—')}</strong></div>
+    ${fields.map(([label,key])=>`<div class="guide-dex-stat-row"><span>${label}</span><strong>${escapeHtml(s[key]??'—')}</strong><div class="guide-dex-stat-track"><div class="guide-dex-stat-fill ${key==='speed'?'is-speed':''}" style="width:${Math.min(100,Math.max(0,Number(s[key])||0)/180*100)}%"></div></div></div>`).join('')}</section>`;
+}
 function levelLabel(level){
   if(level===-3)return '進化時';
   if(level<=1)return 'Lv.1';
@@ -64,8 +72,9 @@ function renderPokemon(id){
         <h2>${escapeHtml(p.name)}</h2>
         <div class="guide-type-row">${types.map(t=>`<span class="guide-type-chip">${escapeHtml(t)}</span>`).join('')}</div>
       </div>
-      <div class="guide-stat">${escapeHtml(statText(p))}</div>
+      
     </div>
+    ${renderDexStats(p)}
     <label class="block-label">このポケモンの技を絞り込み
       <input id="guideMoveFilter" type="search" placeholder="例：じしん">
     </label>
