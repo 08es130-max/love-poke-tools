@@ -911,7 +911,7 @@ const LIVE_INTERVALS={rare:[15*60000,25*60000],normal:[7*60000,12*60000],often:[
 const liveCache=new Map();
 let liveEvent=null,nextLiveAt=Infinity,liveLoading=false,liveGeneration=0;
 function scheduleLive(now=performance.now()){
-  const range=[2*60000,4*60000];
+  const range=[55*1000,65*1000];
   nextLiveAt=range ? now+range[0]+Math.random()*(range[1]-range[0]) : Infinity;
 }
 async function getLiveFrames(id){
