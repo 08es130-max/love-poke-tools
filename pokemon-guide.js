@@ -566,11 +566,18 @@ function renderSuggestions(query=''){
   const root=$('#guidePokemonSuggestions');
   if(!root)return;
   const q=query.trim();
-  const data=(window.POKEMON_DATA||[]).filter(p=>!p.formKey&&window.POKEMON_SV_LEARNSETS?.[p.id]);
-  const found=(q?data.filter(p=>p.name.includes(q)||String(p.id)===q||String(p.id).padStart(4,'0')===q):data)
+  const data=(window.POKEMON_DATA||[]).filter(p=>!p.formKey&&p.id>=1&&p.id<=1025);
+  const selected=localStorage.getItem('lovepoke_sv_dex_region')||'all';
+  const dex=window.POKEMON_SV_REGIONAL_DEX||{};
+  const regions={all:'全国図鑑',paldea:'パルデア',kitakami:'キタカミ',blueberry:'ブルーベリー',unlisted:'SV地域図鑑に未掲載'};
+  const candidates=data.filter(p=>selected==='all'||(selected==='unlisted'?!dex[p.id]:!!dex[p.id]?.[selected]));
+  const found=(q?candidates.filter(p=>p.name.includes(q)||String(p.id)===q||String(p.id).padStart(4,'0')===q):candidates)
     .sort((a,b)=>(q?(b.name.startsWith(q)-a.name.startsWith(q)):0)||a.id-b.id);
-  root.innerHTML=found.slice(0,80).map(p=>`<button type="button" data-guide-result="${p.id}"><span>No.${String(p.id).padStart(4,'0')}</span><strong>${escapeHtml(p.name)}</strong></button>`).join('')||'<p class="note">該当するポケモンが見つかりません。</p>';
+  root.innerHTML='<div class="guide-sv-dex-filter" role="group" aria-label="地域図鑑で絞り込み">'+Object.entries(regions).map(([id,label])=>'<button type="button" data-guide-region="'+id+'" class="'+(id===selected?'active':'')+'">'+label+'</button>').join('')+'</div>'+
+   '<p class="note">該当 '+found.length+'匹'+(found.length>80?'（最初の80匹を表示。名前で絞り込めます）':'')+' · 地域図鑑の掲載は野生出現を意味しません。</p>'+
+   (found.slice(0,80).map(p=>`<button type="button" data-guide-result="${p.id}"><span>No.${String(p.id).padStart(4,'0')}</span><strong>${escapeHtml(p.name)}</strong></button>`).join('')||'<p class="note">該当するポケモンが見つかりません。</p>');
 }
+
 function activateGuide(){
   document.querySelectorAll('.poke-tab').forEach(x=>x.classList.toggle('active',x.dataset.pokePane==='guide'));
   document.querySelectorAll('.poke-pane').forEach(x=>x.classList.add('hidden'));
@@ -584,6 +591,12 @@ window.openLovePokeGuide=id=>{
   renderPokemon(id);
 };
 document.addEventListener('click',event=>{
+  const regionButton=event.target.closest('[data-guide-region]');
+  if(regionButton){
+    localStorage.setItem('lovepoke_sv_dex_region',regionButton.dataset.guideRegion);
+    renderSuggestions($('#guidePokemonSearch')?.value||'');
+    return;
+  }
   const target=event.target.closest('[data-poke-guide-id],[data-guide-result]');
   if(!target)return;
   const id=target.dataset.pokeGuideId||target.dataset.guideResult;
