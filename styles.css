@@ -578,3 +578,13 @@ button,.nav-btn,.mini-btn,.column-reset,.lock-btn{touch-action:manipulation}
 .guide-back-btn{display:inline-flex;align-items:center;justify-content:center;margin:0 0 14px;min-height:38px;padding:8px 14px;font-weight:700}
 
 .guide-pre-evo>h3{margin:0;padding:12px;font-size:15px}.guide-pre-evo>h3 span{font-size:12px;opacity:.7;margin-left:6px}
+
+.guide-move-expand{overflow:hidden}
+.guide-move-expand>summary{cursor:pointer;list-style:none;display:flex;align-items:center;flex-wrap:wrap;gap:5px}
+.guide-move-expand>summary::-webkit-details-marker{display:none}
+.guide-move-expand .guide-move-chevron{margin-left:auto;font-size:11px;opacity:.65}
+.guide-move-info{padding:10px 2px 4px;font-size:12px;line-height:1.6}
+.guide-move-info p{margin:8px 0 2px;overflow-wrap:anywhere}
+.guide-move-info small{opacity:.65}
+.guide-move-tags{display:flex;flex-wrap:wrap;gap:5px}
+.guide-move-tags>span{border:1px solid #cfd8e6;border-radius:6px;padding:2px 5px;font-size:11px}
