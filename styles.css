@@ -588,3 +588,16 @@ button,.nav-btn,.mini-btn,.column-reset,.lock-btn{touch-action:manipulation}
 .guide-move-info small{opacity:.65}
 .guide-move-tags{display:flex;flex-wrap:wrap;gap:5px}
 .guide-move-tags>span{border:1px solid #cfd8e6;border-radius:6px;padding:2px 5px;font-size:11px}
+
+.guide-dex-navigation{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:0 0 14px}
+.guide-neighbor-btn{display:flex;flex-direction:column;align-items:flex-start;gap:5px;min-width:0;padding:10px 12px;border:1px solid #e8b7c9;border-radius:12px;background:#fff7fa;color:#a23d66;cursor:pointer;text-align:left}
+.guide-neighbor-btn:last-child{align-items:flex-end;text-align:right}
+.guide-neighbor-btn span{font-size:12px;font-weight:600}
+.guide-neighbor-btn strong{font-size:13px;overflow-wrap:anywhere}
+.guide-dex-weakness{border:1px solid #dce3ee;border-radius:13px;padding:13px;margin:14px 0}
+.guide-dex-weakness h3{margin:0 0 10px;font-size:16px}
+.guide-weakness-row{display:grid;grid-template-columns:90px minmax(0,1fr);align-items:start;gap:7px;padding:7px 0;border-top:1px solid #edf0f5}
+.guide-weakness-row>strong{font-size:12px;white-space:nowrap;padding-top:5px}
+.guide-weakness-types{display:flex;flex-wrap:wrap;gap:5px}
+.guide-dex-weakness .guide-type-chip{font-size:12px;padding:4px 8px}
+.guide-dex-weakness .hint{margin:10px 0 0;font-size:11px}
