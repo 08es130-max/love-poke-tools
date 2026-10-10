@@ -470,8 +470,11 @@ function renderSVLocationResults(p,version){
  const guideSearch='https://www.google.com/search?q='+searchQuery;
  const regions=[['paldea','パルデア地方','本編'],['kitakami','キタカミの里','碧の仮面'],['blueberry','ブルーベリー学園','藍の円盤']];
  const regionCards=regions.map(([id,label,subtitle])=>{
-  const offlineMap='<div class="guide-sv-offline-map" role="img" aria-label="'+label+'の地域案内（模式図・出現地点未登録）"><div class="guide-sv-map-land"><span>'+label+'</span><small>出現地点データ未登録</small></div></div>';
   const matches=locations.filter(([region])=>region===id);
+  const personalMatches=personal.filter(entry=>entry.region===id);
+  const displaySpots=[...matches.map(([,name])=>({name,source:'収録データ'})),...personalMatches.map(entry=>({name:entry.name,source:'自分のメモ'}))];
+  const spotMarkup=displaySpots.length?displaySpots.map(spot=>'<span class="guide-sv-map-spot" title="'+escapeHtml(spot.source)+'">'+escapeHtml(spot.name)+'</span>').join(''):'<small>この地域の出現地点は未登録です</small>';
+  const offlineMap='<div class="guide-sv-offline-map guide-sv-offline-map-'+id+'" role="group" aria-label="'+label+'の出現エリア一覧（地理的な位置は表していません）"><div class="guide-sv-map-land"><span>'+label+'</span><div class="guide-sv-map-spots">'+spotMarkup+'</div></div></div>';
   return `<div class="guide-sv-region-card">
    <div class="guide-sv-region-card-top"><strong>${label}</strong><small>${subtitle}</small></div>
    ${offlineMap}<div class="guide-sv-region-status">${matches.length?`登録済み ${matches.length}件`:'出現情報を確認中'}</div>
@@ -486,7 +489,7 @@ function renderSVLocationResults(p,version){
  <div class="guide-sv-memo-form"><select id="guideSVSpotRegion" aria-label="地域"><option value="paldea">パルデア</option><option value="kitakami">キタカミ</option><option value="blueberry">ブルーベリー</option></select><input id="guideSVSpotName" maxlength="80" placeholder="例：南2番エリア" aria-label="見つけた場所"><button type="button" id="guideSVSpotAdd">追加</button></div>
  ${personal.length?`<ul class="guide-sv-memo-list">${personal.map((entry,i)=>`<li><span>${escapeHtml(SV_REGION_LABELS[entry.region]||entry.region)}：${escapeHtml(entry.name)}</span><button type="button" data-sv-spot-remove="${i}" aria-label="メモを削除">削除</button></li>`).join('')}</ul>`:'<p class="note">自分で見つけた場所を記録できます。公式の出現データとは区別して表示します。</p>'}
  </div>
- <p class="hint">野生の探索候補は公開されている育成スポット情報を参考にした一例で、全出現地点の網羅ではありません。地域カードの図は位置を示さない模式図です。正確な地図はオンライン時に外部リンクから確認できます。出現地点のハイライトは、位置データの検証後に追加します。</p>`;
+ <p class="hint">野生の探索候補は公開されている育成スポット情報を参考にした一例で、全出現地点の網羅ではありません。地域カードの図には収録地点と自分のメモを表示しますが、地理的な位置を表すものではありません。正確な地図はオンライン時に外部リンクから確認できます。出現地点のハイライトは、位置データの検証後に追加します。</p>`;
 }
 
 function renderPokemon(id){
