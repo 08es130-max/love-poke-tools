@@ -100,7 +100,7 @@ function renderPreEvolutionMoves(p){
  const ancestors=preEvolutionIds(p).filter(id=>window.POKEMON_SV_LEARNSETS?.[id]);
  if(!ancestors.length)return '';
  const current=window.POKEMON_SV_LEARNSETS?.[p.id]||{};
- const known=new Set([...(current.l||[]).map(x=>Number(x[0])),...(current.t||[]).filter(x=>String(x[1]??'').trim()!=='').map(x=>Number(x[0])),...(current.e||[]).map(Number),...(current.r||[]).map(Number)]);
+ const known=new Set([...(current.l||[]).map(x=>Number(x[0])),...(current.t||[]).filter(x=>String(x[1]??'').trim()!=='').map(x=>Number(x[0])),...(current.e||[]).map(Number)]);
  const moves=new Map();
  for(const id of ancestors){
   const previous=window.POKEMON_SV_LEARNSETS?.[id]||{};
@@ -111,7 +111,7 @@ function renderPreEvolutionMoves(p){
    moves.get(n).push(`${name} ${levelLabel(level)}`);
   }
  }
- return `<div class="guide-pre-evo"><h3>進化前のみ覚える技（レベル習得） <span>${moves.size}件</span></h3><p class="hint">進化前の段階でレベルアップ習得し、現在のポケモンの習得技一覧にない技です。進化前で覚えてから進化させる必要があります。</p><div class="guide-move-grid">${[...moves].map(([mid,source])=>moveButton(moveName(mid),[...new Set(source)].join(' / '))).join('')||'<p class="note">該当する技はありません。</p>'}</div></div>`;
+ return `<div class="guide-pre-evo"><h3>進化前のみ覚える技（レベル習得） <span>${moves.size}件</span></h3><p class="hint">進化前のレベルアップで覚える技のうち、進化後のレベル習得・有効なわざマシン・タマゴ技にはない技です。思い出し技に掲載されていても、進化前での習得が必要な場合があります。</p><div class="guide-move-grid">${[...moves].map(([mid,source])=>moveButton(moveName(mid),[...new Set(source)].join(' / '))).join('')||'<p class="note">該当する技はありません。</p>'}</div></div>`;
 }
 function renderPokemon(id){
   const p=pokemonById(id);
