@@ -213,6 +213,7 @@
         if(score!==undefined){card.score=score;matched++}
       }
       syncFavoriteOptions();
+      if(document.querySelector('.loveca-optimizer')?.open){optimizerChoices();optimizerResults()}
       battleStatus(`カードデータ：読込完了 ／ ライブスコア ${matched}枚取得`,'ok');
     }catch(error){
       console.warn('Live score supplement unavailable',error);
@@ -565,10 +566,100 @@
     });
   }
 
+
+  // Optional 1-3 live optimizer; reads the existing board rather than storing another board.
+  const optimizerIds=new Set();
+  const optimizerColors=[['pink','桃'],['red','赤'],['yellow','黄'],['green','緑'],['blue','青'],['purple','紫']];
+  function boardForOptimizer(){
+    const rows=[...document.querySelectorAll('#heartGrid .heart-row')];
+    const owned={};
+    [...optimizerColors.map(x=>x[0]),'colorless'].forEach((key,i)=>{
+      owned[key]=Number(rows[i]?.querySelector('input')?.value)||0;
+    });
+    owned.all=Number(rows[7]?.querySelector('input')?.value)||0;
+    owned.blade=Number(rows[8]?.querySelector('input')?.value)||0;
+    return owned;
+  }
+  function optimizerDeficit(selection,owned){
+    const req={};for(const [key] of optimizerColors)req[key]=0;
+    req.colorless=0;
+    selection.forEach(card=>Object.keys(req).forEach(key=>req[key]+=Number(card.hearts?.[key])||0));
+    let deficit=0,spare=0;
+    const missing={};
+    for(const [key] of optimizerColors){
+      const delta=req[key]-(owned[key]||0);
+      missing[key]=Math.max(0,delta);
+      deficit+=missing[key];spare+=Math.max(0,-delta);
+    }
+    const grayShort=Math.max(0,req.colorless-(owned.colorless||0)-spare);
+    missing.colorless=grayShort;
+    deficit+=grayShort;
+    const availableAll=owned.all+owned.blade;
+    return {req,missing,deficit,availableAll,neededBlade:Math.max(0,deficit-owned.all),possible:deficit<=availableAll};
+  }
+  function optimizerResults(){
+    const out=document.querySelector('#lovecaOptimizerResults');if(!out)return;
+    const selected=[...optimizerIds].map(cardById).filter(Boolean);
+    if(!selected.length){out.textContent='候補ライブを選ぶと、成功可能な組み合わせを表示します。';return}
+    const owned=boardForOptimizer(),results=[];
+    for(let i=0;i<selected.length;i++)for(let j=i;j<selected.length;j++)for(let k=j;k<selected.length;k++){
+      if(j===i&&k!==i)continue;
+      const picks=[selected[i]];
+      if(j>i)picks.push(selected[j]);
+      if(k>j)picks.push(selected[k]);
+      const calc=optimizerDeficit(picks,owned);
+      if(!calc.possible)continue;
+      const scores=picks.map(liveScore);
+      results.push({picks,calc,score:scores.every(n=>n!==null)?scores.reduce((a,b)=>a+b,0):null});
+    }
+    results.sort((a,b)=>(b.score??-1)-(a.score??-1)||a.calc.neededBlade-b.calc.neededBlade||b.picks.length-a.picks.length);
+    if(!results.length){out.textContent='この盤面では、全エールをALLと仮定しても成功できる組み合わせはありません。';return}
+    out.replaceChildren();
+    results.slice(0,3).forEach((entry,i)=>{
+      const item=document.createElement('div');item.className='loveca-opt-result';
+      const head=document.createElement('strong');
+      head.textContent=`#${i+1}  ${entry.score===null?'点数未取得':entry.score+'点'} ／ ${entry.picks.length}枚`;
+      const names=document.createElement('div');names.textContent=entry.picks.map(x=>x.name).join(' ＋ ');
+      const detail=document.createElement('small');
+      const missing=Object.entries(entry.calc.missing).filter(([,v])=>v>0).map(([key,v])=>`${optimizerColors.find(x=>x[0]===key)?.[1]||'無色'}♥${v}`).join(' ');
+      detail.textContent=`盤面不足：${missing||'なし'} ／ 必要エールALL ${entry.calc.neededBlade} ／ ブレード ${owned.blade}`;
+      item.append(head,names,detail);out.append(item);
+    });
+  }
+  function optimizerChoices(){
+    const box=document.querySelector('#lovecaOptimizerChoices');if(!box)return;
+    const fav=favoriteLiveCards();
+    box.replaceChildren();
+    if(!fav.length){box.textContent='カード検索でライブをお気に入り登録してください。';return}
+    fav.forEach(card=>{
+      const label=document.createElement('label');label.className='loveca-opt-choice';
+      const input=document.createElement('input');input.type='checkbox';input.checked=optimizerIds.has(String(card.id));
+      input.addEventListener('change',()=>{
+        if(input.checked&&optimizerIds.size>=6){input.checked=false;return}
+        if(input.checked)optimizerIds.add(String(card.id));else optimizerIds.delete(String(card.id));
+        document.querySelector('#lovecaOptimizerCount').textContent=`${optimizerIds.size}/6枚`;
+        optimizerResults();
+      });
+      const name=document.createElement('span');const score=liveScore(card);
+      name.textContent=card.name+(score===null?'':` ${score}点`);
+      label.append(input,name);box.append(label);
+    });
+    document.querySelector('#lovecaOptimizerCount').textContent=`${optimizerIds.size}/6枚`;
+  }
+  function setupOptimizer(){
+    const panel=document.querySelector('.live-preset-panel');if(!panel)return;
+    const details=document.createElement('details');details.className='loveca-optimizer';
+    details.innerHTML='<summary>最適ライブを探す <span class="loveca-opt-summary">盤面のハート＋ブレードで判定</span></summary><div class="loveca-opt-body"><div class="hint">お気に入りから最大6枚選択。1〜3枚の組み合わせを検索します。エールはすべてALLとして計算します。</div><div class="loveca-opt-toolbar"><span id="lovecaOptimizerCount">0/6枚</span><button id="lovecaOptimizerRefresh" type="button" class="ghost-btn">再計算</button></div><div id="lovecaOptimizerChoices" class="loveca-opt-choices"></div><div id="lovecaOptimizerResults" class="loveca-opt-results"></div></div>';
+    panel.append(details);
+    details.addEventListener('toggle',()=>{if(details.open){optimizerChoices();optimizerResults()}});
+    details.querySelector('#lovecaOptimizerRefresh').addEventListener('click',()=>{optimizerChoices();optimizerResults()});
+    document.querySelector('#heartGrid')?.addEventListener('input',()=>{if(details.open)optimizerResults()});
+  }
   function init(){
     ensureCss();
     setupLoveTabs();
     setupLiveWorkFilters();
+    setupOptimizer();
     setupLiveSelectIntegration();
     // Populate saved favorite live cards on the battle screen without opening card search.
     void loadCards();
