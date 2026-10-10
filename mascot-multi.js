@@ -1023,14 +1023,17 @@ function updateLive(now){
   e.phase='dance';hideSpeech(e.caller);
   const members=e.members,frames=e.frames,yu=e.yu,centerX=e.centerX;
   const centerY=members.reduce((sum,a)=>sum+a.y+a.h/2,0)/3;
+ const stageWidth=Math.max(...members.map(a=>a.w));
+ const stageGap=stageWidth*0.92;
+ const stageCenter=Math.max(Math.max(...members.map(a=>box(a).l+a.w/2))+stageGap,Math.min(centerX,Math.min(...members.map(a=>box(a).r+a.w/2))-stageGap));
+ const stageBottom=Math.max(...members.map(a=>box(a).t+a.h),Math.min(centerY+Math.max(...members.map(a=>a.h))*.5,Math.min(...members.map(a=>box(a).b+a.h))));
  members.forEach((a,i)=>{
   const q=box(a);
-  a.x=Math.max(q.l,Math.min(q.r,centerX+(i-1)*a.w*.56-a.w/2));
-  a.y=Math.max(q.t,Math.min(q.b,centerY-a.h/2));
+  a.x=Math.max(q.l,Math.min(q.r,stageCenter+(i-1)*stageGap-a.w/2));
+  a.y=Math.max(q.t,Math.min(q.b,stageBottom-a.h));
   const image=document.createElement('img');
   image.className='mascot-live-frame';image.alt='';image.draggable=false;
-  const ratio=metrics.get(a.id)?.visibleRatio||.76;
-  image.style.height=a.h*ratio+'px';image.style.bottom=a.h*(1-ratio)*.35+'px';
+  image.style.height=a.h*.78+'px';image.style.bottom='0px';
   image.src=frames[i].frames[frames[i].sequence[0]];
   a.el.appendChild(image);a.liveImage=image;a.performing=true;
   a.el.classList.add('mascot-live-active');
