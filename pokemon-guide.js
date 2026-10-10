@@ -400,6 +400,17 @@ function renderDexWeaknesses(p){
 
 // SV encounter guide: curated, verified entries only. Missing entries are not assumed unobtainable.
 const SV_LOCATION_ENTRIES={
+  56:{both:[["paldea","南2番エリア","野生・探索候補"]]},
+  92:{both:[["paldea","南3番エリア（夜）","野生・探索候補"]]},
+  194:{both:[["paldea","南1番エリア","野生・探索候補"]]},
+  246:{both:[["paldea","北1番エリア","野生・探索候補"]]},
+  371:{both:[["paldea","コサジの小道","野生・探索候補"]]},
+  915:{both:[["paldea","南1番エリア","野生・探索候補"]]},
+  932:{both:[["paldea","東1番エリア","野生・探索候補"]]},
+  935:{both:[["paldea","南5番エリア","野生・探索候補"]]},
+  953:{both:[["paldea","南3番エリア（崖付近）","野生・探索候補"]]},
+  976:{both:[["paldea","ロースト砂漠","野生・探索候補"]]},
+
   906:{both:[['paldea','最初のパートナーとして選択','入手']]},
   909:{both:[['paldea','最初のパートナーとして選択','入手']]},
   912:{both:[['paldea','最初のパートナーとして選択','入手']]}
@@ -455,7 +466,7 @@ function renderSVLocations(p){
 function renderSVLocationResults(p,version){
  const record=SV_LOCATION_ENTRIES[p.id];
  const personal=svMemoRead(p.id,version);
- const locations=[...(record?.both||[]),...(record?.[version]||[])];
+ const locations=[...(record?.both||[]),...(record?.[version]||[])].filter(()=>!SV_VERSION_LIMITED[p.id]||SV_VERSION_LIMITED[p.id]===version);
  const limit=SV_VERSION_LIMITED[p.id];
  const limitedMessage=limit?'<p class="guide-sv-limit">'+(limit===version?'このバージョンで入手できます。出現地点は確認中です。':'通常は'+(limit==='scarlet'?'スカーレット':'バイオレット')+'限定です。交換などで入手できる場合があります。')+'</p>':'';
  const searchQuery=encodeURIComponent(`ポケモンSV ${p.name} ${version==='scarlet'?'スカーレット':'バイオレット'} 出現場所 マップ`);
@@ -478,7 +489,7 @@ function renderSVLocationResults(p,version){
  <div class="guide-sv-memo-form"><select id="guideSVSpotRegion" aria-label="地域"><option value="paldea">パルデア</option><option value="kitakami">キタカミ</option><option value="blueberry">ブルーベリー</option></select><input id="guideSVSpotName" maxlength="80" placeholder="例：南2番エリア" aria-label="見つけた場所"><button type="button" id="guideSVSpotAdd">追加</button></div>
  ${personal.length?`<ul class="guide-sv-memo-list">${personal.map((entry,i)=>`<li><span>${escapeHtml(SV_REGION_LABELS[entry.region]||entry.region)}：${escapeHtml(entry.name)}</span><button type="button" data-sv-spot-remove="${i}" aria-label="メモを削除">削除</button></li>`).join('')}</ul>`:'<p class="note">自分で見つけた場所を記録できます。公式の出現データとは区別して表示します。</p>'}
  </div>
- <p class="hint">地域カードの図は位置を示さない模式図です。正確な地図はオンライン時に外部リンクから確認できます。出現地点のハイライトは、位置データの検証後に追加します。</p>`;
+ <p class="hint">野生の探索候補は公開されている育成スポット情報を参考にした一例で、全出現地点の網羅ではありません。地域カードの図は位置を示さない模式図です。正確な地図はオンライン時に外部リンクから確認できます。出現地点のハイライトは、位置データの検証後に追加します。</p>`;
 }
 
 function renderPokemon(id){
