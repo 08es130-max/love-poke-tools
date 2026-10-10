@@ -501,6 +501,7 @@ function renderSVLocationResults(p,version){
  const limit=SV_VERSION_LIMITED[p.id];
  const svDataAvailable=!!window.POKEMON_SV_LEARNSETS?.[p.id];
  const dex=window.POKEMON_SV_REGIONAL_DEX?.[p.id]||{};
+ const coverageHtml='<p class="guide-sv-data-status">出現地点：'+(locations.length?'アプリ内に'+locations.length+'件登録済み':'未登録')+' ／ 正確な地図座標：未検証</p>';
  const dexMessage=Object.keys(dex).length?Object.entries(dex).map(([region,num])=>SV_REGION_LABELS[region]+'図鑑 No.'+String(num).padStart(3,'0')).join(' ／ '):'SV地域図鑑への掲載なし（HOME・特別な入手方法の可否は別途確認）';
  const limitedMessage=limit?'<p class="guide-sv-limit">'+(limit===version?'このバージョン限定として登録されています。入手方法・地点は個別に確認してください。':'通常は'+(limit==='scarlet'?'スカーレット':'バイオレット')+'限定です。交換などで入手できる場合があります。')+'</p>':'';
  const searchQuery=encodeURIComponent(`ポケモンSV ${p.name} ${version==='scarlet'?'スカーレット':'バイオレット'} 出現場所 マップ`);
@@ -522,7 +523,7 @@ function renderSVLocationResults(p,version){
    <a href="${SV_MAP_LINKS[id]}" target="_blank" rel="noopener noreferrer" class="guide-sv-map-link">エリアマップを見る ↗</a>
    </div>`;
  }).join('');
- return `<p class="guide-sv-data-status">${escapeHtml(dexMessage)}</p><p class="guide-sv-data-status">${svDataAvailable?'SV技データ収録済み（出現の保証ではありません）':'SV技データ未収録（入手不可の確定ではありません）'}</p>${limitedMessage}${acquisitionHtml}${evoFamilyHtml}<div class="guide-sv-region-grid">${regionCards}</div>
+ return `<p class="guide-sv-data-status">${escapeHtml(dexMessage)}</p><p class="guide-sv-data-status">${svDataAvailable?'SV技データ収録済み（出現の保証ではありません）':'SV技データ未収録（入手不可の確定ではありません）'}</p>${limitedMessage}${coverageHtml}${acquisitionHtml}${evoFamilyHtml}<div class="guide-sv-region-grid">${regionCards}</div>
  <div class="guide-sv-source-links"><a class="guide-sv-lookup" href="${gamewithSearch}" target="_blank" rel="noopener noreferrer">GameWithで「${escapeHtml(p.name)}」の出現場所・入手方法を確認 ↗</a><a class="guide-sv-lookup" href="https://gamewith.jp/pokemon-sv/article/show/373315" target="_blank" rel="noopener noreferrer">GameWith パルデア図鑑一覧 ↗</a><a class="guide-sv-lookup" href="${gamewithDlcIndex}" target="_blank" rel="noopener noreferrer">GameWith DLC追加ポケモン一覧 ↗</a></div>
  <a class="guide-sv-lookup" href="${guideSearch}" target="_blank" rel="noopener noreferrer">「${escapeHtml(p.name)}」の${version==='scarlet'?'スカーレット':'バイオレット'}出現場所を調べる ↗</a>
  ${locations.length?`<ul class="guide-sv-location-list">${locations.map(([region,name,method])=>`<li><strong>${escapeHtml(name)}</strong><small>${SV_REGION_LABELS[region]} · ${escapeHtml(method)}</small></li>`).join('')}</ul>`:
