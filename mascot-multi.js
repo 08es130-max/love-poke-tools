@@ -1034,7 +1034,7 @@ function updateLive(now){
   const image=document.createElement('img');
   image.className='mascot-live-frame';image.alt='';image.draggable=false;
   // Match visible character height, independent of transparent PNG padding.
-  const targetVisible=Math.min(...members.map(m=>m.h))*.72;
+  const targetVisible=Math.min(...members.map(m=>m.h))*.92;
   image.style.height=targetVisible+'px';image.style.bottom='0px';
   image.onload=()=>{
    try{
