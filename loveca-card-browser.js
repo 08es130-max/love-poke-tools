@@ -51,6 +51,11 @@
     calc.id='loveCalcPane';
     calc.className='love-pane';
     existing.forEach(node=>calc.append(node));
+    const syncBadge=document.createElement('div');
+    syncBadge.id='lovecaBattleSyncStatus';syncBadge.className='loveca-battle-sync';
+    syncBadge.setAttribute('role','status');syncBadge.setAttribute('aria-live','polite');
+    syncBadge.textContent='カードデータ：読み込み中…';
+    calc.prepend(syncBadge);
 
     const browser=document.createElement('div');
     browser.id='loveCardBrowserPane';
@@ -181,11 +186,17 @@
       </section>`;
   }
 
+  function battleStatus(text,state){
+    const badge=document.querySelector('#lovecaBattleSyncStatus');
+    if(badge){badge.textContent=text;badge.dataset.state=state;}
+  }
+
   async function loadCards(){
     if(loaded)return;
     if(loading)return loading;
     const badge=document.querySelector('#lovecaDbStatus');
     if(badge){badge.textContent='読込中';badge.className='badge warn'}
+    battleStatus('カードデータ：読み込み中…','loading');
     loading=(async()=>{
       try{
         const response=await fetch('./loveca-cards.json',{cache:'no-store'});
@@ -197,6 +208,7 @@
         populateFilters();
         applyFilters();
         syncFavoriteOptions();
+        battleStatus('カードデータ：読込完了 ／ お気に入りライブ反映済み','ok');
         if(badge){badge.textContent=`${cards.length.toLocaleString()}枚`;badge.className='badge ok'}
         const date=data.updatedAt?new Date(data.updatedAt):null;
         const hint=document.querySelector('.loveca-browser-head .hint');
@@ -205,6 +217,7 @@
         }
       }catch(error){
         console.error(error);
+        battleStatus('カードデータ：読み込み失敗（カード検索で再試行）','error');
         if(badge){badge.textContent='読込エラー';badge.className='badge warn'}
         const box=document.querySelector('#lovecaCardResults');
         if(box)box.innerHTML=`<p class="note">カードデータを読み込めませんでした。通信状態を確認して再読み込みしてください。</p>`;
