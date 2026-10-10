@@ -210,3 +210,8 @@
 .loveca-blade-color-grid label{display:flex!important;flex-direction:row!important;align-items:center;gap:5px!important;padding:7px 8px;border:1px solid #e4dde1;border-radius:9px;background:#fff}
 .loveca-blade-color-grid input{width:18px!important;height:18px!important}
 @media (max-width:480px){.loveca-heart-filter-row{grid-template-columns:58px minmax(0,1fr) auto minmax(0,1fr)}.loveca-blade-color-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+/* Battle-screen status for card database loading and favorite live preset reflection. */
+.loveca-battle-sync{display:block;margin:0 0 10px;padding:7px 11px;border-radius:10px;border:1px solid #e5dce2;background:#faf7f9;color:#685c65;font-size:12px;font-weight:650;line-height:1.4}
+.loveca-battle-sync[data-state="ok"]{color:#276d51;border-color:#c7e5d5;background:#f1faf5}
+.loveca-battle-sync[data-state="error"]{color:#a44b3b;border-color:#efcbc5;background:#fff6f4}
