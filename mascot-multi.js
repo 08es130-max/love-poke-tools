@@ -998,14 +998,26 @@ async function beginLive(manual=false){
   if(!manual)nextLiveAt=performance.now()+5000;
   return false;
  }
- const caller=eligible[Math.floor(Math.random()*eligible.length)];
- const pool=eligible.filter(a=>a!==caller);for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]]}const others=pool.slice(0,2);
- const members=[caller,...others],serial=liveGeneration;
+ const serial=liveGeneration;
  liveLoading=true;
- let frames;
- try{frames=await Promise.all(members.map(a=>getLiveFrames(a.id)))}
- catch(err){console.warn('Mascot mini-live:',err);nextLiveAt=performance.now()+5000;return false}
- finally{liveLoading=false}
+ let members=[],frames=[];
+ try{
+  // A single unavailable costume must not cancel the whole live.
+  const shuffled=[...eligible].sort(()=>Math.random()-.5);
+  const results=await Promise.allSettled(shuffled.map(a=>getLiveFrames(a.id)));
+  for(let i=0;i<shuffled.length;i++){
+   if(results[i].status==='fulfilled'&&results[i].value){
+    members.push(shuffled[i]);frames.push(results[i].value);
+    if(members.length===3)break;
+   }
+  }
+  if(members.length<3){
+   console.warn('Mascot mini-live: fewer than three usable live costumes');
+   nextLiveAt=performance.now()+15000;
+   return false;
+  }
+ }finally{liveLoading=false}
+ const caller=members[0];
  if(serial!==liveGeneration||members.some(a=>!actors.includes(a))||!actors.includes(yu)||
     liveEvent||S.lineup||!S.moving||document.hidden)return false;
  const now=performance.now();
