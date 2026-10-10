@@ -622,7 +622,7 @@
       const names=document.createElement('div');names.textContent=entry.picks.map(x=>x.name).join(' ＋ ');
       const detail=document.createElement('small');
       const missing=Object.entries(entry.calc.missing).filter(([,v])=>v>0).map(([key,v])=>`${optimizerColors.find(x=>x[0]===key)?.[1]||'無色'}♥${v}`).join(' ');
-      detail.textContent=`盤面不足：${missing||'なし'} ／ 必要エールALL ${entry.calc.neededBlade} ／ ブレード ${owned.blade}`;
+      detail.textContent=`盤面不足：${missing||'なし'} ／ ブレード ${owned.blade}`;
       item.append(head,names,detail);out.append(item);
     });
   }
