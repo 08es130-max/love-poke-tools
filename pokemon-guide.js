@@ -424,11 +424,22 @@ function renderSVLocations(p){
 function renderSVLocationResults(p,version){
  const record=SV_LOCATION_ENTRIES[p.id];
  const locations=[...(record?.both||[]),...(record?.[version]||[])];
- const links=Object.entries(SV_MAP_LINKS).map(([id,url])=>`<a href="${url}" target="_blank" rel="noopener noreferrer" class="guide-sv-map-link">${SV_REGION_LABELS[id]}のマップ ↗</a>`).join('');
- return `<div class="guide-sv-region-maps">${links}</div>
+ const searchQuery=encodeURIComponent(`ポケモンSV ${p.name} ${version==='scarlet'?'スカーレット':'バイオレット'} 出現場所 マップ`);
+ const guideSearch='https://www.google.com/search?q='+searchQuery;
+ const regions=[['paldea','パルデア地方','本編'],['kitakami','キタカミの里','碧の仮面'],['blueberry','ブルーベリー学園','藍の円盤']];
+ const regionCards=regions.map(([id,label,subtitle])=>{
+  const matches=locations.filter(([region])=>region===id);
+  return `<div class="guide-sv-region-card">
+   <div class="guide-sv-region-card-top"><strong>${label}</strong><small>${subtitle}</small></div>
+   <div class="guide-sv-region-status">${matches.length?`登録済み ${matches.length}件`:'出現情報を確認中'}</div>
+   <a href="${SV_MAP_LINKS[id]}" target="_blank" rel="noopener noreferrer" class="guide-sv-map-link">エリアマップを見る ↗</a>
+   </div>`;
+ }).join('');
+ return `<div class="guide-sv-region-grid">${regionCards}</div>
+ <a class="guide-sv-lookup" href="${guideSearch}" target="_blank" rel="noopener noreferrer">「${escapeHtml(p.name)}」の${version==='scarlet'?'スカーレット':'バイオレット'}出現場所を調べる ↗</a>
  ${locations.length?`<ul class="guide-sv-location-list">${locations.map(([region,name,method])=>`<li><strong>${escapeHtml(name)}</strong><small>${SV_REGION_LABELS[region]} · ${escapeHtml(method)}</small></li>`).join('')}</ul>`:
  '<p class="note">このポケモンの出現場所はまだ登録・検証できていません。野生で出現しないという意味ではありません。</p>'}
- <p class="hint">出現場所データは現在一部のみ収録しています。マップは外部のSVエリア地図が開きます。地図上にこのポケモンの出現地点を示す機能は未対応です。</p>`;
+ <p class="hint">地域別のマップは外部サイトで開きます。現在は出現データの収録が一部のみのため、地図上の出現地点ハイライトは未対応です。外部検索結果は参考情報としてご確認ください。</p>`;
 }
 
 function renderPokemon(id){
