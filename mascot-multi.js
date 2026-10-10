@@ -1706,21 +1706,29 @@ function collide(now){for(let i=0;i<actors.length;i++)for(let j=i+1;j<actors.len
   }
   let nx=dx/di,ny=dy/di,o=mi-di;a.x-=nx*o/2;a.y-=ny*o/2;b.x+=nx*o/2;b.y+=ny*o/2;setV(a,Math.atan2(-ny,-nx)+(Math.random()-.5)*.7);setV(b,Math.atan2(ny,nx)+(Math.random()-.5)*.7);a.cool=b.cool=now+850;pose(a,now,850);pose(b,now,850)}}}
 function single(a,dist,now){let q=box(a);if(a.d==='right'){a.x+=dist;if(a.x>=q.r){a.x=q.r;a.d='down';pose(a,now)}}else if(a.d==='down'){a.y+=dist;if(a.y>=q.b){a.y=q.b;a.d='left';pose(a,now)}}else if(a.d==='left'){a.x-=dist;if(a.x<=q.l){a.x=q.l;a.d='up';pose(a,now)}}else{a.y-=dist;if(a.y<=q.t){a.y=q.t;a.d='right';pose(a,now)}}}
+let autoLiveStatus='待機中';
+function checkAutomaticLive(){
+ const now=performance.now();
+ if(liveEvent||liveLoading||now<nextLiveAt)return;
+ if(document.hidden){autoLiveStatus='画面が非表示のため待機';return}
+ if(document.querySelector('dialog[open]')){autoLiveStatus='設定画面を閉じると開始';return}
+ if(S.lineup){S.lineup=false;place();syncStatus();save()}
+ if(!S.moving){S.moving=true;sync();save()}
+ if(socialEvent)endConversation(now);
+ nextLiveAt=now+15000;
+ autoLiveStatus='自動ライブ準備中';
+ void beginLive(false).then(started=>{
+  autoLiveStatus=started?'ライブ開始':'開始条件を確認中（15秒後に再試行）';
+  if(!started)nextLiveAt=performance.now()+15000;
+ }).catch(err=>{
+  console.warn('Automatic mini-live:',err);
+  autoLiveStatus='開始エラー（15秒後に再試行）';
+  nextLiveAt=performance.now()+15000;
+ });
+}
 function tick(now){
   const dt=Math.min(50,now-(last||now));last=now;
-  if(!liveEvent&&now>=nextLiveAt&&!liveLoading){
-    if(!document.hidden&&!document.querySelector('dialog[open]')){
-      // Automatic concerts follow the same preparation path as the working manual button.
-      if(S.lineup){S.lineup=false;place();syncStatus();save()}
-      if(!S.moving){S.moving=true;sync();save()}
-      if(socialEvent)endConversation(now);
-      // Advance the deadline before the asynchronous load to prevent repeated starts.
-      nextLiveAt=now+15000;
-      void beginLive(false).then(started=>{
-        if(!started&&nextLiveAt<=performance.now())nextLiveAt=performance.now()+15000;
-      }).catch(err=>{console.warn('Automatic mini-live:',err);nextLiveAt=performance.now()+15000});
-    }
-  }
+  checkAutomaticLive();
   updateLive(now);
   if(actors.length){
     if(S.lineup){
@@ -1814,7 +1822,7 @@ function ui(){root=document.createElement('div');root.id=ROOT;root.className='ma
           </label>
         `).join('')}
       </div>
-      <p id="mStatus" class="mascot-selection-status"></p>
+      <p id="mStatus" class="mascot-selection-status"></p><p id="mLiveStatus" class="mascot-selection-status" aria-live="off">自動ライブ：待機中</p>
     </section>
     <div class="mascot-setting-grid">
       <label class="mascot-switch"><span>動かす</span><input id="mMoving" type="checkbox"></label>
@@ -1828,6 +1836,16 @@ window.lovePokeStartMascotLive=()=>beginLive(true);
 async function init(){document.querySelectorAll('#'+ROOT).forEach(x=>x.remove());ui();sync();await rebuild();scheduleLive();document.addEventListener('visibilitychange',()=>{if(document.hidden)endLive(performance.now());else if(nextLiveAt<performance.now())scheduleLive()});addEventListener('resize',()=>{
  if(S.lineup){placeLineup();return}
  actors.forEach(a=>{let d=dims(a.id);a.w=d.w;a.h=d.h;let q=box(a);a.x=Math.min(q.r,Math.max(q.l,a.x));a.y=Math.min(q.b,Math.max(q.t,a.y))})
-},{passive:true});requestAnimationFrame(tick)}
+},{passive:true});requestAnimationFrame(tick);
+ // Independent scheduler also runs when animation frames are throttled.
+ setInterval(()=>{
+  checkAutomaticLive();
+  const info=document.querySelector('#mLiveStatus');
+  if(info){
+   const seconds=Math.max(0,Math.ceil((nextLiveAt-performance.now())/1000));
+   info.textContent='自動ライブ：'+autoLiveStatus+' ／ 次回まで '+Math.floor(seconds/60)+'分'+seconds%60+'秒';
+  }
+ },1000);
+}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
