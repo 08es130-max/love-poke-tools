@@ -215,3 +215,11 @@
 .loveca-battle-sync{display:block;margin:0 0 10px;padding:7px 11px;border-radius:10px;border:1px solid #e5dce2;background:#faf7f9;color:#685c65;font-size:12px;font-weight:650;line-height:1.4}
 .loveca-battle-sync[data-state="ok"]{color:#276d51;border-color:#c7e5d5;background:#f1faf5}
 .loveca-battle-sync[data-state="error"]{color:#a44b3b;border-color:#efcbc5;background:#fff6f4}
+
+/* Compact independent work filters beside each battle live selector */
+.loveca-live-select-row{display:flex;align-items:center;gap:5px;min-width:0;width:100%}
+.loveca-live-select-row>select{flex:1;min-width:0;width:0}
+.loveca-live-work-filters{display:flex;gap:2px;flex:0 0 auto}
+.loveca-live-work-btn{min-width:24px;height:30px;padding:0 3px;border:1px solid #d9cad3;border-radius:5px;background:#fff;color:#776573;font-size:10px;font-weight:700;cursor:pointer}
+.loveca-live-work-btn[data-active="true"]{background:#ad4684;color:white;border-color:#ad4684}
+@media(max-width:560px){.live-load-grid label:has(.loveca-live-select-row){grid-template-columns:60px minmax(0,1fr)}.loveca-live-work-btn{min-width:23px;padding:0 2px}}
