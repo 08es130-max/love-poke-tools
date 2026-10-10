@@ -1037,7 +1037,7 @@ function updateLive(now){
   const image=document.createElement('img');
   image.className='mascot-live-frame';image.alt='';image.draggable=false;
   // Match visible character height, independent of transparent PNG padding.
-  const targetVisible=Math.min(...members.map(m=>m.h))*.92;
+  const targetVisible=Math.min(...members.map(m=>m.h))*1.08;
   image.style.height=targetVisible+'px';image.style.bottom='0px';
   image.onload=()=>{
    try{
@@ -1760,7 +1760,15 @@ function ui(){root=document.createElement('div');root.id=ROOT;root.className='ma
   const liveButton=document.createElement('button');
   liveButton.type='button';liveButton.className='mascot-live-test-btn';liveButton.textContent='♪';
   liveButton.setAttribute('aria-label','テストライブ');liveButton.title='テストライブ';
-  liveButton.addEventListener('click',()=>{void beginLive(true)});
+  liveButton.addEventListener('click',async()=>{
+    if(liveLoading||liveEvent)return;
+    // A manual test should override incidental conversations and lineup mode.
+    if(S.lineup){S.lineup=false;place();syncStatus()}
+    if(!S.moving){S.moving=true;sync()}
+    if(socialEvent)endConversation(performance.now());
+    const started=await beginLive(true);
+    if(!started)console.warn('Mini-live could not start: select Yu and at least three performers.');
+  });
   dialog=document.createElement('dialog');dialog.className='mascot-dialog';dialog.innerHTML=`
   <form method="dialog" class="mascot-dialog-card">
     <header class="mascot-dialog-head">
