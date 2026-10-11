@@ -672,7 +672,8 @@ function renderTmCosts(){
  const mode=document.getElementById('guideTmFilter')?.value||'all';
  const ids=[...new Set([...Object.keys(bp),...Object.keys(recipes)])].map(Number).sort((a,b)=>a-b);
  const rows=ids.filter(n=>(mode==='all'||(mode==='bp'?bp[n]!=null:!!recipes[n]))&&(!q||String(n).includes(q)||String(n).padStart(3,'0').includes(q)||(names[n]||'').toLowerCase().includes(q)||(recipes[n]||[]).slice(1).join(' ').toLowerCase().includes(q)));
- root.innerHTML='<p class="note">表示 '+rows.length+'件 ／ BP価格登録 '+Object.keys(bp).length+'件 ／ LP・素材登録 '+Object.keys(recipes).length+'件</p>'+
+ const audit=window.POKEMON_SV_TM_AUDIT;
+ root.innerHTML=(audit&&!audit.valid?'<p role="alert" class="note">データ検証で不整合を検出しました。内容を確認してください。</p>':'')+'<p class="note">表示 '+rows.length+'件 ／ BP価格登録 '+Object.keys(bp).length+'件 ／ LP・素材登録 '+Object.keys(recipes).length+'件</p>'+
  (rows.map(n=>{const r=recipes[n];return '<div class="guide-sv-acquisition" style="margin:8px 0;padding:12px;border:1px solid var(--border,#8885);border-radius:10px"><strong>TM'+String(n).padStart(3,'0')+' '+escapeHtml(names[n]||'技名未登録')+'</strong><p style="margin:6px 0">購買部：<strong>'+(bp[n]!=null?bp[n]+' BP':'販売情報なし')+'</strong> ／ 作成：<strong>'+(r?r[0].toLocaleString()+' LP':'未収録')+'</strong></p><small>必要素材：'+(r?escapeHtml(r.slice(1).join(' ／ ')):'未収録')+'</small></div>'}).join('')||'<p class="note">該当する技マシンがありません。</p>');
 }
 document.getElementById('guideTmSearch')?.addEventListener('input',renderTmCosts);
