@@ -671,3 +671,13 @@ button,.nav-btn,.mini-btn,.column-reset,.lock-btn{touch-action:manipulation}
 /* Only show the top shortcut while the Pokémon detail itself is on screen. */
 #guidePokemonDetail .guide-to-top{display:none!important}
 body:has(#pokeGuidePane:not(.hidden) #guideDexTool:not(.hidden) #guidePokemonDetail:not(.hidden)) #guidePokemonDetail .guide-to-top{display:flex!important;right:calc(env(safe-area-inset-right,0px) + 68px)!important;bottom:calc(env(safe-area-inset-bottom,0px) + 12px)!important;width:52px;height:44px;border-radius:24px;z-index:935}
+
+/* v0.9.173: the pagination wrapper must span the full Pokédex width. */
+#guidePokemonSuggestions{display:block!important}
+#guidePokemonSuggestions .guide-sv-dex-filter{display:flex;flex-wrap:wrap;gap:6px;width:100%}
+#guidePokemonSuggestions #guideDexResultCount{margin:14px 0 10px}
+#guideDexResultsList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;width:100%}
+#guideDexResultsList [data-guide-result]{min-width:0;width:100%;display:grid;grid-template-columns:minmax(56px,72px) minmax(0,1fr);gap:7px;align-items:center;text-align:left}
+#guideDexResultsList [data-guide-result] strong{overflow-wrap:anywhere}
+#guideDexLoadMore:not([hidden]){display:block;width:100%;margin:14px 0 4px}
+@media(max-width:560px){#guideDexResultsList{grid-template-columns:1fr}}
