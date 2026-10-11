@@ -423,7 +423,19 @@ function renderPokemon(id){
   if(!p||!detail)return;
   const learn=window.POKEMON_SV_LEARNSETS?.[p.id]||{};
   const level=(learn.l||[]).map(([mid,lev])=>moveButton(moveName(mid),levelLabel(lev))).join('');
-  const tm=(learn.t||[]).map(([mid,no])=>moveButton(moveName(mid),no?`TM${no}`:'')).join('');
+  const tm=(learn.t||[]).map(([mid,no])=>{
+    const num=Number(no);
+    const bp=window.POKEMON_SV_TM_BP?.[num];
+    const recipe=window.POKEMON_SV_TM_RECIPES?.[num];
+    const label=Number.isInteger(num)&&num>0?'TM'+String(num).padStart(3,'0'):'';
+    const price=[bp!=null?'購買部 '+bp+'BP':null,recipe?'作成 '+Number(recipe[0]).toLocaleString()+'LP':null].filter(Boolean).join(' ／ ');
+    const detail=Number.isInteger(num)&&num>0&&recipe?'<div class="guide-tm-recipe"><strong>作成に必要な素材</strong><ul>'+recipe.slice(1).map(x=>'<li>'+escapeHtml(x)+'</li>').join('')+'</ul><small>購買部：'+(bp!=null?bp+' BP':'販売情報なし')+' ／ 作成：'+Number(recipe[0]).toLocaleString()+' LP</small></div>':'';
+    const original=moveButton(moveName(mid),[label,price].filter(Boolean).join(' ／ '));
+    if(!detail)return original;
+    // Keep the existing move detail expandable; append recipe within the same disclosure.
+    if(original.startsWith('<details'))return original.replace('</div></details>',''+detail+'</div></details>');
+    return '<details class="guide-move guide-move-expand"><summary><strong>'+escapeHtml(moveName(mid))+'</strong><span>'+escapeHtml([label,price].filter(Boolean).join(' ／ '))+'</span><span class="guide-move-chevron">素材</span></summary><div class="guide-move-info">'+detail+'</div></details>';
+  }).join('');
   const eggMoves=inheritedEggMoves(p);
   const egg=eggMoves.map(mid=>moveButton(moveName(mid),'タマゴ技')).join('');
   const reminder=(learn.r||[]).map(mid=>moveButton(moveName(mid),'思い出し')).join('');
@@ -432,7 +444,7 @@ function renderPokemon(id){
   detail.innerHTML=`
     <button type="button" id="guideBackToList" class="ghost-btn guide-back-btn">← ポケモン一覧に戻る</button>
     ${renderDexNavigation(p)}
-    <div class="guide-detail-head">
+    <button type="button" id="guideBackToTop" class="guide-to-top" aria-label="ポケモンページの上部へ戻る" title="ページ上部へ">↑<span>上へ</span></button>\n    <div class="guide-detail-head">
       <div>
         <div class="guide-dex-no">No.${String(p.id).padStart(4,'0')}</div>
         <h2>${escapeHtml(p.name)}</h2>
@@ -454,6 +466,7 @@ function renderPokemon(id){
     ${(learn.r||[]).length?`<div class="guide-move-section"><h3>思い出し技 <span>${learn.r.length}</span></h3><div class="guide-move-grid">${reminder}</div></div>`:''}
     <p class="hint">SV Ver.3.0.0（藍の円盤込み）の内蔵データを表示しています。特殊フォームは今後個別に補正できます。</p>
   `;
+  $('#guideBackToTop')?.addEventListener('click',()=>{detail.scrollIntoView({behavior:'smooth',block:'start'});});
   $('#guideBackToList')?.addEventListener('click',()=>{
     detail.classList.add('hidden');
     const input=$('#guidePokemonSearch');
