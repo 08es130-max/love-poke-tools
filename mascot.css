@@ -633,3 +633,7 @@
  border-left:1px solid #e9b0c8!important;
  border-right:0!important;border-bottom:0!important;
 }
+
+/* Fixed mobile toolbar ordering: ♪ / 整列 / ページ上部 / 設定 */
+.mascot-lineup-btn{right:max(130px,calc(env(safe-area-inset-right,0px) + 128px));min-width:52px;min-height:44px}
+.mascot-settings-btn{right:max(10px,calc(env(safe-area-inset-right,0px) + 8px));width:44px;height:44px}
