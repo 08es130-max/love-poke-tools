@@ -667,3 +667,7 @@ button,.nav-btn,.mini-btn,.column-reset,.lock-btn{touch-action:manipulation}
  width:44px;height:44px;font-size:21px;z-index:935;
 }
 #guidePokemonDetail:not(.hidden) .guide-to-top span{font-size:9px}
+
+/* Only show the top shortcut while the Pokémon detail itself is on screen. */
+#guidePokemonDetail .guide-to-top{display:none!important}
+body:has(#pokeGuidePane:not(.hidden) #guideDexTool:not(.hidden) #guidePokemonDetail:not(.hidden)) #guidePokemonDetail .guide-to-top{display:flex!important;right:calc(env(safe-area-inset-right,0px) + 68px)!important;bottom:calc(env(safe-area-inset-bottom,0px) + 12px)!important;width:52px;height:44px;border-radius:24px;z-index:935}
