@@ -1,6 +1,6 @@
 // Network-first PWA worker. Cache failures must NEVER override successful fetches.
 const CACHE_PREFIX = 'lovepoke-';
-const CACHE_NAME = CACHE_PREFIX + 'v20261011-175';
+const CACHE_NAME = CACHE_PREFIX + 'v20261011-176';
 
 // Only essential shell assets are precached. Large optional images/data are
 // cached on successful requests so a single failed image cannot block an update.
@@ -8,9 +8,9 @@ const CORE_ASSETS = [
   './',
   './index.html',
   './styles.css',
-  './styles.css?v=20261010-tools73',
+  './styles.css?v=20261011-tm-ui1',
   './app.js',
-  './pokemon-guide.js?v=20261011-tools107',
+  './pokemon-guide.js?v=20261011-tools108',
   './pokemon-data.js',
   './pokemon-stats.js',
   './pokemon-dex-extra.js?v=20261010-dex1',
