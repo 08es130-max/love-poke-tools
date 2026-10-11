@@ -659,3 +659,11 @@ button,.nav-btn,.mini-btn,.column-reset,.lock-btn{touch-action:manipulation}
 .guide-tm-recipe small{display:block;margin-top:7px}
 #guidePokemonDetail:not(.hidden) .guide-to-top{position:fixed;right:max(16px,env(safe-area-inset-right));bottom:calc(20px + env(safe-area-inset-bottom));z-index:90;display:flex;flex-direction:column;align-items:center;justify-content:center;width:54px;height:54px;border-radius:50%;border:1px solid var(--border,#8885);background:var(--accent,#295c9e);color:#fff;box-shadow:0 4px 16px #0005;font-size:23px;cursor:pointer}
 .guide-to-top span{font-size:11px;line-height:1}
+
+/* Four floating controls: ♪ → 整列 → ↑ → 設定 (left to right). */
+#guidePokemonDetail:not(.hidden) .guide-to-top{
+ right:max(70px,calc(env(safe-area-inset-right,0px) + 68px));
+ bottom:max(10px,calc(env(safe-area-inset-bottom,0px) + 8px));
+ width:44px;height:44px;font-size:21px;z-index:935;
+}
+#guidePokemonDetail:not(.hidden) .guide-to-top span{font-size:9px}
