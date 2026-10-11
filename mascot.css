@@ -645,3 +645,9 @@
 /* On an open Pokémon detail, reserve a fourth slot for the upward arrow. */
 body:has(#pokeGuidePane:not(.hidden) #guideDexTool:not(.hidden) #guidePokemonDetail:not(.hidden)) .mascot-lineup-btn{right:calc(env(safe-area-inset-right,0px) + 132px)!important}
 body:has(#pokeGuidePane:not(.hidden) #guideDexTool:not(.hidden) #guidePokemonDetail:not(.hidden)) .mascot-live-test-btn{right:calc(env(safe-area-inset-right,0px) + 196px)!important}
+
+/* v0.9.171: permanent four-button toolbar on all app pages. */
+.mascot-settings-btn{right:calc(env(safe-area-inset-right,0px) + 12px)!important}
+.mascot-top-btn{position:fixed;right:calc(env(safe-area-inset-right,0px) + 68px);bottom:calc(env(safe-area-inset-bottom,0px) + 12px);z-index:925;width:52px;height:44px;padding:0;border:1px solid rgba(0,0,0,.12);border-radius:24px;background:#2865a4;color:white;font-size:25px;font-weight:700;box-shadow:0 4px 14px #0003;cursor:pointer;pointer-events:auto;touch-action:manipulation}
+.mascot-lineup-btn{right:calc(env(safe-area-inset-right,0px) + 132px)!important}
+.mascot-live-test-btn{right:calc(env(safe-area-inset-right,0px) + 196px)!important}
