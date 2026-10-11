@@ -21,7 +21,7 @@
 <body>
   <header class="app-header">
     <div>
-      <div class="header-meta"><span class="eyebrow">OFFLINE PWA</span><span class="app-version">Ver.0.9.164</span><button type="button" id="appCheckUpdate" class="app-refresh-btn" aria-label="最新版に更新">↻ 更新</button></div>
+      <div class="header-meta"><span class="eyebrow">OFFLINE PWA</span><span class="app-version">Ver.0.9.165</span><button type="button" id="appCheckUpdate" class="app-refresh-btn" aria-label="最新版に更新">↻ 更新</button></div>
       <h1 id="appTitle">ラブカ ハート計算</h1>
     </div>
     <button id="resetAllBtn" class="ghost-btn">リセット</button>
@@ -331,7 +331,7 @@
       <div id="pokeGuidePane" class="poke-pane hidden">
         <nav class="guide-tool-nav" aria-label="育成ツール">
           <button type="button" class="guide-tool-tab active" data-guide-tool="dex">図鑑・技</button>
-          <button type="button" class="guide-tool-tab" data-guide-tool="types">タイプ相性</button>
+          <button type="button" class="guide-tool-tab" data-guide-tool="tm">わざマシン費用</button><button type="button" class="guide-tool-tab" data-guide-tool="types">タイプ相性</button>
           <button type="button" class="guide-tool-tab" data-guide-tool="speed">すばやさ比較</button><button type="button" class="guide-tool-tab" data-guide-tool="party">パーティ分析</button><button type="button" class="guide-tool-tab" data-guide-tool="build">育成メモ</button>
         </nav>
         <div id="guideDexTool" class="guide-tool-pane">
@@ -348,6 +348,7 @@
           </section>
           <section id="guidePokemonDetail" class="panel hidden"></section>
         </div>
+        <div id="guideTmTool" class="guide-tool-pane hidden"><section class="panel"><div class="section-title-row"><h2>わざマシン LP・素材・BP比較</h2><span class="badge ok">オフライン対応</span></div><p class="hint">BPはブルーベリー学園購買部での購入価格です。LP・素材はわざマシンマシンでの作成費用です。未確認の項目は「未収録」と表示します。</p><label class="block-label">わざ名・番号・素材名で検索<input type="search" id="guideTmSearch" placeholder="例：じしん、149、ストライク"></label><label class="block-label">表示<select id="guideTmFilter"><option value="all">登録済みすべて</option><option value="bp">BPで購入できる技</option><option value="recipe">作成素材を収録済み</option></select></label><div id="guideTmResults"></div></section></div>
         <div id="guideTypesTool" class="guide-tool-pane hidden">
           <section class="panel">
             <div class="section-title-row"><h2>タイプ相性表</h2><span class="badge soft">SV 18タイプ</span></div>
@@ -523,6 +524,7 @@
   <script src="./pokemon-sv-learnsets.js"></script>
   <script src="./pokemon-sv-regional-dex.js"></script>
   <script src="./pokemon-sv-acquisition.js"></script>
+  <script src="./pokemon-sv-tm-costs.js"></script>
 
 
   <script src="./pokemon-move-details.js?v=20261010-moves1"></script>
