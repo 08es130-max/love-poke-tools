@@ -4,13 +4,13 @@ const id='mascot-test-live-launch';
 if(document.getElementById(id))return;
 const css=document.createElement('style');
 css.textContent=`
-#${id}{position:fixed;right:max(132px,calc(env(safe-area-inset-right,0px) + 130px));bottom:max(10px,calc(env(safe-area-inset-bottom,0px) + 8px));z-index:930;min-width:100px;min-height:42px;padding:7px 10px;border:1px solid #d79bc0;border-radius:24px;background:#fffafa;color:#b23b83;font:700 12px/1.2 -apple-system,BlinkMacSystemFont,sans-serif;box-shadow:0 4px 14px #0002;cursor:pointer;touch-action:manipulation}
+#${id}{position:fixed;right:max(198px,calc(env(safe-area-inset-right,0px) + 196px));bottom:max(10px,calc(env(safe-area-inset-bottom,0px) + 8px));z-index:930;width:44px;min-width:44px;min-height:44px;padding:7px 10px;border:1px solid #d79bc0;border-radius:24px;background:#fffafa;color:#b23b83;font:700 12px/1.2 -apple-system,BlinkMacSystemFont,sans-serif;box-shadow:0 4px 14px #0002;cursor:pointer;touch-action:manipulation}
 #${id}:focus-visible{outline:3px solid #44abc0;outline-offset:2px}
 .mascot-live-toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 65px);transform:translateX(-50%);z-index:950;max-width:min(92vw,320px);padding:9px 12px;border-radius:12px;background:#34263bec;color:#fff;font-size:12px;font-weight:700;text-align:center;pointer-events:none}
 `;
 document.head.append(css);
 const btn=document.createElement('button');
-btn.id=id;btn.type='button';btn.textContent='♪ テストライブ';
+btn.id=id;btn.type='button';btn.textContent='♪';
 btn.setAttribute('aria-label','歩行中のキャラクターがその場でライブを始めます');
 document.body.append(btn);
 let toastTimer=0;
