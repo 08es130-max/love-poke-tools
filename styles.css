@@ -652,3 +652,10 @@ button,.nav-btn,.mini-btn,.column-reset,.lock-btn{touch-action:manipulation}
 .guide-sv-dex-filter{display:flex;flex-wrap:wrap;gap:6px;padding:8px 0}
 .guide-sv-dex-filter button{border:1px solid #a8b8b1;background:#fff;color:#254d3c;border-radius:16px;padding:7px 10px;font-size:12px;cursor:pointer}
 .guide-sv-dex-filter button.active{background:#245d45;color:#fff;border-color:#245d45}
+
+/* Pokédex TM costs and in-place recipe disclosure */
+.guide-tm-recipe{margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--surface,#ffffff10);border:1px solid var(--border,#8885)}
+.guide-tm-recipe ul{margin:7px 0;padding-left:1.5em;line-height:1.7}
+.guide-tm-recipe small{display:block;margin-top:7px}
+#guidePokemonDetail:not(.hidden) .guide-to-top{position:fixed;right:max(16px,env(safe-area-inset-right));bottom:calc(20px + env(safe-area-inset-bottom));z-index:90;display:flex;flex-direction:column;align-items:center;justify-content:center;width:54px;height:54px;border-radius:50%;border:1px solid var(--border,#8885);background:var(--accent,#295c9e);color:#fff;box-shadow:0 4px 16px #0005;font-size:23px;cursor:pointer}
+.guide-to-top span{font-size:11px;line-height:1}
