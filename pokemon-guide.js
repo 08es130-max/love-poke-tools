@@ -488,19 +488,54 @@ function renderPokemon(id){
   if(filter)filter.oninput=()=>filterMoves(detail,filter.value);
   detail.scrollIntoView({behavior:'smooth',block:'start'});
 }
+const DEX_PAGE_SIZE=80;
+let dexShownCount=DEX_PAGE_SIZE;
+let dexListKey='';
+let dexObserver=null;
+function appendDexResults(){
+ const root=$('#guidePokemonSuggestions');
+ if(!root)return;
+ const q=$('#guidePokemonSearch')?.value.trim()||'';
+ const selected=localStorage.getItem('lovepoke_sv_dex_region')||'all';
+ const dex=window.POKEMON_SV_REGIONAL_DEX||{};
+ const data=(window.POKEMON_DATA||[]).filter(p=>!p.formKey&&p.id>=1&&p.id<=1025);
+ const found=data.filter(p=>(selected==='all'||(selected==='unlisted'?!dex[p.id]:!!dex[p.id]?.[selected]))&&(!q||p.name.includes(q)||String(p.id)===q||String(p.id).padStart(4,'0')===q)).sort((a,b)=>a.id-b.id);
+ const list=root.querySelector('#guideDexResultsList');
+ const marker=root.querySelector('#guideDexLoadMore');
+ if(!list||!marker||dexShownCount>=found.length){if(marker)marker.hidden=true;return}
+ const next=Math.min(found.length,dexShownCount+DEX_PAGE_SIZE);
+ list.insertAdjacentHTML('beforeend',found.slice(dexShownCount,next).map(p=>`<button type="button" data-guide-result="${p.id}"><span>No.${String(p.id).padStart(4,'0')}</span><strong>${escapeHtml(p.name)}</strong></button>`).join(''));
+ dexShownCount=next;
+ const count=root.querySelector('#guideDexResultCount');
+ if(count)count.textContent='該当 '+found.length+'匹（'+dexShownCount+'匹を表示）';
+ marker.hidden=dexShownCount>=found.length;
+}
 function renderSuggestions(query=''){
-  const root=$('#guidePokemonSuggestions');
-  if(!root)return;
-  const q=query.trim();
-  const data=(window.POKEMON_DATA||[]).filter(p=>!p.formKey&&p.id>=1&&p.id<=1025);
-  const selected=localStorage.getItem('lovepoke_sv_dex_region')||'all';
-  const dex=window.POKEMON_SV_REGIONAL_DEX||{};
-  const regions={all:'全国図鑑',paldea:'パルデア',kitakami:'キタカミ',blueberry:'ブルーベリー',unlisted:'SV地域図鑑に未掲載'};
-  const candidates=data.filter(p=>selected==='all'||(selected==='unlisted'?!dex[p.id]:!!dex[p.id]?.[selected]));
-  const found=(q?candidates.filter(p=>p.name.includes(q)||String(p.id)===q||String(p.id).padStart(4,'0')===q):candidates).sort((a,b)=>a.id-b.id);
-  root.innerHTML='<div class="guide-sv-dex-filter" role="group" aria-label="地域図鑑で絞り込み">'+Object.entries(regions).map(([id,label])=>'<button type="button" data-guide-region="'+id+'" class="'+(id===selected?'active':'')+'">'+label+'</button>').join('')+'</div>'+
-   '<p class="note">該当 '+found.length+'匹'+(found.length>80?'（最初の80匹を表示）':'')+'</p>'+
-   (found.slice(0,80).map(p=>`<button type="button" data-guide-result="${p.id}"><span>No.${String(p.id).padStart(4,'0')}</span><strong>${escapeHtml(p.name)}</strong></button>`).join('')||'<p class="note">該当するポケモンが見つかりません。</p>');
+ const root=$('#guidePokemonSuggestions');
+ if(!root)return;
+ const q=query.trim();
+ const data=(window.POKEMON_DATA||[]).filter(p=>!p.formKey&&p.id>=1&&p.id<=1025);
+ const selected=localStorage.getItem('lovepoke_sv_dex_region')||'all';
+ const dex=window.POKEMON_SV_REGIONAL_DEX||{};
+ const regions={all:'全国図鑑',paldea:'パルデア',kitakami:'キタカミ',blueberry:'ブルーベリー',unlisted:'SV地域図鑑に未掲載'};
+ const candidates=data.filter(p=>selected==='all'||(selected==='unlisted'?!dex[p.id]:!!dex[p.id]?.[selected]));
+ const found=(q?candidates.filter(p=>p.name.includes(q)||String(p.id)===q||String(p.id).padStart(4,'0')===q):candidates).sort((a,b)=>a.id-b.id);
+ const key=selected+'|'+q;
+ if(key!==dexListKey){dexShownCount=DEX_PAGE_SIZE;dexListKey=key}
+ const visible=Math.min(dexShownCount,found.length);
+ root.innerHTML='<div class="guide-sv-dex-filter" role="group" aria-label="地域図鑑で絞り込み">'+Object.entries(regions).map(([id,label])=>'<button type="button" data-guide-region="'+id+'" class="'+(id===selected?'active':'')+'">'+label+'</button>').join('')+'</div>'+
+  '<p id="guideDexResultCount" class="note">該当 '+found.length+'匹（'+visible+'匹を表示）</p>'+
+  '<div id="guideDexResultsList">'+(found.slice(0,visible).map(p=>`<button type="button" data-guide-result="${p.id}"><span>No.${String(p.id).padStart(4,'0')}</span><strong>${escapeHtml(p.name)}</strong></button>`).join('')||'<p class="note">該当するポケモンが見つかりません。</p>')+'</div>'+
+  '<button type="button" id="guideDexLoadMore" class="ghost-btn" '+(visible>=found.length?'hidden':'')+'>次の80匹を表示 ↓</button>';
+ dexObserver?.disconnect();
+ const marker=root.querySelector('#guideDexLoadMore');
+ marker?.addEventListener('click',appendDexResults);
+ if(marker&&'IntersectionObserver' in window){
+  dexObserver=new IntersectionObserver(entries=>{
+   if(entries.some(entry=>entry.isIntersecting)&&!marker.hidden)appendDexResults();
+  },{rootMargin:'0px 0px 240px 0px'});
+  dexObserver.observe(marker);
+ }
 }
 
 function activateGuide(){
