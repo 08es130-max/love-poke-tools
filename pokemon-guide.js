@@ -444,7 +444,7 @@ function renderPokemon(id){
   detail.innerHTML=`
     <button type="button" id="guideBackToList" class="ghost-btn guide-back-btn">← ポケモン一覧に戻る</button>
     ${renderDexNavigation(p)}
-    <button type="button" id="guideBackToTop" class="guide-to-top" aria-label="ポケモンページの上部へ戻る" title="ページ上部へ">↑<span>上へ</span></button>\n    <div class="guide-detail-head">
+    <div class="guide-detail-head">
       <div>
         <div class="guide-dex-no">No.${String(p.id).padStart(4,'0')}</div>
         <h2>${escapeHtml(p.name)}</h2>
@@ -466,7 +466,6 @@ function renderPokemon(id){
     ${(learn.r||[]).length?`<div class="guide-move-section"><h3>思い出し技 <span>${learn.r.length}</span></h3><div class="guide-move-grid">${reminder}</div></div>`:''}
     <p class="hint">SV Ver.3.0.0（藍の円盤込み）の内蔵データを表示しています。特殊フォームは今後個別に補正できます。</p>
   `;
-  $('#guideBackToTop')?.addEventListener('click',()=>{detail.scrollIntoView({behavior:'smooth',block:'start'});});
   $('#guideBackToList')?.addEventListener('click',()=>{
     detail.classList.add('hidden');
     const input=$('#guidePokemonSearch');
