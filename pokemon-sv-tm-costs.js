@@ -27,3 +27,16 @@ Object.assign(window.POKEMON_SV_TM_RECIPES,{
 });
 Object.assign(window.POKEMON_SV_TM_NAMES,{134:'きしかいせい',136:'エレキフィールド',157:'オーバーヒート',207:'やけっぱち'});
 delete window.POKEMON_SV_TM_PARTIAL;
+
+// Data integrity audit: prevent silent omissions and malformed material counts.
+window.POKEMON_SV_TM_AUDIT=(()=>{
+ const recipes=window.POKEMON_SV_TM_RECIPES,names=window.POKEMON_SV_TM_NAMES,errors=[];
+ for(let n=1;n<=229;n++){
+  const row=recipes[n];
+  if(!names[n]||!Array.isArray(row)){errors.push('TM'+n+': missing name or recipe');continue;}
+  if(!Number.isInteger(row[0])||row[0]<=0)errors.push('TM'+n+': invalid LP');
+  if(row.length<2||row.length>4)errors.push('TM'+n+': unexpected material count');
+  for(const material of row.slice(1))if(!/^.+×[1-9]\\d*$/.test(material))errors.push('TM'+n+': invalid material '+material);
+ }
+ return {total:Object.keys(recipes).length,expected:229,valid:errors.length===0,errors};
+})();
