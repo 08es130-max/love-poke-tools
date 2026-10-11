@@ -637,3 +637,11 @@
 /* Fixed mobile toolbar ordering: ♪ / 整列 / ページ上部 / 設定 */
 .mascot-lineup-btn{right:max(130px,calc(env(safe-area-inset-right,0px) + 128px));min-width:52px;min-height:44px}
 .mascot-settings-btn{right:max(10px,calc(env(safe-area-inset-right,0px) + 8px));width:44px;height:44px}
+
+/* v0.9.170: one toolbar coordinate system; never overlap ♪ and 整列. */
+.mascot-settings-btn{right:calc(env(safe-area-inset-right,0px) + 12px)!important;bottom:calc(env(safe-area-inset-bottom,0px) + 12px)!important;width:44px;height:44px}
+.mascot-lineup-btn{right:calc(env(safe-area-inset-right,0px) + 68px)!important;bottom:calc(env(safe-area-inset-bottom,0px) + 12px)!important;width:52px;min-width:52px;height:44px;min-height:44px}
+.mascot-live-test-btn{right:calc(env(safe-area-inset-right,0px) + 132px)!important;bottom:calc(env(safe-area-inset-bottom,0px) + 12px)!important;width:44px;height:44px}
+/* On an open Pokémon detail, reserve a fourth slot for the upward arrow. */
+body:has(#pokeGuidePane:not(.hidden) #guideDexTool:not(.hidden) #guidePokemonDetail:not(.hidden)) .mascot-lineup-btn{right:calc(env(safe-area-inset-right,0px) + 132px)!important}
+body:has(#pokeGuidePane:not(.hidden) #guideDexTool:not(.hidden) #guidePokemonDetail:not(.hidden)) .mascot-live-test-btn{right:calc(env(safe-area-inset-right,0px) + 196px)!important}
