@@ -14,7 +14,7 @@ for(let n=1;n<=229;n++){
  const [lp,...materials]=w.POKEMON_SV_TM_RECIPES[n];
  assert(Number.isInteger(lp)&&lp>0,'Invalid LP for TM'+n);
  assert(materials.length>=1&&materials.length<=3,'Invalid material count for TM'+n);
- assert(materials.every(x=>/^.+×[1-9]\\d*$/.test(x)),'Invalid material quantity for TM'+n);
+ assert(materials.every(x=>/^.+×[1-9]\d*$/.test(x)),'Invalid material quantity for TM'+n);
 }
 assert.equal(w.POKEMON_SV_TM_RECIPES[207][0],3000);
 assert.deepEqual(Array.from(w.POKEMON_SV_TM_RECIPES[207].slice(1)),['ドンメルのようがん×2','ブビィのけ×3']);
