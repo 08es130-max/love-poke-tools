@@ -36,7 +36,7 @@ window.POKEMON_SV_TM_AUDIT=(()=>{
   if(!names[n]||!Array.isArray(row)){errors.push('TM'+n+': missing name or recipe');continue;}
   if(!Number.isInteger(row[0])||row[0]<=0)errors.push('TM'+n+': invalid LP');
   if(row.length<2||row.length>4)errors.push('TM'+n+': unexpected material count');
-  for(const material of row.slice(1))if(!/^.+×[1-9]\\d*$/.test(material))errors.push('TM'+n+': invalid material '+material);
+  for(const material of row.slice(1))if(!/^.+×[1-9]\d*$/.test(material))errors.push('TM'+n+': invalid material '+material);
  }
  return {total:Object.keys(recipes).length,expected:229,valid:errors.length===0,errors};
 })();
