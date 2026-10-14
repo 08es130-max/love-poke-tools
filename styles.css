@@ -681,3 +681,7 @@ body:has(#pokeGuidePane:not(.hidden) #guideDexTool:not(.hidden) #guidePokemonDet
 #guideDexResultsList [data-guide-result] strong{overflow-wrap:anywhere}
 #guideDexLoadMore:not([hidden]){display:block;width:100%;margin:14px 0 4px}
 @media(max-width:560px){#guideDexResultsList{grid-template-columns:1fr}}
+
+/* Ver.0.9.183: Keep all five Pokédex region tabs equal-height and single-line. */
+#guidePokemonSuggestions .guide-sv-dex-filter{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;width:100%;}
+#guidePokemonSuggestions .guide-sv-dex-filter button{min-width:0;width:100%;white-space:nowrap;overflow:hidden;text-overflow:clip;box-sizing:border-box;padding:8px 4px;font-size:clamp(10px,3.1vw,13px);line-height:1.35;min-height:38px;text-align:center;}
