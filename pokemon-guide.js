@@ -554,7 +554,7 @@ function renderSuggestions(query=''){
  const data=(window.POKEMON_DATA||[]).filter(p=>!p.formKey&&p.id>=1&&p.id<=1025);
  const selected=localStorage.getItem('lovepoke_sv_dex_region')||'all';
  const dex=window.POKEMON_SV_REGIONAL_DEX||{};
- const regions={all:'全国図鑑',paldea:'パルデア',kitakami:'キタカミ',blueberry:'ブルーベリー',unlisted:'SV地域図鑑に未掲載'};
+ const regions={all:'全国図鑑',paldea:'パルデア',kitakami:'キタカミ',blueberry:'ブルーベリー',unlisted:'SV未掲載'};
  const candidates=data.filter(p=>selected==='all'||(selected==='unlisted'?!dex[p.id]:!!dex[p.id]?.[selected]));
  const found=(q?candidates.filter(p=>p.name.includes(q)||String(p.id)===q||String(p.id).padStart(4,'0')===q):candidates).sort((a,b)=>a.id-b.id);
  const key=selected+'|'+q;
