@@ -1,0 +1,50 @@
+(()=>{'use strict';
+const CHART={
+ Normal:{Rock:.5,Ghost:0,Steel:.5},Fire:{Fire:.5,Water:.5,Grass:2,Ice:2,Bug:2,Rock:.5,Dragon:.5,Steel:2},
+ Water:{Fire:2,Water:.5,Grass:.5,Ground:2,Rock:2,Dragon:.5},Electric:{Water:2,Electric:.5,Grass:.5,Ground:0,Flying:2,Dragon:.5},
+ Grass:{Fire:.5,Water:2,Grass:.5,Poison:.5,Ground:2,Flying:.5,Bug:.5,Rock:2,Dragon:.5,Steel:.5},
+ Ice:{Fire:.5,Water:.5,Grass:2,Ice:.5,Ground:2,Flying:2,Dragon:2,Steel:.5},
+ Fighting:{Normal:2,Ice:2,Poison:.5,Flying:.5,Psychic:.5,Bug:.5,Rock:2,Ghost:0,Dark:2,Steel:2,Fairy:.5},
+ Poison:{Grass:2,Poison:.5,Ground:.5,Rock:.5,Ghost:.5,Steel:0,Fairy:2},
+ Ground:{Fire:2,Electric:2,Grass:.5,Poison:2,Flying:0,Bug:.5,Rock:2,Steel:2},
+ Flying:{Electric:.5,Grass:2,Fighting:2,Bug:2,Rock:.5,Steel:.5},
+ Psychic:{Fighting:2,Poison:2,Psychic:.5,Dark:0,Steel:.5},
+ Bug:{Fire:.5,Grass:2,Fighting:.5,Poison:.5,Flying:.5,Psychic:2,Ghost:.5,Dark:2,Steel:.5,Fairy:.5},
+ Rock:{Fire:2,Ice:2,Fighting:.5,Ground:.5,Flying:2,Bug:2,Steel:.5},
+ Ghost:{Normal:0,Psychic:2,Ghost:2,Dark:.5},Dragon:{Dragon:2,Steel:.5,Fairy:0},
+ Dark:{Fighting:.5,Psychic:2,Ghost:2,Dark:.5,Fairy:.5},Steel:{Fire:.5,Water:.5,Electric:.5,Ice:2,Rock:2,Steel:.5,Fairy:2},
+ Fairy:{Fire:.5,Fighting:2,Poison:.5,Dragon:2,Dark:2,Steel:.5}
+};
+
+const TYPES=['Normal','Fire','Water','Electric','Grass','Ice','Fighting','Poison','Ground','Flying','Psychic','Bug','Rock','Ghost','Dragon','Dark','Steel','Fairy'];
+const JA=['ノーマル','ほのお','みず','でんき','くさ','こおり','かくとう','どく','じめん','ひこう','エスパー','むし','いわ','ゴースト','ドラゴン','あく','はがね','フェアリー'];
+const root=document.getElementById('guideAssistTool');if(!root)return;
+const key='lovepoke-battle-assist-v1';const blank=()=>({name:'',nature:'1',ev:252,iv:31,item:'1',ability:'',rank:0,tailwind:false,paralysis:false,tera:'',moves:['','','','']});
+let state;try{state=JSON.parse(localStorage.getItem(key))}catch{}if(!state||!Array.isArray(state.mine)||!Array.isArray(state.foe))state={mine:Array.from({length:6},blank),foe:Array.from({length:6},blank)};
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pokes=()=>window.POKEMON_DATA||[];
+const get=n=>pokes().find(p=>p.name===n&&!p.formKey);
+const options=(items,val)=>items.map(([v,l])=>'<option value="'+esc(v)+'"'+(String(val)===String(v)?' selected':'')+'>'+esc(l)+'</option>').join('');
+const typeOpts=(val,empty=true)=>options([...(empty?[['','未判明・未使用']]:[]),...TYPES.map((t,i)=>[t,JA[i]])],val);
+const items=[['1','なし・不明'],['1.5','こだわりスカーフ'],['0.5','くろいてっきゅう・パワー系']];
+const abilities=[['','未判明'],['1','補正なし'],['2','S×2（天候・かるわざ等）'],['1.5','S×1.5（こだいかっせい等）'],['quickfeet','はやあし'],['0.5','スロースタート']];
+const rankOpts=Array.from({length:13},(_,i)=>[String(i-6),i===6?'±0':i>6?'+'+(i-6):String(i-6)]);
+const moveNames=Object.values(window.POKEMON_SV_MOVE_NAMES||{});
+const list=document.createElement('datalist');list.id='assistPokemonNames';list.innerHTML=pokes().filter(p=>!p.formKey).map(p=>'<option value="'+esc(p.name)+'"></option>').join('');root.appendChild(list);
+const moveList=document.createElement('datalist');moveList.id='assistMoveNames';moveList.innerHTML=moveNames.map(m=>'<option value="'+esc(m)+'"></option>').join('');root.appendChild(moveList);
+root.insertAdjacentHTML('beforeend','<section class="panel"><h2>対戦アシスト</h2><p class="hint">自分の6匹を先に登録し、対戦中に相手の情報を判明した分だけ追加できます。入力内容は端末内に自動保存されます。</p><div class="assist-tabs"><button data-assist-view="mine" class="active">自分のポケモン</button><button data-assist-view="foe">相手のポケモン</button><button data-assist-view="analysis">相性・すばやさ</button></div><div id="assistContent"></div><div id="assistAnalysis"></div></section>');
+let view='mine';const content=root.querySelector('#assistContent'),analysis=root.querySelector('#assistAnalysis');
+function abilityNames(p){return (window.LOVEPOKE_DEX_EXTRA?.abilities?.[String(p.id)]||[]).map(a=>a.name).filter((a,i,arr)=>arr.indexOf(a)===i)}
+function rowHTML(side,i){const x=state[side][i],p=get(x.name),names=p?abilityNames(p):[],foe=side==='foe';return '<details class="assist-poke"'+(i===0?' open':'')+'><summary><b>'+(i+1)+'. '+esc(x.name||'未登録')+'</b><span>'+(p?'S'+(window.POKEMON_STATS?.[String(p.id)]?.speed??'—'):'ポケモンを選択')+'</span></summary><div class="assist-fields"><label class="assist-full">ポケモン<input data-field="name" list="assistPokemonNames" value="'+esc(x.name)+'" placeholder="名前を入力"></label><label>性格<select data-field="nature">'+options([['1.1','S上昇'],['1','補正なし'],['0.9','S下降']],x.nature)+'</select></label><label>個体値<input type="number" data-field="iv" min="0" max="31" value="'+esc(x.iv)+'"></label><label>努力値（S）<input type="number" data-field="ev" min="0" max="252" step="4" value="'+esc(x.ev)+'"></label><label>持ち物<select data-field="item">'+options(items,x.item)+'</select></label><label>特性<select data-field="ability">'+options(foe?[['','未判明（候補を全表示）'],...names.map(n=>[n,n])]:[['','未設定'],...names.map(n=>[n,n])],x.ability)+'</select></label><label>ランク<select data-field="rank">'+options(rankOpts,x.rank)+'</select></label><label>テラスタイプ<select data-field="tera">'+typeOpts(x.tera)+'</select></label><label class="assist-check"><input type="checkbox" data-field="tailwind"'+(x.tailwind?' checked':'')+'>追い風</label><label class="assist-check"><input type="checkbox" data-field="paralysis"'+(x.paralysis?' checked':'')+'>まひ</label>'+(foe?'<div class="assist-full assist-abilities">'+(x.ability?'判明した特性：'+esc(x.ability):'特性候補：'+(names.length?names.map(esc).join(' ／ '):'データなし'))+'</div>':'')+Array.from({length:4},(_,j)=>'<label class="assist-full">技'+(j+1)+'<input data-move="'+j+'" list="assistMoveNames" value="'+esc(x.moves?.[j]||'')+'" placeholder="'+(foe?'判明した技を入力':'技を入力')+'"></label>').join('')+'</div></details>'}
+function render(){root.querySelectorAll('[data-assist-view]').forEach(b=>b.classList.toggle('active',b.dataset.assistView===view));content.innerHTML=view==='analysis'?'':('<div class="assist-team">'+state[view].map((x,i)=>rowHTML(view,i)).join('')+'</div>');analysis.style.display=view==='analysis'?'':'none';if(view==='analysis')renderAnalysis();}
+function save(){try{localStorage.setItem(key,JSON.stringify(state))}catch{}}
+root.addEventListener('click',e=>{const b=e.target.closest('[data-assist-view]');if(b){view=b.dataset.assistView;render()}});
+function update(e){const el=e.target,field=el.dataset.field,move=el.dataset.move;if(field===undefined&&move===undefined)return;const details=el.closest('.assist-poke');if(!details)return;const i=[...details.parentElement.children].indexOf(details);const x=state[view][i];if(move!==undefined){x.moves[Number(move)]=el.value}else{x[field]=el.type==='checkbox'?el.checked:el.value;}save();if(field==='name'){const p=get(x.name);if(p){x.ability='';save()}const opened=[...content.querySelectorAll('.assist-poke')].map(d=>d.open);render();content.querySelectorAll('.assist-poke').forEach((d,j)=>d.open=opened[j]);}else if(field==='ability'){const label=details.querySelector('.assist-abilities');if(label){const p=get(x.name),names=p?abilityNames(p):[];label.textContent=x.ability?'判明した特性：'+x.ability:'特性候補：'+(names.join(' ／ ')||'データなし')}}}
+root.addEventListener('change',update);root.addEventListener('input',e=>{if(e.target.matches('input[list]')){const field=e.target.dataset.field;if(field==='name'&&!get(e.target.value))return;update(e)}});
+function speed(p,x){const base=Number(window.POKEMON_STATS?.[String(p.id)]?.speed)||0,iv=Math.min(31,Math.max(0,Number(x.iv)||0)),ev=Math.min(252,Math.max(0,Number(x.ev)||0));let n=Math.floor((Math.floor((2*base+iv+Math.floor(ev/4))/2)+5)*Number(x.nature||1));n=Math.floor(n*Number(x.item||1));const ab=x.ability;if(ab==='はやあし')n=Math.floor(n*1.5);else if(['ようりょくそ','すいすい','すなかき','ゆきかき','サーフテール','かるわざ'].includes(ab))n*=2;else if(['こだいかっせい','クォークチャージ'].includes(ab))n=Math.floor(n*1.5);else if(ab==='スロースタート')n=Math.floor(n*.5);const rank=Number(x.rank)||0;n=Math.floor(n*(rank>=0?(2+rank)/2:2/(2-rank)));if(x.tailwind)n*=2;if(x.paralysis&&ab!=='はやあし')n=Math.floor(n*.5);return Math.max(1,n)}
+function types(p,x){return x.tera?[x.tera]:(window.POKEMON_TYPES?.[String(p.id)]||[])}
+function effectiveness(atk,p,x){return types(p,x).reduce((v,t)=>v*(CHART[atk]?.[t]??1),1)}
+function matchup(side){const team=state[side].map(x=>({x,p:get(x.name)})).filter(z=>z.p);if(!team.length)return '<p class="hint">ポケモンを登録すると相性を表示します。</p>';const count=condition=>TYPES.map((t,i)=>({t:JA[i],n:team.filter(({p,x})=>condition(effectiveness(t,p,x))).length}));const display=(title,arr)=>'<p><b>'+title+'</b>：'+(arr.length?arr.map(z=>'<span class="assist-type">'+z.t+' '+z.n+'体</span>').join(''):'該当なし')+'</p>';return display('弱点',count(v=>v>1).filter(z=>z.n>0))+display('耐性・無効',count(v=>v<1).filter(z=>z.n>0))+display('一貫性（3体以上に等倍以上）',count(v=>v>=1).filter(z=>z.n>=3))+display('弱点の一貫（3体以上に抜群）',count(v=>v>1).filter(z=>z.n>=3));}
+function renderAnalysis(){const mine=state.mine.map(x=>({x,p:get(x.name)})).filter(z=>z.p),foe=state.foe.map(x=>({x,p:get(x.name)})).filter(z=>z.p);analysis.innerHTML='<h3>相手側の弱点・耐性・一貫性</h3>'+matchup('foe')+'<h3>自分側の弱点・耐性・一貫性</h3>'+matchup('mine')+'<h3>素早さ判定（Lv.50）</h3><p class="hint">相手は最速実数値を基準に降順。自分は登録条件で実数値確定。相手の条件が未判明なら最速252振り・性格補正ありで比較します。</p><div class="assist-speed-head"><span>相手</span><span>最速</span><span>登録値</span><span>こちらの比較</span></div>'+foe.map(({p,x})=>{const b=Number(window.POKEMON_STATS?.[String(p.id)]?.speed)||0,max=Math.floor((Math.floor((2*b+31+63)/2)+5)*1.1),known=x.ability||x.tera||x.moves.some(Boolean)||x.item!=='1'||x.rank!=0||x.tailwind||x.paralysis;const actual=speed(p,x);return {p,x,max,known,actual}}).sort((a,b)=>b.max-a.max).map(z=>'<div class="assist-speed-row"><strong>'+esc(z.p.name)+'</strong><b>'+z.max+'</b><span>'+(z.known?z.actual:'未確定')+'</span><span>'+mine.map(m=>esc(m.p.name)+' '+speed(m.p,m.x)+(z.known?(speed(m.p,m.x)>z.actual?' ◎':speed(m.p,m.x)===z.actual?' ＝':' ×'):(speed(m.p,m.x)>z.max?' ◎':' △'))).join('<br>')+'</span></div>').join('')+'<p class="hint">◎＝上回る、＝同速、×＝下回る、△＝相手の最速基準を上回らない（条件次第）。特性によるタイプ無効化・テラスタル前後の切替、未判明の持ち物や補正は別途考慮してください。</p>';}
+render();
+})();
