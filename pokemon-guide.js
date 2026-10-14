@@ -172,11 +172,33 @@ function moveButton(name,sub=''){
  return `<details class="guide-move guide-move-expand"><summary><strong>${escapeHtml(name)}</strong>${sub?`<span>${escapeHtml(sub)}</span>`:''}<span class="guide-move-chevron">詳細</span></summary><div class="guide-move-info"><div class="guide-move-tags">${tags.map(t=>`<span>${escapeHtml(t)}</span>`).join('')}</div><p>${escapeHtml(desc)}</p>${note?`<small>${note}</small>`:''}</div></details>`;
 }
 function filterMoves(root,query){
-  const q=query.trim();
-  root.querySelectorAll('.guide-move').forEach(el=>{
-    el.classList.toggle('hidden',!!q&&!el.textContent.includes(q));
+ const q=query.trim();
+ const category=root.querySelector('#guideMoveCategory')?.value||'all';
+ const order=root.querySelector('#guideMoveSort')?.value||'default';
+ root.querySelectorAll('.guide-move-grid').forEach(grid=>{
+  const items=[...grid.children].filter(el=>el.classList.contains('guide-move'));
+  for(const [index,el] of items.entries()){
+   if(!el.dataset.originalOrder)el.dataset.originalOrder=String(index+1);
+   const name=el.querySelector('summary strong, strong')?.textContent||'';
+   const id=moveIdFromName(name);
+   const move=window.LOVEPOKE_MOVE_DETAILS?.[id]||{};
+   const categoryOk=category==='all'||String(move.c)===category;
+   el.classList.toggle('hidden',!categoryOk||!!q&&!el.textContent.includes(q));
+  }
+  items.sort((a,b)=>{
+   const getMove=el=>window.LOVEPOKE_MOVE_DETAILS?.[moveIdFromName(el.querySelector('summary strong, strong')?.textContent||'')]||{};
+   const ma=getMove(a),mb=getMove(b);
+   if(order==='power-desc'||order==='power-asc'){
+    const pa=Number(ma.p)||0,pb=Number(mb.p)||0;
+    if(pa!==pb)return order==='power-desc'?pb-pa:pa-pb;
+   }
+   if(order==='name')return (a.querySelector('summary strong, strong')?.textContent||'').localeCompare(b.querySelector('summary strong, strong')?.textContent||'','ja');
+   return Number(a.dataset.originalOrder)-Number(b.dataset.originalOrder);
   });
+  for(const el of items)grid.appendChild(el);
+ });
 }
+
 function inheritedEggMoves(p){
   const family=(window.POKEMON_DATA||[]).filter(x=>!x.formKey&&x.evo===p.evo);
   const ids=new Set();
@@ -465,9 +487,11 @@ function renderPokemon(id){
     ${renderSVLocations(p)}
     ${renderDexStats(p)}
     ${renderDexAbilities(p)}
-    <label class="block-label">このポケモンの技を絞り込み
-      <input id="guideMoveFilter" type="search" placeholder="例：じしん">
-    </label>
+    <div class="guide-move-controls" style="display:flex;flex-wrap:wrap;gap:10px;margin:12px 0">
+      <label class="block-label" style="flex:2 1 180px">技名で検索<input id="guideMoveFilter" type="search" placeholder="例：じしん"></label>
+      <label class="block-label" style="flex:1 1 120px">分類<select id="guideMoveCategory" style="width:100%;min-height:38px"><option value="all">すべて</option><option value="2">物理</option><option value="3">特殊</option><option value="1">変化</option></select></label>
+      <label class="block-label" style="flex:1 1 145px">並び順<select id="guideMoveSort" style="width:100%;min-height:38px"><option value="default">習得順（初期）</option><option value="power-desc">威力が高い順</option><option value="power-asc">威力が低い順</option><option value="name">技名順</option></select></label>
+    </div>
     ${renderPreEvolutionMoves(p)}
     <div class="guide-move-section"><h3>レベルで覚える技 <span>${(learn.l||[]).length}</span></h3><div class="guide-move-grid">${level||'<p class="note">データなし</p>'}</div></div>
     <div class="guide-move-section"><h3>わざマシン <span>${(learn.t||[]).length}</span></h3><div class="guide-move-grid">${tm||'<p class="note">データなし</p>'}</div></div>
@@ -495,6 +519,10 @@ function renderPokemon(id){
   }));
   const filter=$('#guideMoveFilter');
   if(filter)filter.oninput=()=>filterMoves(detail,filter.value);
+  for(const id of ['guideMoveCategory','guideMoveSort']){
+   const select=detail.querySelector('#'+id);
+   if(select)select.addEventListener('change',()=>filterMoves(detail,filter?.value||''));
+  }
   detail.scrollIntoView({behavior:'smooth',block:'start'});
 }
 const DEX_PAGE_SIZE=80;
