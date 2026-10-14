@@ -382,6 +382,22 @@
             </div>
             <div id="speedTargetResult" class="speed-target-result">ポケモンを選ぶと、ここに実数値と位置を表示します。</div>
           </section>
+          <details class="panel speed-rival-panel" id="speedRivalPanel"><summary><strong>仮想敵・必要努力値の自動計算</strong><small>タップして開く</small></summary>
+            <p class="hint">仮想敵の実数値を計算し、調べたいポケモンが1以上上回るために必要なS努力値を自動算出します。Lv.50・最大252振りで計算します。</p>
+            <h3>仮想敵の設定</h3><div class="speed-rival-controls">
+              <label class="speed-rival-wide">ポケモン<input id="speedRivalPokemon" type="search" list="speedPokemonList" placeholder="例：ドラパルト"></label>
+              <label>性格<select id="speedRivalNature"><option value="1.1">上昇補正</option><option value="1" selected>補正なし</option><option value="0.9">下降補正</option></select></label>
+              <label>努力値<input id="speedRivalEv" type="number" min="0" max="252" step="4" value="252"></label>
+              <label>個体値<input id="speedRivalIv" type="number" min="0" max="31" value="31"></label>
+              <label>持ち物<select id="speedRivalItem"><option value="1">なし</option><option value="1.5">こだわりスカーフ</option><option value="0.5">くろいてっきゅう・パワー系</option></select></label>
+              <label>特性<select id="speedRivalAbility"><option value="1">補正なし</option><option value="2">素早さ2倍</option><option value="1.5">素早さ1.5倍</option><option value="quickfeet">はやあし</option><option value="0.5">スロースタート</option></select></label>
+              <label>ランク<select id="speedRivalRank"><option value="-6">-6</option><option value="-5">-5</option><option value="-4">-4</option><option value="-3">-3</option><option value="-2">-2</option><option value="-1">-1</option><option value="0" selected>±0</option><option value="1">+1</option><option value="2">+2</option><option value="3">+3</option><option value="4">+4</option><option value="5">+5</option><option value="6">+6</option></select></label>
+              <label class="speed-rival-check"><input id="speedRivalTailwind" type="checkbox">追い風</label>
+              <label class="speed-rival-check"><input id="speedRivalParalysis" type="checkbox">まひ</label>
+            </div><div id="speedRivalResult" class="speed-rival-result">仮想敵を選択してください。</div>
+            <h3>上回りたいポケモン</h3><p class="hint">上の「調べたいポケモン」の設定を使用します。努力値だけ自動計算するため、上部の努力値入力は計算に使用しません。</p>
+            <div id="speedRequiredEvResult" class="speed-rival-result">調べたいポケモンと仮想敵を選択してください。</div>
+          </details>
           <section class="panel speed-table-panel">
             <div class="speed-table-scroll">
               <div class="speed-table-head"><span>順</span><span>ポケモン</span><span>S</span><span>最速</span><span>準速</span><span>スカ</span><span>追風</span><span>+1</span><span>+2</span><span>特性</span></div>
