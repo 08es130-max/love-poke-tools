@@ -412,10 +412,17 @@ function renderSVLocationResults(p,version){
  const labels={starter:'最初のパートナー',evolution:'進化',raid:'テラレイド',wild:'野生',trade:'交換',special:'特別な入手方法'};
  const species=(window.POKEMON_DATA||[]).filter(x=>!x.formKey&&x.id>=1&&x.id<=1025);
  const family=p.evo?species.filter(x=>x.evo===p.evo):[];
- const familyHtml=family.length>1?'<div class="guide-sv-acquisition"><strong>進化系統</strong><p>'+family.map(x=>escapeHtml(x.name)+' (No.'+x.id+')').join(' ／ ')+'</p></div>':'';
+ const familyHtml=''; // 進化系統は図鑑詳細の専用ナビゲーションで表示
  const methods=acquisition.filter(x=>Array.isArray(x)&&x[0]!=='wild');
  const methodHtml=methods.length?'<ul class="guide-sv-location-list">'+methods.map(x=>'<li><strong>'+escapeHtml(labels[x[0]]||x[0])+'</strong><small>'+escapeHtml(x.slice(1).join(' ／ '))+'</small></li>').join('')+'</ul>':'<p class="note">進化・交換・イベント等の入手方法は未登録です。</p>';
  return '<p class="note">'+escapeHtml(dexMessage)+'</p>'+familyHtml+methodHtml;
+}
+
+function renderEvolutionFamily(p){
+ const species=(window.POKEMON_DATA||[]).filter(x=>!x.formKey&&x.id>=1&&x.id<=1025);
+ const family=p.evo?species.filter(x=>x.evo===p.evo):[];
+ if(family.length<2)return '';
+ return '<section class="guide-sv-acquisition guide-evolution-family"><h3>進化系統 <small>ポケモンを選ぶと詳細に移動します</small></h3><div class="guide-evolution-links" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px">'+family.map(x=>'<button type="button" class="ghost-btn" data-poke-guide-id="'+x.id+'" style="padding:9px 12px;white-space:normal;'+(x.id===p.id?'font-weight:bold;border:2px solid currentColor;':'')+'">'+escapeHtml(x.name)+' <small>No.'+String(x.id).padStart(4,'0')+'</small>'+(x.id===p.id?'（表示中）':'')+'</button>').join('')+'</div></section>';
 }
 
 function renderPokemon(id){
@@ -453,6 +460,7 @@ function renderPokemon(id){
       </div>
       
     </div>
+    ${renderEvolutionFamily(p)}
     ${renderDexWeaknesses(p)}
     ${renderSVLocations(p)}
     ${renderDexStats(p)}
