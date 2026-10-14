@@ -1053,3 +1053,42 @@ $('#importBuildMemosFile')?.addEventListener('change',async e=>{
  finally{e.target.value=''}
 });
 refreshPartyAnalysisSelect();renderBuildMemos();showBuildBackupLast();
+
+// Virtual opponent speed benchmark and minimum EV investment (Lv.50).
+function speedValueWithConditions(p, prefix, ev){
+ if(!p)return null;
+ const base=Number(window.POKEMON_STATS?.[String(p.id)]?.speed);
+ if(!Number.isFinite(base))return null;
+ const read=(suffix)=>document.getElementById(prefix+suffix);
+ const iv=Math.max(0,Math.min(31,Number(read('Iv')?.value??31)));
+ const nature=Number(read('Nature')?.value)||1;
+ const item=Number(read('Item')?.value)||1;
+ const ability=read('Ability')?.value||'1';
+ let value=speedStat(base,50,iv,ev,nature);
+ value=Math.floor(value*item);
+ value=Math.floor(value*(ability==='quickfeet'?1.5:(Number(ability)||1)));
+ value=Math.floor(value*rankMultiplier(read('Rank')?.value));
+ if(read('Tailwind')?.checked)value*=2;
+ if(read('Paralysis')?.checked&&ability!=='quickfeet')value=Math.floor(value*.5);
+ return Math.max(1,Math.floor(value));
+}
+function renderRivalSpeed(){
+ const panel=document.getElementById('speedRivalPanel');if(!panel?.open)return;
+ const name=(document.getElementById('speedRivalPokemon')?.value||'').trim();
+ const opponent=(window.POKEMON_DATA||[]).find(p=>!p.formKey&&p.name===name);
+ const rivalEv=Math.max(0,Math.min(252,Number(document.getElementById('speedRivalEv')?.value)||0));
+ const rival=opponent?speedValueWithConditions(opponent,'speedRival',rivalEv):null;
+ const result=document.getElementById('speedRivalResult');
+ result.textContent=rival===null?'仮想敵のポケモン名を選択してください。':opponent.name+'：素早さ実数値 '+rival+'（努力値 '+rivalEv+'）';
+ const needed=document.getElementById('speedRequiredEvResult');
+ const mine=targetPokemon();
+ if(rival===null||!mine){needed.textContent='仮想敵と「調べたいポケモン」を両方選択してください。';return;}
+ const candidates=Array.from({length:64},(_,i)=>i*4).filter(ev=>speedValueWithConditions(mine,'speed',ev)>rival);
+ const max=speedValueWithConditions(mine,'speed',252);
+ if(!candidates.length){needed.textContent=mine.name+'：努力値252でも上回れません（最大実数値 '+max+'／仮想敵 '+rival+'）。性格・持ち物・特性・ランク・追い風などを調整してください。';return;}
+ const ev=candidates[0],value=speedValueWithConditions(mine,'speed',ev);
+ needed.innerHTML='<strong>'+escapeHtml(mine.name)+'：必要S努力値 '+ev+'</strong><span>実数値 '+value+' ／ 仮想敵 '+rival+'（差 +'+(value-rival)+'）</span>'+(ev===0?'<small>努力値を振らなくても上回ります。</small>':'');
+}
+document.getElementById('speedRivalPanel')?.addEventListener('toggle',renderRivalSpeed);
+document.getElementById('guideSpeedTool')?.addEventListener('input',renderRivalSpeed);
+document.getElementById('guideSpeedTool')?.addEventListener('change',renderRivalSpeed);
