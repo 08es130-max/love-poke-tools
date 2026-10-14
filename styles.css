@@ -715,3 +715,5 @@ body:has(#pokeGuidePane:not(.hidden) #guideDexTool:not(.hidden) #guidePokemonDet
 
 /* Battle overview: visible item/ability/tera, no slot numbers */
 .assist-home-poke{min-height:106px;padding:9px 4px;gap:5px;justify-content:flex-start}.assist-home-poke strong{font-size:12px;color:#146bb0;margin-bottom:3px}.assist-home-info{display:block;max-width:100%;font-size:10px;color:#61535a;text-align:center;line-height:1.35;overflow-wrap:anywhere}.assist-home-poke small{font-size:10px;margin-top:auto}
+
+.assist-home-poke{min-height:106px;padding:9px 4px;gap:5px;justify-content:flex-start}.assist-home-poke strong{font-size:12px;color:#146bb0;margin-bottom:3px}.assist-home-info{display:block;max-width:100%;font-size:10px;color:#61535a;text-align:center;line-height:1.35;overflow-wrap:anywhere}.assist-home-poke small{font-size:10px;margin-top:auto}
