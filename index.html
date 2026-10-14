@@ -332,8 +332,9 @@
         <nav class="guide-tool-nav" aria-label="育成ツール">
           <button type="button" class="guide-tool-tab active" data-guide-tool="dex">図鑑・技</button>
           <button type="button" class="guide-tool-tab" data-guide-tool="tm">わざマシン費用</button><button type="button" class="guide-tool-tab" data-guide-tool="types">タイプ相性</button>
-          <button type="button" class="guide-tool-tab" data-guide-tool="speed">すばやさ比較</button><button type="button" class="guide-tool-tab" data-guide-tool="party">パーティ分析</button><button type="button" class="guide-tool-tab" data-guide-tool="build">育成メモ</button>
+          <button type="button" class="guide-tool-tab" data-guide-tool="speed">すばやさ比較</button><button type="button" class="guide-tool-tab" data-guide-tool="party">パーティ分析</button><button type="button" class="guide-tool-tab" data-guide-tool="build">育成メモ</button><button type="button" class="guide-tool-tab" data-guide-tool="rng">乱数調整</button>
         </nav>
+        <div id="guideRngTool" class="guide-tool-pane hidden"></div>
         <div id="guideDexTool" class="guide-tool-pane">
           <section class="panel">
             <div class="section-title-row">
@@ -533,6 +534,7 @@
   <script type="module" src="./app.js"></script>
   <script type="module" src="./tournament.js?v=20260927-tools42"></script>
   <script type="module" src="./pokemon-guide.js?v=20261014-region183"></script>
+  <script src="./pokemon-rng-printer.js?v=20261014-rng184" defer></script>
   <script type="module" src="./loveca-records.js?v=20261007-tools60"></script>
   <script type="module" src="./mahjong.js?v=20261011-ocr1"></script>
   <script type="module" src="./mahjong-import.js?v=20261011-ocr2"></script>
