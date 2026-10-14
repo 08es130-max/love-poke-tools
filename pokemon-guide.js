@@ -722,7 +722,7 @@ function renderSpeedTable(){
     const near=!!(target&&!targetSame&&Math.abs(row.fastest-target.value)<=1);
     const classes=['speed-row','benchmark-row',groupCount>1?'speed-tie':'',groupStart&&groupCount>1?'speed-tie-start':'',groupEnd&&groupCount>1?'speed-tie-end':'',targetSame?'speed-tie-target':'',near?'target-line-near':''].filter(Boolean).join(' ');
     const tieBadge=groupStart&&groupCount>1?`<small class="speed-tie-badge">同速 ${row.fastest}・${groupCount}体</small>`:'';
-    return `<button type="button" class="${classes}" data-poke-guide-id="${row.p.id}"><span class="speed-rank">${rank}</span><span class="speed-name"><strong>${escapeHtml(row.p.name)}</strong>${tieBadge}<small>No.${String(row.p.id).padStart(4,'0')}</small></span><span class="speed-base">S${row.base}</span><span>${row.fastest}</span><span>${row.neutral}</span><span>${row.scarf}</span><span class="speed-ability-value">${row.ability?`${row.abilityValue}<small>${row.ability[0]}</small>`:'—'}</span></button>`;
+    return `<button type="button" class="${classes}" data-poke-guide-id="${row.p.id}"><span class="speed-rank">${rank}</span><span class="speed-name"><strong>${escapeHtml(row.p.name)}</strong>${tieBadge}<small>No.${String(row.p.id).padStart(4,'0')}</small></span><span class="speed-base">S${row.base}</span><span>${row.fastest}</span><span>${row.neutral}</span><span>${row.scarf}</span><span>${row.fastest*2}</span><span>${Math.floor(row.fastest*1.5)}</span><span>${row.fastest*2}</span><span class="speed-ability-value">${row.ability?`${row.abilityValue}<small>${row.ability[0]}</small>`:'—'}</span></button>`;
   }).join('')||'<p class="note">条件に該当するポケモンがいません。</p>';
   renderTargetResult(rows,target);
 }
