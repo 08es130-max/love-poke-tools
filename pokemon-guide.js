@@ -765,7 +765,7 @@ document.getElementById('guideTmFilter')?.addEventListener('change',renderTmCost
 function showGuideTool(tool='dex'){
   document.querySelectorAll('.guide-tool-tab').forEach(b=>b.classList.toggle('active',b.dataset.guideTool===tool));
   document.querySelectorAll('.guide-tool-pane').forEach(p=>p.classList.add('hidden'));
-  const id={dex:'guideDexTool',tm:'guideTmTool',types:'guideTypesTool',speed:'guideSpeedTool',party:'guidePartyTool',build:'guideBuildTool'}[tool];
+  const id={dex:'guideDexTool',tm:'guideTmTool',types:'guideTypesTool',speed:'guideSpeedTool',party:'guidePartyTool',build:'guideBuildTool',rng:'guideRngTool'}[tool];
   if(id)document.getElementById(id)?.classList.remove('hidden');
   if(tool==='tm')renderTmCosts();
   if(tool==='types')renderTypeChart();
