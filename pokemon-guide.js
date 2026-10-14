@@ -163,7 +163,8 @@ function moveButton(name,sub=''){
  if(!d)return `<div class="guide-move"><strong>${escapeHtml(name)}</strong>${sub?`<span>${escapeHtml(sub)}</span>`:''}</div>`;
  const type=MOVE_TYPE_LABELS[d.t]||'不明';
  const category=MOVE_CLASS_LABELS[d.c]||'不明';
- const desc=MOVE_EFFECT_JA[id]||'日本語の効果説明を準備中です。';
+ const rawDescription=d.e||'';
+ const desc=MOVE_EFFECT_JA[id]||(/[^\x00-\x7F]/.test(rawDescription)&&!/[A-Za-z]{3,}/.test(rawDescription)?rawDescription:'日本語の効果説明を準備中です。');
  const note='';
  const tags=[`タイプ：${type}`,`分類：${category}`,`威力：${d.p??'—'}`,`命中：${d.a??'—'}`,`PP：${d.pp??'—'}`];
  if(d.pr)tags.push(`優先度：${d.pr>0?'+':''}${d.pr}`);
@@ -299,7 +300,7 @@ const DEX_ABILITY_JA={
 function renderDexAbilities(p){
  const list=window.LOVEPOKE_DEX_EXTRA?.abilities?.[String(p.id)]||[];
  if(!list.length)return '<section class="guide-dex-abilities"><h3>特性</h3><p class="note">特性データなし</p></section>';
- return `<section class="guide-dex-abilities"><h3>特性</h3>${list.map(a=>`<details class="guide-dex-ability"><summary><strong>${escapeHtml(a.name)}</strong><span>${a.hidden?'隠れ特性':'通常特性'}</span></summary><p>${escapeHtml(DEX_ABILITY_JA[a.name]||'日本語の効果説明を準備中です。')}</p></details>`).join('')}</section>`;
+ return `<section class="guide-dex-abilities"><h3>特性</h3>${list.map(a=>`<details class="guide-dex-ability"><summary><strong>${escapeHtml(a.name)}</strong><span>${a.hidden?'隠れ特性':'通常特性'}</span></summary><p>${escapeHtml(DEX_ABILITY_JA[a.name]||((a.description&&!/[A-Za-z]{3,}/.test(a.description))?a.description:'日本語の効果説明を準備中です。'))}</p></details>`).join('')}</section>`;
 }
 function preEvolutionIds(p){
  const parents=window.LOVEPOKE_DEX_EXTRA?.parents||{};
