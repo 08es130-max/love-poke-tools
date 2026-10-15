@@ -41,7 +41,7 @@ function dashboardHTML(){
   const item=x.item==='1.5'?'スカーフ':x.item==='0.5'?'S半減持ち物':x.item&&x.item!=='1'?x.item:'未判明';
   const tera=x.tera?JA[TYPES.indexOf(x.tera)]||x.tera:'未判明';
   const stat=p?window.POKEMON_STATS?.[String(p.id)]?.speed:null;
-  return '<button type="button" class="assist-home-poke" data-assist-side="'+side+'" data-assist-index="'+i+'"><strong>'+esc(x.name||'＋ 登録')+'</strong>'+(p?'<span class="assist-home-info">特性：'+esc(ability)+'</span><span class="assist-home-info">持物：'+esc(item)+'</span><span class="assist-home-info">テラ：'+esc(tera)+'</span><small>'+(foe?'S種族値 '+stat:'実数値 '+speed(p,x))+'</small>':'<small>タップして編集</small>')+'</button>';
+  return '<button type="button" class="assist-home-poke" data-assist-side="'+side+'" data-assist-index="'+i+'"><strong>'+esc(x.name||'＋ 登録')+'</strong>'+(p?'<span class="assist-home-info">特性 '+esc(ability)+'</span><span class="assist-home-info">持物 '+esc(item)+' ／ テラ '+esc(tera)+'</span><small>'+(foe?'S種族値 '+stat:'実数値 '+speed(p,x))+'</small>':'<small>タップして登録</small>')+'</button>';
  }).join('')+'</div></section>';
  return team('mine','自分のポケモン 6体')+team('foe','相手のポケモン 6体')+'<div class="assist-home-actions"><button type="button" data-assist-section="speed"><strong>すばやさ比較</strong><small>最速順・実数値比較 →</small></button><button type="button" data-assist-section="types"><strong>タイプ相性分析</strong><small>弱点・耐性・一貫性 →</small></button></div>';
 }
