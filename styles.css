@@ -752,3 +752,27 @@ body:has(#pokeGuidePane:not(.hidden) #guideDexTool:not(.hidden) #guidePokemonDet
 #guideAssistTool .assist-mini-none{font-size:9px;color:#8e7a83}
 #guideAssistTool .assist-home-actions{grid-template-columns:minmax(0,1fr)}
 @media(max-width:360px){#guideAssistTool .assist-team-match-layout{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:4px}#guideAssistTool .assist-mini-type{font-size:8px}}
+
+/* v0.9.194 — battle assistant viewport optimization, scoped to its active pane */
+@media(max-width:600px){
+ body:has(#guideAssistTool:not(.hidden)) .app-header{padding:7px 12px!important}
+ body:has(#guideAssistTool:not(.hidden)) .app-header h1{font-size:18px!important;margin:0!important}
+ body:has(#guideAssistTool:not(.hidden)) .top-nav{padding:3px 8px!important;gap:5px!important;top:48px!important}
+ body:has(#guideAssistTool:not(.hidden)) .top-nav .nav-btn{padding:7px 4px!important}
+ body:has(#guideAssistTool:not(.hidden)) main{padding-top:0!important}
+ body:has(#guideAssistTool:not(.hidden)) .poke-subnav{margin:0 0 3px!important;padding:2px 0!important;gap:5px!important;top:91px!important}
+ body:has(#guideAssistTool:not(.hidden)) .poke-subnav .poke-tab{padding:7px 2px!important}
+ body:has(#guideAssistTool:not(.hidden)) .guide-tool-nav{margin:0 0 4px!important;row-gap:3px!important}
+ body:has(#guideAssistTool:not(.hidden)) .guide-tool-tab{padding:6px 1px!important;min-height:29px!important}
+ #guideAssistTool .assist-main-panel{margin:0!important;padding:7px 9px!important}
+ #guideAssistTool .assist-main-panel>.section-title-row{min-height:25px!important}
+ #guideAssistTool .assist-main-panel>.section-title-row h2{font-size:16px!important}
+ #guideAssistTool .assist-home-section{margin:3px 0 5px!important}
+ #guideAssistTool .assist-home-section h3{margin:2px 0 4px!important;font-size:12px!important}
+ #guideAssistTool .assist-team-match-layout .assist-home-poke{height:62px!important;min-height:62px!important}
+ #guideAssistTool .assist-mini-match{padding:4px!important}
+ #guideAssistTool .assist-mini-group{padding:2px 0!important}
+ #guideAssistTool .assist-mini-type{padding:2px 3px!important}
+ #guideAssistTool .assist-home-actions{margin-top:5px!important}
+ #guideAssistTool .assist-home-actions button{min-height:41px!important}
+}
