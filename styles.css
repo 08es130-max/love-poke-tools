@@ -776,3 +776,13 @@ body:has(#pokeGuidePane:not(.hidden) #guideDexTool:not(.hidden) #guidePokemonDet
  #guideAssistTool .assist-home-actions{margin-top:5px!important}
  #guideAssistTool .assist-home-actions button{min-height:41px!important}
 }
+
+/* v0.9.195: four opponent slots and dashboard-only page scroll lock */
+body.assist-dashboard-locked{height:100dvh!important;overflow:hidden!important;overscroll-behavior:none!important}
+#guideAssistTool .assist-opponent-switch{display:flex;align-items:center;gap:5px;margin:3px 0 1px;min-width:0}
+#guideAssistTool .assist-opponent-switch>span{font-size:10px;font-weight:800;white-space:nowrap}
+#guideAssistTool .assist-opponent-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));flex:1;min-width:0;gap:3px}
+#guideAssistTool .assist-opponent-tabs button{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border:1px solid #e7cdd7;border-radius:7px;background:#fff;color:#97536c;font-size:10px;font-weight:700;padding:5px 1px}
+#guideAssistTool .assist-opponent-tabs button.active{background:#ed558a;color:white;border-color:#ed558a}
+#guideAssistTool .assist-opponent-rename{border:1px solid #e7cdd7;border-radius:7px;background:#fff;color:#97536c;font-size:9px;white-space:nowrap;padding:5px 3px}
+@media(max-width:600px){body.assist-dashboard-locked #guideAssistTool .assist-home-section{margin:2px 0 3px!important}body.assist-dashboard-locked #guideAssistTool .assist-team-match-layout .assist-home-poke{height:59px!important;min-height:59px!important}body.assist-dashboard-locked #guideAssistTool .assist-home-actions{margin-top:3px!important}body.assist-dashboard-locked #guideAssistTool .assist-home-actions button{min-height:35px!important}}
