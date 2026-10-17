@@ -36,7 +36,7 @@ async function recognize(file){
  // 文字列の出現順ではなく各パネルの座標から名前・点数を個別に読む。
  const panelYs=[.17,.37,.54,.72];const detectedFourth=/4\s*位|四位/.test(whole);
  const detectedThird=/3\s*位|三位/.test(whole);
- const count=detectedFourth?4:detectedThird?3:4;$('#mjImportCount').value=String(count);
+ const currentCount=Number($('#mjImportCount').value)||4;const count=detectedFourth?4:detectedThird?3:currentCount;if(detectedFourth||detectedThird)$('#mjImportCount').value=String(count);
  const rowResults=[];
  for(let i=0;i<count;i++){
   $('#mjImportStatus').textContent=(i+1)+'位の名前と点数を読み取り中…';
@@ -48,7 +48,7 @@ async function recognize(file){
   rowResults.push({name,points:points??''});
  }
  parsed=rowResults;renderRows();
- $('#mjImportStatus').textContent='読み取り完了。名前・点数を必ず確認してください。'+(detectedFourth?'四麻と判定しました。':detectedThird?'三麻の可能性があります。人数を確認してください。':'人数が不確かなため四麻を仮選択しました。');
+ $('#mjImportStatus').textContent='読み取り完了。名前・点数を必ず確認してください。'+(detectedFourth?'四麻と判定しました。':detectedThird?'三麻の可能性があります。人数を確認してください。' :'人数を判定できなかったため、選択中の対局形式を維持しました。');
  }catch(e){$('#mjImportStatus').textContent='画像認識に失敗しました：'+e.message;parsed=Array.from({length:Number($('#mjImportCount').value)||4},()=>({name:'',points:''}));renderRows()}
 }
 function initUI(){const pane=$('#mahjongEntryPane .panel');if(!pane)return;const registry=document.createElement('section');registry.innerHTML='<h3>プレイヤー管理・ゲーム内ネーム</h3><p class="note">戦歴は基本プレイヤー名に集計します。1人に複数のゲーム内ネームを登録できます。</p><div class="guest-add"><input id="mjBaseName" placeholder="新しい基本プレイヤー名"><button type="button" class="ghost-btn" id="mjAddBase">プレイヤー追加</button></div><p id="mjRegistryStatus" class="note"></p><div id="mjRegistry"></div>';pane.insertBefore(registry,$('#mahjongSelectionHint'));
