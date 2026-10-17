@@ -1,7 +1,7 @@
 import {getFirebaseContext} from './firebase-client.js';
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const key='mahjong-player-registry-v1';let records=[],image=null,parsed=[],worker=null;
-const normalize=s=>String(s||'').normalize('NFKC').trim();
+const normalize=s=>String(s||'').normalize('NFKC').replace(/[\\s\\u3000]+/g,'').trim();
 const uid=()=>crypto.randomUUID?.()||'mj-'+Date.now()+'-'+Math.random().toString(36).slice(2);
 function available(){return [...(window.getLovePokeBasePlayers?.()||[]),...records.filter(r=>r.owned).map(r=>({playerId:r.playerId,displayName:r.name}))].filter((p,i,a)=>a.findIndex(x=>x.playerId===p.playerId)===i)}
 function saveLocal(){localStorage.setItem(key,JSON.stringify(records))}
@@ -46,7 +46,7 @@ async function recognize(file){
   const scoreRetry=await ocrCrop(source,[.51,y+.055,.17,.088],true);
   const name=nameText.replace(/\[?\s*自家\s*\]?/g,'').replace(/[\\[\]★*]/g,'').split('\n').map(x=>x.trim()).filter(Boolean).find(x=>/[A-Za-zぁ-んァ-ン一-龯]/.test(x))||'';
   const points=parseScore(scoreText)??parseScore(scoreRetry);
-  rowResults.push({name,points:points??''});
+  const canonical=records.flatMap(r=>r.aliases||[]).find(a=>normalize(a)===normalize(name));rowResults.push({name:canonical||name.replace(/[\\s\\u3000]+/g,''),points:points??''});
  }
  const total=rowResults.reduce((s,r)=>s+(Number.isFinite(r.points)?r.points:0),0);const expected=100000;if(count===4&&rowResults.every(r=>Number.isFinite(r.points))&&total!==expected){rowResults.forEach(r=>r.points='');$('#mjImportStatus').textContent='点数の合計が不正なため自動入力を取り消しました。';}parsed=rowResults;renderRows();
  $('#mjImportStatus').textContent='読み取り完了。名前・点数を必ず確認してください。'+(detectedFourth?'四麻と判定しました。':detectedThird?'三麻の可能性があります。人数を確認してください。' :'人数を判定できなかったため、選択中の対局形式を維持しました。');
