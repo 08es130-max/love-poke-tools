@@ -22,7 +22,7 @@ async function ocrCrop(source,rect,numeric=false){
  if(numeric){const data=ctx.getImageData(0,0,canvas.width,canvas.height);for(let i=0;i<data.data.length;i+=4){const a=data.data[i],b=data.data[i+1],d=data.data[i+2];const bright=Math.max(a,b,d);const v=bright>125?0:255;data.data[i]=data.data[i+1]=data.data[i+2]=v;}ctx.putImageData(data,0,0)}
  return (await worker.recognize(canvas)).data.text.trim();
 }
-function parseScore(s){const matches=[...s.replace(/[，,]/g,'').replace(/[−ー－]/g,'-').matchAll(/-?\d{3,6}/g)].map(x=>Number(x[0]));return matches.find(n=>n>=-100000&&n<=150000&&Math.abs(n)>=100)||null}
+function parseScore(s){const matches=[...s.replace(/[，,]/g,'').replace(/[−ー－]/g,'-').matchAll(/-?\d{3,6}/g)].map(x=>Number(x[0]));return matches.find(n=>n>=-100000&&n<=150000&&(Math.abs(n)>=1000||n===0))??null}
 async function recognize(file){
  $('#mjImportStatus').textContent='順位ごとに画像を読み取っています…';$('#mjImportRows').innerHTML='';
  try{
@@ -34,20 +34,21 @@ async function recognize(file){
  const whole=(await worker.recognize(source)).data.text;$('#mjOcrText').value=whole;
  // 雀魂の横長終局画面では順位パネルが右半分に縦4段で並ぶ。
  // 文字列の出現順ではなく各パネルの座標から名前・点数を個別に読む。
- const panelYs=[.17,.37,.54,.72];const detectedFourth=/4\s*位|四位/.test(whole);
+ const panelYs=[.18,.38,.55,.72];const detectedFourth=/4\s*位|四位/.test(whole);
  const detectedThird=/3\s*位|三位/.test(whole);
  const currentCount=Number($('#mjImportCount').value)||4;const count=detectedFourth?4:detectedThird?3:currentCount;if(detectedFourth||detectedThird)$('#mjImportCount').value=String(count);
  const rowResults=[];
  for(let i=0;i<count;i++){
   $('#mjImportStatus').textContent=(i+1)+'位の名前と点数を読み取り中…';
   const y=panelYs[i];
-  const nameText=await ocrCrop(source,[.50,y-.006,.18,.055]);
-  const scoreText=await ocrCrop(source,[.51,y+.055,.17,.073],true);
-  const name=nameText.split('\n').map(x=>x.trim()).filter(Boolean).find(x=>/[A-Za-zぁ-んァ-ン一-龯]/.test(x))||'';
-  const points=parseScore(scoreText);
+  const nameText=await ocrCrop(source,[.50,y-.005,.20,.052]);
+  const scoreText=await ocrCrop(source,[.51,y+.055,.17,.088],false);
+  const scoreRetry=await ocrCrop(source,[.51,y+.055,.17,.088],true);
+  const name=nameText.replace(/\[?\s*自家\s*\]?/g,'').replace(/[\\[\]★*]/g,'').split('\n').map(x=>x.trim()).filter(Boolean).find(x=>/[A-Za-zぁ-んァ-ン一-龯]/.test(x))||'';
+  const points=parseScore(scoreText)??parseScore(scoreRetry);
   rowResults.push({name,points:points??''});
  }
- parsed=rowResults;renderRows();
+ const total=rowResults.reduce((s,r)=>s+(Number.isFinite(r.points)?r.points:0),0);const expected=count===4?100000:105000;if(rowResults.every(r=>Number.isFinite(r.points))&&total!==expected){rowResults.forEach(r=>r.points='');$('#mjImportStatus').textContent='点数の合計が不正なため自動入力を取り消しました。';}parsed=rowResults;renderRows();
  $('#mjImportStatus').textContent='読み取り完了。名前・点数を必ず確認してください。'+(detectedFourth?'四麻と判定しました。':detectedThird?'三麻の可能性があります。人数を確認してください。' :'人数を判定できなかったため、選択中の対局形式を維持しました。');
  }catch(e){$('#mjImportStatus').textContent='画像認識に失敗しました：'+e.message;parsed=Array.from({length:Number($('#mjImportCount').value)||4},()=>({name:'',points:''}));renderRows()}
 }
