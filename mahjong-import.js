@@ -24,19 +24,26 @@ async function ocrCrop(source,rect,numeric=false){
 }
 function parseScore(s){const candidates=[...String(s).replace(/[，,\s]/g,'').replace(/[−－]/g,'-').matchAll(/-?\d{3,6}/g)].map(m=>Number(m[0]));return candidates.find(n=>n>=-100000&&n<=150000&&n%100===0)??null}
 async function recognizeScore(source,i,y){
- // 名前や収支(+35.1等)を含めず、白い持ち点数字のみを切り出す。
  const x=[.515,.553,.595,.64][i],top=y+.055;
- const rects=[[x,top,.135,.070],[x-.012,top-.014,.17,.093],[x-.02,top-.025,.19,.11]];
- const results=[];
+ const rects=[[x-.018,top-.018,.185,.105],[x-.025,top-.028,.20,.12],[x,top,.135,.07]];
+ const results=[],debug=[];
  for(const rect of rects){
   for(const invert of [false,true]){
-   const value=parseScore(await ocrCrop(source,rect,invert));
+   const raw=await ocrCrop(source,rect,invert),value=parseScore(raw);
+   debug.push({rect,invert,raw,value});
    if(value!==null)results.push(value);
   }
-  if(results.length>=2&&results[0]===results[1])break;
  }
  const tally=new Map();for(const v of results)tally.set(v,(tally.get(v)||0)+1);
- return [...tally].sort((a,b)=>b[1]-a[1])[0]?.[0]??null;
+ const candidates=[...tally].sort((a,b)=>b[1]-a[1]||String(Math.abs(b[0])).length-String(Math.abs(a[0])).length);
+ // 100や0などは大きな点数の末尾だけを認識した可能性が高いので優先しない
+ const substantial=candidates.filter(([v])=>Math.abs(v)>=1000);
+ return {points:(substantial[0]||candidates[0])?.[0]??null,candidates:candidates.map(([v,n])=>({value:v,votes:n})),debug,rect:rects[0]};
+}
+function renderScoreDebug(source,rows){
+ let el=$('#mjScoreDebug');if(!el){el=document.createElement('details');el.id='mjScoreDebug';el.innerHTML='<summary>点数OCRの切り出し画像・認識文字を確認</summary><div id="mjScoreDebugRows"></div>';$('#mjImportRows').after(el)}
+ const box=$('#mjScoreDebugRows');box.innerHTML='';
+ rows.forEach((r,i)=>{if(!r.scoreDebug)return;const d=r.scoreDebug;const div=document.createElement('div');div.style.cssText='margin:12px 0;padding:8px;border:1px solid #ddd;overflow-wrap:anywhere';const canvas=document.createElement('canvas'),rect=d.rect;canvas.width=Math.round(rect[2]*source.width);canvas.height=Math.round(rect[3]*source.height);canvas.style.cssText='max-width:100%;height:auto;display:block;background:#142039';canvas.getContext('2d').drawImage(source,rect[0]*source.width,rect[1]*source.height,rect[2]*source.width,rect[3]*source.height,0,0,canvas.width,canvas.height);div.textContent=(i+1)+'位 候補: '+d.candidates.map(x=>x.value+'('+x.votes+'回)').join(', ')+' / OCR: '+d.debug.map(x=>x.raw.replace(/\s+/g,' ')).join(' | ');div.prepend(canvas);box.append(div)});
 }
 function aliasSuggestion(raw){const n=normalize(raw);if(!n)return null;const names=records.flatMap(r=>r.aliases||[]);const distance=(a,b)=>{const x=[...a],y=[...b],d=Array.from({length:x.length+1},()=>Array(y.length+1).fill(0));for(let i=0;i<=x.length;i++)d[i][0]=i;for(let j=0;j<=y.length;j++)d[0][j]=j;for(let i=1;i<=x.length;i++)for(let j=1;j<=y.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(x[i-1]===y[j-1]?0:1));return d[x.length][y.length]};const ranked=names.map(a=>({name:a,d:distance(n,normalize(a))})).sort((a,b)=>a.d-b.d);if(!ranked.length)return null;const best=ranked[0];return best.d===0?best.name:(n.length>=4&&best.d<=1&&(!ranked[1]||ranked[1].d>best.d)?best.name:null)}
 async function recognize(file){
@@ -59,10 +66,10 @@ async function recognize(file){
   const y=panelYs[i];
   const nameStarts=[.505,.505,.585,.61];const nameText=await ocrCrop(source,[nameStarts[i]??.61,y-.005,i>=2?.14:(i===1?.185:.15),.045]);
   const name=nameText.replace(/\[?\s*自家\s*\]?/g,'').replace(/[\\[\]★*]/g,'').split('\n').map(x=>x.trim()).filter(Boolean).find(x=>/[A-Za-zぁ-んァ-ン一-龯]/.test(x))?.replace(/^[^A-Za-zぁ-んァ-ン一-龯]+/u,'')||'';
-  const points=await recognizeScore(source,i,y);
-  const canonical=aliasSuggestion(name);rowResults.push({name:canonical||name.replace(/[\s\u3000]+/g,''),points:points??''});
+  const score=await recognizeScore(source,i,y);
+  const canonical=aliasSuggestion(name);rowResults.push({name:canonical||name.replace(/[\s\u3000]+/g,''),points:score.points??'',scoreDebug:score});
  }
- const missing=rowResults.map((r,i)=>r.points===''?i:-1).filter(i=>i>=0);if(count===4&&missing.length===1){const known=rowResults.reduce((s,r)=>s+(r.points===''?0:Number(r.points)),0);const inferred=100000-known;if(inferred>=-100000&&inferred<=150000&&inferred%100===0){rowResults[missing[0]].points=inferred;rowResults[missing[0]].inferred=true}}const total=rowResults.reduce((s,r)=>s+(Number.isFinite(r.points)?r.points:0),0);const expected=100000;if(count===4&&rowResults.every(r=>Number.isFinite(r.points))&&total!==expected){$('#mjImportStatus').textContent='合計点が10万点ではありません。点数を確認してください。';}parsed=rowResults;renderRows();if(rowResults.some(r=>r.inferred))$('#mjImportWarning').textContent+=' ※点数の一部は合計10万点からの逆算です。必ず画像と照合してください。';
+ const missing=rowResults.map((r,i)=>r.points===''?i:-1).filter(i=>i>=0);if(count===4&&missing.length===1){const known=rowResults.reduce((s,r)=>s+(r.points===''?0:Number(r.points)),0);const inferred=100000-known;if(inferred>=-100000&&inferred<=150000&&inferred%100===0){rowResults[missing[0]].points=inferred;rowResults[missing[0]].inferred=true}}const total=rowResults.reduce((s,r)=>s+(Number.isFinite(r.points)?r.points:0),0);const expected=100000;if(count===4&&rowResults.every(r=>Number.isFinite(r.points))&&total!==expected){$('#mjImportStatus').textContent='合計点が10万点ではありません。点数を確認してください。';}parsed=rowResults;renderRows();renderScoreDebug(source,rowResults);if(rowResults.some(r=>r.inferred))$('#mjImportWarning').textContent+=' ※点数の一部は合計10万点からの逆算です。必ず画像と照合してください。';
  $('#mjImportStatus').textContent='読み取り完了。名前・点数を必ず確認してください。'+(detectedFourth?'四麻と判定しました。':detectedThird?'三麻の可能性があります。人数を確認してください。' :'人数を判定できなかったため、選択中の対局形式を維持しました。');
  }catch(e){$('#mjImportStatus').textContent='画像認識に失敗しました：'+e.message;parsed=Array.from({length:Number($('#mjImportCount').value)||4},()=>({name:'',points:''}));renderRows()}
 }
