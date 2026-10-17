@@ -15,7 +15,42 @@ async function persist(){saveLocal();update();try{const {db,firestore:{doc,setDo
 function resolve(name){const n=normalize(name);const found=available().filter(p=>normalize(p.displayName)===n||records.some(r=>r.playerId===p.playerId&&r.aliases.some(a=>normalize(a)===n)));return found.length===1?found[0]:null}
 function renderRows(){const box=$('#mjImportRows');box.innerHTML=parsed.map((r,i)=>'<div class="mahjong-result"><strong>'+(i+1)+'位</strong><label>ゲーム内ネーム<input data-mj-name="'+i+'" value="'+esc(r.name)+'"></label><label>点数<input type="number" inputmode="numeric" data-mj-points="'+i+'" value="'+esc(r.points??'')+'"></label><div class="note" data-mj-match="'+i+'"></div></div>').join('');box.querySelectorAll('input').forEach(x=>x.addEventListener('input',checkRows));checkRows()}
 function checkRows(){const names=[...document.querySelectorAll('[data-mj-name]')];let okay=true;names.forEach((input,i)=>{const p=resolve(input.value),label=$('[data-mj-match="'+i+'"]');label.textContent=p?'一致：'+p.displayName:'一致する名前がありません：「'+input.value+'」をプレイヤー管理で登録してください。';label.style.color=p?'':'#d33';if(!p)okay=false});$('#mjImportApply').disabled=!okay||names.some((_,i)=>!Number.isInteger(Number($('[data-mj-points="'+i+'"]').value))||$('[data-mj-points="'+i+'"]').value==='');$('#mjImportWarning').textContent=okay?'全員の名前が一致しました。点数を確認して取り込んでください。':'未登録または誤認識のゲーム内ネームがあります。全員を照合するまで取り込みできません。'}
-async function recognize(file){$('#mjImportStatus').textContent='画像を解析しています…';$('#mjImportRows').innerHTML='';try{if(!window.Tesseract)throw Error('画像認識ライブラリを読み込めませんでした。オンラインで再試行してください。');if(!worker)worker=await window.Tesseract.createWorker('jpn+eng');const bitmap=await createImageBitmap(file);const cv=document.createElement('canvas'),ctx=cv.getContext('2d');const landscape=bitmap.width<bitmap.height;cv.width=landscape?bitmap.height:bitmap.width;cv.height=landscape?bitmap.width:bitmap.height;ctx.translate(cv.width/2,cv.height/2);if(landscape)ctx.rotate(-Math.PI/2);ctx.drawImage(bitmap,-bitmap.width/2,-bitmap.height/2);bitmap.close?.();const out=await worker.recognize(cv);$('#mjOcrText').value=out.data.text;$('#mjImportStatus').textContent='認識完了。順位・名前・点数を確認してください。誤りは下の欄で修正できます。';const text=out.data.text;const scores=[...text.matchAll(/(?:^|\s)(\d{4,6})(?:\s|$)/gm)].map(x=>Number(x[1])).filter(x=>x>=1000&&x<=100000);const lines=text.split('\n').map(s=>s.trim()).filter(Boolean);const names=lines.filter(s=>!/^[-+\d.,\s]+$/.test(s)&&!/(終局|確認|点数|順位|麻雀|PT)/.test(s));const ranks=[...text.matchAll(/(?:^|\s)([1-4])\s*位/g)].map(m=>Number(m[1]));const distinct=[...new Set(ranks)];const count=distinct.includes(4)?4:(distinct.length===3&&distinct.every(n=>n<=3)?3:0);$('#mjImportCount').value=String(count||4);$('#mjImportStatus').textContent+=count?' '+(count===3?'三麻':'四麻')+'と判定しました。':' 人数を確定できませんでした。三麻・四麻を選択してください。';parsed=Array.from({length:count||4},(_,i)=>({name:names[i]||'',points:scores[i]??''}));renderRows()}catch(e){$('#mjImportStatus').textContent='自動認識に失敗しました：'+e.message+'。手動入力で続けられます。';parsed=Array.from({length:Number($('#mjImportCount').value)||4},()=>({name:'',points:''}));renderRows()}}
+async function ocrCrop(source,rect,numeric=false){
+ const canvas=document.createElement('canvas');canvas.width=Math.round(rect[2]*source.width*2);canvas.height=Math.round(rect[3]*source.height*2);
+ const ctx=canvas.getContext('2d',{willReadFrequently:true});ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);
+ ctx.drawImage(source,Math.round(rect[0]*source.width),Math.round(rect[1]*source.height),Math.round(rect[2]*source.width),Math.round(rect[3]*source.height),0,0,canvas.width,canvas.height);
+ if(numeric){const data=ctx.getImageData(0,0,canvas.width,canvas.height);for(let i=0;i<data.data.length;i+=4){const a=data.data[i],b=data.data[i+1],d=data.data[i+2];const bright=Math.max(a,b,d);const v=bright>125?0:255;data.data[i]=data.data[i+1]=data.data[i+2]=v;}ctx.putImageData(data,0,0)}
+ return (await worker.recognize(canvas)).data.text.trim();
+}
+function parseScore(s){const matches=[...s.replace(/[，,]/g,'').replace(/[−ー－]/g,'-').matchAll(/-?\d{3,6}/g)].map(x=>Number(x[0]));return matches.find(n=>n>=-100000&&n<=150000&&Math.abs(n)>=100)||null}
+async function recognize(file){
+ $('#mjImportStatus').textContent='順位ごとに画像を読み取っています…';$('#mjImportRows').innerHTML='';
+ try{
+ if(!window.Tesseract)throw Error('画像認識ライブラリを読み込めません。ネット接続を確認してください。');
+ if(!worker)worker=await window.Tesseract.createWorker('jpn+eng');
+ const bitmap=await createImageBitmap(file);const source=document.createElement('canvas');const ctx=source.getContext('2d');
+ const rotate=bitmap.width<bitmap.height;source.width=rotate?bitmap.height:bitmap.width;source.height=rotate?bitmap.width:bitmap.height;
+ ctx.translate(source.width/2,source.height/2);if(rotate)ctx.rotate(Math.PI/2);ctx.drawImage(bitmap,-bitmap.width/2,-bitmap.height/2);bitmap.close?.();
+ const whole=(await worker.recognize(source)).data.text;$('#mjOcrText').value=whole;
+ // 雀魂の横長終局画面では順位パネルが右半分に縦4段で並ぶ。
+ // 文字列の出現順ではなく各パネルの座標から名前・点数を個別に読む。
+ const panelYs=[.17,.37,.54,.72];const detectedFourth=/4\s*位|四位/.test(whole);
+ const detectedThird=/3\s*位|三位/.test(whole);
+ const count=detectedFourth?4:detectedThird?3:4;$('#mjImportCount').value=String(count);
+ const rowResults=[];
+ for(let i=0;i<count;i++){
+  $('#mjImportStatus').textContent=(i+1)+'位の名前と点数を読み取り中…';
+  const y=panelYs[i];
+  const nameText=await ocrCrop(source,[.50,y-.006,.18,.055]);
+  const scoreText=await ocrCrop(source,[.51,y+.055,.17,.073],true);
+  const name=nameText.split('\n').map(x=>x.trim()).filter(Boolean).find(x=>/[A-Za-zぁ-んァ-ン一-龯]/.test(x))||'';
+  const points=parseScore(scoreText);
+  rowResults.push({name,points:points??''});
+ }
+ parsed=rowResults;renderRows();
+ $('#mjImportStatus').textContent='読み取り完了。名前・点数を必ず確認してください。'+(detectedFourth?'四麻と判定しました。':detectedThird?'三麻の可能性があります。人数を確認してください。':'人数が不確かなため四麻を仮選択しました。');
+ }catch(e){$('#mjImportStatus').textContent='画像認識に失敗しました：'+e.message;parsed=Array.from({length:Number($('#mjImportCount').value)||4},()=>({name:'',points:''}));renderRows()}
+}
 function initUI(){const pane=$('#mahjongEntryPane .panel');if(!pane)return;const registry=document.createElement('section');registry.innerHTML='<h3>プレイヤー管理・ゲーム内ネーム</h3><p class="note">戦歴は基本プレイヤー名に集計します。1人に複数のゲーム内ネームを登録できます。</p><div class="guest-add"><input id="mjBaseName" placeholder="新しい基本プレイヤー名"><button type="button" class="ghost-btn" id="mjAddBase">プレイヤー追加</button></div><p id="mjRegistryStatus" class="note"></p><div id="mjRegistry"></div>';pane.insertBefore(registry,$('#mahjongSelectionHint'));
 const importer=document.createElement('section');importer.innerHTML='<h3>スクショから結果入力</h3><label class="block-label">対局形式（認識後に変更可能）<select id="mjImportCount"><option value="3">三麻（3人）</option><option value="4" selected>四麻（4人）</option></select></label><p class="note">雀魂の終局画面を選択してください。読み取った内容は必ず確認・修正してから登録します。</p><input type="file" id="mjScreenshot" accept="image/*"><p id="mjImportStatus" class="note"></p><details><summary>OCRで読み取った文字を確認</summary><textarea id="mjOcrText" rows="5" readonly style="width:100%"></textarea></details><div id="mjImportRows"></div><p id="mjImportWarning" role="alert" class="note"></p><button id="mjImportApply" type="button" class="primary-btn" disabled>確認した結果を登録フォームへ反映</button>';pane.insertBefore(importer,$('#mahjongSelectionHint'));
 $('#mjAddBase').onclick=()=>{const n=normalize($('#mjBaseName').value);if(!n)return;if(available().some(p=>normalize(p.displayName)===n))return alert('同じ基本プレイヤー名が既にあります。');records.push({playerId:'mj-'+uid(),name:n,aliases:[],owned:true});$('#mjBaseName').value='';persist()};
