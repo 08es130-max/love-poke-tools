@@ -799,3 +799,9 @@ body.assist-dashboard-locked{height:100dvh!important;overflow:hidden!important;o
 #guideAssistTool .assist-mini-group>b{font-size:9px!important;margin-bottom:1px!important}
 #guideAssistTool .assist-mini-type{font-size:9px!important;padding:2px 3px!important}
 #guideAssistTool .assist-mini-more{font-size:9px;color:#8b6174;white-space:nowrap;padding:2px 0}
+
+/* Battle assistant one-character original type badges */
+#guideAssistTool .assist-poke-name{display:flex;align-items:center;justify-content:center;gap:3px;max-width:100%;min-width:0;white-space:nowrap}
+#guideAssistTool .assist-poke-name strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:0 1 auto}
+#guideAssistTool .assist-poke-types{display:inline-flex;flex:none;gap:2px;align-items:center}
+#guideAssistTool .assist-poke-type{display:inline-block;font-size:9px;line-height:1.2;padding:2px 3px;border:1px solid #e4c7d3;border-radius:4px;color:#984566;background:#fff5f9;font-weight:700}
