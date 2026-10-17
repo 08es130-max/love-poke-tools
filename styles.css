@@ -805,3 +805,10 @@ body:has(#pokeGuidePane:not(.hidden) #guideDexTool:not(.hidden) #guidePokemonDet
 #guideAssistTool .assist-poke-name strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:0 1 auto}
 #guideAssistTool .assist-poke-types{display:inline-flex;flex:none;gap:2px;align-items:center}
 #guideAssistTool .assist-poke-type{display:inline-block;font-size:9px;line-height:1.2;padding:2px 3px;border:1px solid #e4c7d3;border-radius:4px;color:#984566;background:#fff5f9;font-weight:700}
+
+/* v0.9.200: all six base stats in battle assistant detail summary */
+#guideAssistTool .assist-poke summary{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+#guideAssistTool .assist-poke summary .assist-base-stats{display:flex;align-items:center;justify-content:flex-end;gap:5px;flex-wrap:wrap;font-size:11px;color:#776b72}
+#guideAssistTool .assist-poke summary .assist-base-stats>span{white-space:nowrap}
+#guideAssistTool .assist-poke summary .assist-base-stats b{font-weight:800;color:#343036;margin-left:1px}
+@media(max-width:600px){#guideAssistTool .assist-poke summary .assist-base-stats{width:100%;justify-content:space-between;gap:3px;font-size:11px}}
