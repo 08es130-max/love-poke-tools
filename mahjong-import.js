@@ -42,10 +42,10 @@ async function recognize(file){
  for(let i=0;i<count;i++){
   $('#mjImportStatus').textContent=(i+1)+'位の名前と点数を読み取り中…';
   const y=panelYs[i];
-  const nameText=await ocrCrop(source,[.505,y-.005,.185,.045]);
+  const nameStarts=[.505,.545,.585,.61];const nameText=await ocrCrop(source,[nameStarts[i]??.61,y-.005,i>=2?.14:.15,.045]);
   const scoreText=await ocrCrop(source,[.51,y+.045,.19,.105],false);
   const scoreRetry=await ocrCrop(source,[.51,y+.045,.19,.105],true);
-  const name=nameText.replace(/\[?\s*自家\s*\]?/g,'').replace(/[\\[\]★*]/g,'').split('\n').map(x=>x.trim()).filter(Boolean).find(x=>/[A-Za-zぁ-んァ-ン一-龯]/.test(x))||'';
+  const name=nameText.replace(/\[?\s*自家\s*\]?/g,'').replace(/[\\[\]★*]/g,'').split('\n').map(x=>x.trim()).filter(Boolean).find(x=>/[A-Za-zぁ-んァ-ン一-龯]/.test(x))?.replace(/^[^A-Za-zぁ-んァ-ン一-龯]+/u,'')||'';
   let points=parseScore(scoreText)??parseScore(scoreRetry);if(points!=null&&i>=2&&points>0&&/[-−－ー]/.test(scoreText+' '+scoreRetry))points=-points;
   const canonical=aliasSuggestion(name);rowResults.push({name:canonical||name.replace(/[\s\u3000]+/g,''),points:points??''});
  }
