@@ -786,3 +786,16 @@ body.assist-dashboard-locked{height:100dvh!important;overflow:hidden!important;o
 #guideAssistTool .assist-opponent-tabs button.active{background:#ed558a;color:white;border-color:#ed558a}
 #guideAssistTool .assist-opponent-rename{border:1px solid #e7cdd7;border-radius:7px;background:#fff;color:#97536c;font-size:9px;white-space:nowrap;padding:5px 3px}
 @media(max-width:600px){body.assist-dashboard-locked #guideAssistTool .assist-home-section{margin:2px 0 3px!important}body.assist-dashboard-locked #guideAssistTool .assist-team-match-layout .assist-home-poke{height:59px!important;min-height:59px!important}body.assist-dashboard-locked #guideAssistTool .assist-home-actions{margin-top:3px!important}body.assist-dashboard-locked #guideAssistTool .assist-home-actions button{min-height:35px!important}}
+
+/* v0.9.197: prevent matchup counts from stretching six Pokemon cards */
+#guideAssistTool .assist-team-match-layout{align-items:start!important}
+#guideAssistTool .assist-team-match-layout .assist-home-team{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;grid-template-rows:repeat(3,59px)!important;align-content:start!important;align-items:stretch!important;gap:4px!important}
+#guideAssistTool .assist-team-match-layout .assist-home-poke{height:59px!important;min-height:0!important;max-height:59px!important}
+#guideAssistTool .assist-mini-match{align-self:start!important;min-width:0!important;padding:4px!important}
+#guideAssistTool .assist-mini-title{display:flex;justify-content:space-between;align-items:center;gap:3px;margin-bottom:2px}
+#guideAssistTool .assist-mini-title h4{margin:0!important;font-size:10px!important}
+#guideAssistTool .assist-mini-title button{border:0;background:transparent;color:#a63664;font-weight:800;font-size:10px;padding:2px 1px;white-space:nowrap}
+#guideAssistTool .assist-mini-group{padding:2px 0!important}
+#guideAssistTool .assist-mini-group>b{font-size:9px!important;margin-bottom:1px!important}
+#guideAssistTool .assist-mini-type{font-size:9px!important;padding:2px 3px!important}
+#guideAssistTool .assist-mini-more{font-size:9px;color:#8b6174;white-space:nowrap;padding:2px 0}
