@@ -48,7 +48,7 @@ async function recognize(file){
   const points=parseScore(scoreText)??parseScore(scoreRetry);
   rowResults.push({name,points:points??''});
  }
- const total=rowResults.reduce((s,r)=>s+(Number.isFinite(r.points)?r.points:0),0);const expected=count===4?100000:105000;if(rowResults.every(r=>Number.isFinite(r.points))&&total!==expected){rowResults.forEach(r=>r.points='');$('#mjImportStatus').textContent='点数の合計が不正なため自動入力を取り消しました。';}parsed=rowResults;renderRows();
+ const total=rowResults.reduce((s,r)=>s+(Number.isFinite(r.points)?r.points:0),0);const expected=100000;if(count===4&&rowResults.every(r=>Number.isFinite(r.points))&&total!==expected){rowResults.forEach(r=>r.points='');$('#mjImportStatus').textContent='点数の合計が不正なため自動入力を取り消しました。';}parsed=rowResults;renderRows();
  $('#mjImportStatus').textContent='読み取り完了。名前・点数を必ず確認してください。'+(detectedFourth?'四麻と判定しました。':detectedThird?'三麻の可能性があります。人数を確認してください。' :'人数を判定できなかったため、選択中の対局形式を維持しました。');
  }catch(e){$('#mjImportStatus').textContent='画像認識に失敗しました：'+e.message;parsed=Array.from({length:Number($('#mjImportCount').value)||4},()=>({name:'',points:''}));renderRows()}
 }
