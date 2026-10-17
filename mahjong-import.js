@@ -22,7 +22,22 @@ async function ocrCrop(source,rect,numeric=false){
  if(numeric){const data=ctx.getImageData(0,0,canvas.width,canvas.height);for(let i=0;i<data.data.length;i+=4){const a=data.data[i],b=data.data[i+1],d=data.data[i+2];const bright=Math.max(a,b,d);const v=bright>125?0:255;data.data[i]=data.data[i+1]=data.data[i+2]=v;}ctx.putImageData(data,0,0)}
  return (await worker.recognize(canvas)).data.text.trim();
 }
-function parseScore(s){const matches=[...s.replace(/[，,]/g,'').replace(/[−ー－]/g,'-').matchAll(/-?\d{3,6}/g)].map(x=>Number(x[0]));return matches.find(n=>n>=-100000&&n<=150000&&(Math.abs(n)>=100||n===0))??null}
+function parseScore(s){const candidates=[...String(s).replace(/[，,\s]/g,'').replace(/[−－]/g,'-').matchAll(/-?\d{3,6}/g)].map(m=>Number(m[0]));return candidates.find(n=>n>=-100000&&n<=150000&&n%100===0)??null}
+async function recognizeScore(source,i,y){
+ // 名前や収支(+35.1等)を含めず、白い持ち点数字のみを切り出す。
+ const x=[.515,.553,.595,.64][i],top=y+.055;
+ const rects=[[x,top,.135,.070],[x-.012,top-.014,.17,.093],[x-.02,top-.025,.19,.11]];
+ const results=[];
+ for(const rect of rects){
+  for(const invert of [false,true]){
+   const value=parseScore(await ocrCrop(source,rect,invert));
+   if(value!==null)results.push(value);
+  }
+  if(results.length>=2&&results[0]===results[1])break;
+ }
+ const tally=new Map();for(const v of results)tally.set(v,(tally.get(v)||0)+1);
+ return [...tally].sort((a,b)=>b[1]-a[1])[0]?.[0]??null;
+}
 function aliasSuggestion(raw){const n=normalize(raw);if(!n)return null;const names=records.flatMap(r=>r.aliases||[]);const distance=(a,b)=>{const x=[...a],y=[...b],d=Array.from({length:x.length+1},()=>Array(y.length+1).fill(0));for(let i=0;i<=x.length;i++)d[i][0]=i;for(let j=0;j<=y.length;j++)d[0][j]=j;for(let i=1;i<=x.length;i++)for(let j=1;j<=y.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(x[i-1]===y[j-1]?0:1));return d[x.length][y.length]};const ranked=names.map(a=>({name:a,d:distance(n,normalize(a))})).sort((a,b)=>a.d-b.d);if(!ranked.length)return null;const best=ranked[0];return best.d===0?best.name:(n.length>=4&&best.d<=1&&(!ranked[1]||ranked[1].d>best.d)?best.name:null)}
 async function recognize(file){
  $('#mjImportStatus').textContent='順位ごとに画像を読み取っています…';$('#mjImportRows').innerHTML='';
@@ -43,17 +58,11 @@ async function recognize(file){
   $('#mjImportStatus').textContent=(i+1)+'位の名前と点数を読み取り中…';
   const y=panelYs[i];
   const nameStarts=[.505,.505,.585,.61];const nameText=await ocrCrop(source,[nameStarts[i]??.61,y-.005,i>=2?.14:(i===1?.185:.15),.045]);
-  const scoreXs=[.515,.55,.595,.64];
-  const scoreRect=[scoreXs[i]??.64,y+.055,.15,.09];
-  const scoreText=await ocrCrop(source,scoreRect,false);
-  const scoreRetry=await ocrCrop(source,scoreRect,true);
   const name=nameText.replace(/\[?\s*自家\s*\]?/g,'').replace(/[\\[\]★*]/g,'').split('\n').map(x=>x.trim()).filter(Boolean).find(x=>/[A-Za-zぁ-んァ-ン一-龯]/.test(x))?.replace(/^[^A-Za-zぁ-んァ-ン一-龯]+/u,'')||'';
-  let points=parseScore(scoreText)??parseScore(scoreRetry);
-  if(points==null){const wider=await ocrCrop(source,[scoreXs[i]??.64,y+.035,.19,.115],false);points=parseScore(wider)}
-  if(points!=null&&points%100!==0)points=null; // 不完全な桁の誤認識を棄却
+  const points=await recognizeScore(source,i,y);
   const canonical=aliasSuggestion(name);rowResults.push({name:canonical||name.replace(/[\s\u3000]+/g,''),points:points??''});
  }
- const missing=rowResults.map((r,i)=>r.points===''?i:-1).filter(i=>i>=0);if(count===4&&missing.length===1){const known=rowResults.reduce((s,r)=>s+(r.points===''?0:Number(r.points)),0);const inferred=100000-known;if(inferred>=-100000&&inferred<=150000&&inferred%100===0){rowResults[missing[0]].points=inferred;rowResults[missing[0]].inferred=true}}const total=rowResults.reduce((s,r)=>s+(Number.isFinite(r.points)?r.points:0),0);const expected=100000;if(count===4&&rowResults.every(r=>Number.isFinite(r.points))&&total!==expected){rowResults.forEach(r=>r.points='');$('#mjImportStatus').textContent='点数の合計が不正なため自動入力を取り消しました。';}parsed=rowResults;renderRows();if(rowResults.some(r=>r.inferred))$('#mjImportWarning').textContent+=' ※点数の一部は合計10万点からの逆算です。必ず画像と照合してください。';
+ const missing=rowResults.map((r,i)=>r.points===''?i:-1).filter(i=>i>=0);if(count===4&&missing.length===1){const known=rowResults.reduce((s,r)=>s+(r.points===''?0:Number(r.points)),0);const inferred=100000-known;if(inferred>=-100000&&inferred<=150000&&inferred%100===0){rowResults[missing[0]].points=inferred;rowResults[missing[0]].inferred=true}}const total=rowResults.reduce((s,r)=>s+(Number.isFinite(r.points)?r.points:0),0);const expected=100000;if(count===4&&rowResults.every(r=>Number.isFinite(r.points))&&total!==expected){$('#mjImportStatus').textContent='合計点が10万点ではありません。点数を確認してください。';}parsed=rowResults;renderRows();if(rowResults.some(r=>r.inferred))$('#mjImportWarning').textContent+=' ※点数の一部は合計10万点からの逆算です。必ず画像と照合してください。';
  $('#mjImportStatus').textContent='読み取り完了。名前・点数を必ず確認してください。'+(detectedFourth?'四麻と判定しました。':detectedThird?'三麻の可能性があります。人数を確認してください。' :'人数を判定できなかったため、選択中の対局形式を維持しました。');
  }catch(e){$('#mjImportStatus').textContent='画像認識に失敗しました：'+e.message;parsed=Array.from({length:Number($('#mjImportCount').value)||4},()=>({name:'',points:''}));renderRows()}
 }
