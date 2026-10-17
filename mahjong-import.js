@@ -43,10 +43,12 @@ async function recognize(file){
   $('#mjImportStatus').textContent=(i+1)+'位の名前と点数を読み取り中…';
   const y=panelYs[i];
   const nameStarts=[.505,.505,.585,.61];const nameText=await ocrCrop(source,[nameStarts[i]??.61,y-.005,i>=2?.14:(i===1?.185:.15),.045]);
-  const scoreText=await ocrCrop(source,[.51,y+.045,.19,.105],false);
-  const scoreRetry=await ocrCrop(source,[.51,y+.045,.19,.105],true);
+  const scoreXs=[.51,.55,.59,.63];
+  const scoreRect=[scoreXs[i]??.63,y+.055,.135,.078];
+  const scoreText=await ocrCrop(source,scoreRect,false);
+  const scoreRetry=await ocrCrop(source,scoreRect,true);
   const name=nameText.replace(/\[?\s*自家\s*\]?/g,'').replace(/[\\[\]★*]/g,'').split('\n').map(x=>x.trim()).filter(Boolean).find(x=>/[A-Za-zぁ-んァ-ン一-龯]/.test(x))?.replace(/^[^A-Za-zぁ-んァ-ン一-龯]+/u,'')||'';
-  let points=parseScore(scoreText)??parseScore(scoreRetry);if(points!=null&&i>=2&&points>0&&/[-−－ー]/.test(scoreText+' '+scoreRetry))points=-points;
+  let points=parseScore(scoreText)??parseScore(scoreRetry); // 順位や収支表示のマイナス記号を持ち点へ転用しない
   const canonical=aliasSuggestion(name);rowResults.push({name:canonical||name.replace(/[\s\u3000]+/g,''),points:points??''});
  }
  const missing=rowResults.map((r,i)=>r.points===''?i:-1).filter(i=>i>=0);if(count===4&&missing.length===1){const known=rowResults.reduce((s,r)=>s+(r.points===''?0:Number(r.points)),0);const inferred=100000-known;if(inferred>=-100000&&inferred<=150000&&inferred%100===0){rowResults[missing[0]].points=inferred;rowResults[missing[0]].inferred=true}}const total=rowResults.reduce((s,r)=>s+(Number.isFinite(r.points)?r.points:0),0);const expected=100000;if(count===4&&rowResults.every(r=>Number.isFinite(r.points))&&total!==expected){rowResults.forEach(r=>r.points='');$('#mjImportStatus').textContent='点数の合計が不正なため自動入力を取り消しました。';}parsed=rowResults;renderRows();if(rowResults.some(r=>r.inferred))$('#mjImportWarning').textContent+=' ※点数の一部は合計10万点からの逆算です。必ず画像と照合してください。';
