@@ -39,6 +39,7 @@ const list=document.createElement('datalist');list.id='assistPokemonNames';list.
 const moveList=document.createElement('datalist');moveList.id='assistMoveNames';moveList.innerHTML=moveNames.map(m=>'<option value="'+esc(m)+'"></option>').join('');root.appendChild(moveList);
 root.insertAdjacentHTML('beforeend','<section class="panel assist-main-panel"><div class="section-title-row"><h2>対戦アシスト</h2><span class="badge soft">自動保存</span></div><div id="assistDashboard"></div><div id="assistDetail" class="hidden"><button type="button" class="assist-back" data-assist-back>← 一覧に戻る</button><h3 id="assistDetailTitle"></h3><div id="assistContent"></div><div id="assistAnalysis"></div><button type="button" class="assist-back assist-back-bottom" data-assist-back>← 一覧に戻る</button></div></section>');
 let view='home',selectedIndex=0;const dashboard=root.querySelector('#assistDashboard'),detail=root.querySelector('#assistDetail'),content=root.querySelector('#assistContent'),analysis=root.querySelector('#assistAnalysis');
+const shortTypes=["無","炎","水","電","草","氷","闘","毒","地","飛","超","虫","岩","霊","竜","悪","鋼","妖"];
 function dashboardHTML(){
  const team=(side,title)=>'<section class="assist-home-section"><h3>'+title+'</h3><div class="assist-team-match-layout"><div class="assist-home-team">'+state[side].map((x,i)=>{
   const p=get(x.name),foe=side==='foe',names=p?abilityNames(p):[];
@@ -46,7 +47,7 @@ function dashboardHTML(){
   const item=x.item==='1.5'?'スカーフ':x.item==='0.5'?'S半減持ち物':x.item&&x.item!=='1'?x.item:'未判明';
   const tera=x.tera?JA[TYPES.indexOf(x.tera)]||x.tera:'未判明';
   const stat=p?window.POKEMON_STATS?.[String(p.id)]?.speed:null;
-  return '<button type="button" class="assist-home-poke" data-assist-side="'+side+'" data-assist-index="'+i+'"><strong>'+esc(x.name||'＋ 登録')+'</strong>'+(p?'<span class="assist-home-info">特性 '+esc(ability)+'</span><span class="assist-home-info">持物 '+esc(item)+' ／ テラ '+esc(tera)+'</span><small>'+(foe?'S種族値 '+stat:'実数値 '+speed(p,x))+'</small>':'<small>タップして登録</small>')+'</button>';
+  return '<button type="button" class="assist-home-poke" data-assist-side="'+side+'" data-assist-index="'+i+'"><span class="assist-poke-name"><strong>'+esc(x.name||'＋ 登録')+'</strong>'+(p?'<span class="assist-poke-types">'+(window.POKEMON_TYPES?.[String(p.id)]||[]).map(t=>'<span class="assist-poke-type">'+esc(shortTypes[TYPES.indexOf(t)]||'?')+'</span>').join('')+'</span>':'')+'</span>'+(p?'<span class="assist-home-info">特性 '+esc(ability)+'</span><span class="assist-home-info">持物 '+esc(item)+' ／ テラ '+esc(tera)+'</span><small>'+(foe?'S種族値 '+stat:'実数値 '+speed(p,x))+'</small>':'<small>タップして登録</small>')+'</button>';
  }).join('')+'</div>'+matchupMini(side)+'</div></section>';
  return team('mine','自分のポケモン 6体')+opponentSelector()+team('foe','相手のポケモン 6体')+'<div class="assist-home-actions"><button type="button" data-assist-section="speed"><strong>すばやさ比較</strong><small>最速順・実数値比較 →</small></button></div>';
 }
