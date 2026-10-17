@@ -23,6 +23,7 @@ async function ocrCrop(source,rect,numeric=false){
  return (await worker.recognize(canvas)).data.text.trim();
 }
 function parseScore(s){const matches=[...s.replace(/[，,]/g,'').replace(/[−ー－]/g,'-').matchAll(/-?\d{3,6}/g)].map(x=>Number(x[0]));return matches.find(n=>n>=-100000&&n<=150000&&(Math.abs(n)>=100||n===0))??null}
+function aliasSuggestion(raw){const n=normalize(raw);if(!n)return null;const names=records.flatMap(r=>r.aliases||[]);const distance=(a,b)=>{const x=[...a],y=[...b],d=Array.from({length:x.length+1},()=>Array(y.length+1).fill(0));for(let i=0;i<=x.length;i++)d[i][0]=i;for(let j=0;j<=y.length;j++)d[0][j]=j;for(let i=1;i<=x.length;i++)for(let j=1;j<=y.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(x[i-1]===y[j-1]?0:1));return d[x.length][y.length]};const ranked=names.map(a=>({name:a,d:distance(n,normalize(a))})).sort((a,b)=>a.d-b.d);if(!ranked.length)return null;const best=ranked[0];return best.d===0?best.name:(n.length>=4&&best.d<=1&&(!ranked[1]||ranked[1].d>best.d)?best.name:null)}
 async function recognize(file){
  $('#mjImportStatus').textContent='順位ごとに画像を読み取っています…';$('#mjImportRows').innerHTML='';
  try{
@@ -41,14 +42,14 @@ async function recognize(file){
  for(let i=0;i<count;i++){
   $('#mjImportStatus').textContent=(i+1)+'位の名前と点数を読み取り中…';
   const y=panelYs[i];
-  const nameText=await ocrCrop(source,[.50,y-.005,.20,.052]);
+  const nameText=await ocrCrop(source,[.505,y-.005,.185,.045]);
   const scoreText=await ocrCrop(source,[.51,y+.045,.19,.105],false);
   const scoreRetry=await ocrCrop(source,[.51,y+.045,.19,.105],true);
   const name=nameText.replace(/\[?\s*自家\s*\]?/g,'').replace(/[\\[\]★*]/g,'').split('\n').map(x=>x.trim()).filter(Boolean).find(x=>/[A-Za-zぁ-んァ-ン一-龯]/.test(x))||'';
   let points=parseScore(scoreText)??parseScore(scoreRetry);if(points!=null&&i>=2&&points>0&&/[-−－ー]/.test(scoreText+' '+scoreRetry))points=-points;
-  const canonical=records.flatMap(r=>r.aliases||[]).find(a=>normalize(a)===normalize(name));rowResults.push({name:canonical||name.replace(/[\s\u3000]+/g,''),points:points??''});
+  const canonical=aliasSuggestion(name);rowResults.push({name:canonical||name.replace(/[\s\u3000]+/g,''),points:points??''});
  }
- const total=rowResults.reduce((s,r)=>s+(Number.isFinite(r.points)?r.points:0),0);const expected=100000;if(count===4&&rowResults.every(r=>Number.isFinite(r.points))&&total!==expected){rowResults.forEach(r=>r.points='');$('#mjImportStatus').textContent='点数の合計が不正なため自動入力を取り消しました。';}parsed=rowResults;renderRows();
+ const missing=rowResults.map((r,i)=>r.points===''?i:-1).filter(i=>i>=0);if(count===4&&missing.length===1){const known=rowResults.reduce((s,r)=>s+(r.points===''?0:Number(r.points)),0);const inferred=100000-known;if(inferred>=-100000&&inferred<=150000&&inferred%100===0){rowResults[missing[0]].points=inferred;rowResults[missing[0]].inferred=true}}const total=rowResults.reduce((s,r)=>s+(Number.isFinite(r.points)?r.points:0),0);const expected=100000;if(count===4&&rowResults.every(r=>Number.isFinite(r.points))&&total!==expected){rowResults.forEach(r=>r.points='');$('#mjImportStatus').textContent='点数の合計が不正なため自動入力を取り消しました。';}parsed=rowResults;renderRows();if(rowResults.some(r=>r.inferred))$('#mjImportWarning').textContent+=' ※点数の一部は合計10万点からの逆算です。必ず画像と照合してください。';
  $('#mjImportStatus').textContent='読み取り完了。名前・点数を必ず確認してください。'+(detectedFourth?'四麻と判定しました。':detectedThird?'三麻の可能性があります。人数を確認してください。' :'人数を判定できなかったため、選択中の対局形式を維持しました。');
  }catch(e){$('#mjImportStatus').textContent='画像認識に失敗しました：'+e.message;parsed=Array.from({length:Number($('#mjImportCount').value)||4},()=>({name:'',points:''}));renderRows()}
 }
