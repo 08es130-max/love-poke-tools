@@ -45,7 +45,21 @@ function renderScoreDebug(source,rows){
  const box=$('#mjScoreDebugRows');box.innerHTML='';
  rows.forEach((r,i)=>{if(!r.scoreDebug)return;const d=r.scoreDebug;const div=document.createElement('div');div.style.cssText='margin:12px 0;padding:8px;border:1px solid #ddd;overflow-wrap:anywhere';const canvas=document.createElement('canvas'),rect=d.rect;canvas.width=Math.round(rect[2]*source.width);canvas.height=Math.round(rect[3]*source.height);canvas.style.cssText='max-width:100%;height:auto;display:block;background:#142039';canvas.getContext('2d').drawImage(source,rect[0]*source.width,rect[1]*source.height,rect[2]*source.width,rect[3]*source.height,0,0,canvas.width,canvas.height);div.textContent=(i+1)+'位 候補: '+d.candidates.map(x=>x.value+'('+x.votes+'回)').join(', ')+' / OCR: '+d.debug.map(x=>x.raw.replace(/\s+/g,' ')).join(' | ');div.prepend(canvas);box.append(div)});
 }
-function aliasSuggestion(raw){const n=normalize(raw);if(!n)return null;const names=records.flatMap(r=>r.aliases||[]);const distance=(a,b)=>{const x=[...a],y=[...b],d=Array.from({length:x.length+1},()=>Array(y.length+1).fill(0));for(let i=0;i<=x.length;i++)d[i][0]=i;for(let j=0;j<=y.length;j++)d[0][j]=j;for(let i=1;i<=x.length;i++)for(let j=1;j<=y.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(x[i-1]===y[j-1]?0:1));return d[x.length][y.length]};const ranked=names.map(a=>({name:a,d:distance(n,normalize(a))})).sort((a,b)=>a.d-b.d);if(!ranked.length)return null;const best=ranked[0];return best.d===0?best.name:(n.length>=4&&best.d<=1&&(!ranked[1]||ranked[1].d>best.d)?best.name:null)}
+function aliasSuggestion(raw){
+ const n=normalize(raw);if(!n)return null;
+ const names=records.flatMap(r=>r.aliases||[]);
+ const distance=(a,b)=>{const x=[...a],y=[...b],d=Array.from({length:x.length+1},()=>Array(y.length+1).fill(0));for(let i=0;i<=x.length;i++)d[i][0]=i;for(let j=0;j<=y.length;j++)d[0][j]=j;for(let i=1;i<=x.length;i++)for(let j=1;j<=y.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(x[i-1]===y[j-1]?0:1));return d[x.length][y.length]};
+ const ranked=names.map(name=>({name,d:distance(n,normalize(name))})).sort((a,b)=>a.d-b.d);
+ if(!ranked.length)return null;
+ const best=ranked[0],runner=ranked[1];
+ if(best.d===0)return best.name;
+ // OCRの余計な接尾辞は、登録名が十分長く一意に含まれる場合のみ除去
+ const embedded=names.filter(name=>normalize(name).length>=4&&n.includes(normalize(name)));
+ if(embedded.length===1)return embedded[0];
+ // ひらがな1文字の誤認識は、唯一の近似候補がある場合に限る
+ if(n.length>=4&&best.d<=1&&(!runner||runner.d>best.d))return best.name;
+ return null;
+}
 async function recognize(file){
  $('#mjImportStatus').textContent='順位ごとに画像を読み取っています…';$('#mjImportRows').innerHTML='';
  try{
