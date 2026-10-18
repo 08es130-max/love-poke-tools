@@ -58,6 +58,8 @@ function aliasSuggestion(raw){
  if(embedded.length===1)return embedded[0];
  // ひらがな1文字の誤認識は、唯一の近似候補がある場合に限る
  if(n.length>=4&&best.d<=1&&(!runner||runner.d>best.d))return best.name;
+ const prefix=names.filter(name=>{const v=normalize(name);return v.length>=5&&n.startsWith(v.slice(0,4))&&Math.abs(n.length-v.length)<=2&&distance(n,v)<=3});
+ if(prefix.length===1)return prefix[0];
  return null;
 }
 async function recognize(file){
