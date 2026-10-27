@@ -66,3 +66,10 @@
 #loveSoloPane .solo-success-zone{border:1px solid #e7b1c9;border-radius:8px;background:#fff;padding:7px;min-height:65px}
 #loveSoloPane .solo-success-cards{display:flex;gap:5px;flex-wrap:wrap}
 #loveSoloPane .solo-success-cards .solo-tap-card{width:55px;flex:none}
+
+/* Keep up to 12 energy cards visible without horizontal scrolling. */
+#loveSoloPane .solo-energy-row{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:7px 5px;align-items:center;min-height:0;overflow:visible}
+#loveSoloPane .solo-energy-card{box-sizing:border-box;width:min(100%,43px);height:auto;aspect-ratio:43/58;justify-self:center;min-width:0;padding:2px;gap:2px;transform-origin:center}
+#loveSoloPane .solo-energy-card.used{transform:rotate(90deg) scale(.8);margin:0}
+#loveSoloPane .solo-energy-card span{font-size:clamp(6px,1.8vw,9px)}
+#loveSoloPane .solo-energy-card small{font-size:clamp(6px,1.7vw,8px)}
