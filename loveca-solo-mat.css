@@ -73,3 +73,10 @@
 #loveSoloPane .solo-energy-card.used{transform:rotate(90deg) scale(.8);margin:0}
 #loveSoloPane .solo-energy-card span{font-size:clamp(6px,1.8vw,9px)}
 #loveSoloPane .solo-energy-card small{font-size:clamp(6px,1.7vw,8px)}
+
+/* Waited members rotate inside their fixed slots; revealed cards stay visible. */
+#loveSoloPane .solo-slot-stage.solo-wait img{transform:rotate(90deg) scale(.72)}
+#loveSoloPane .solo-slot-stage.solo-wait{background:#fff1f6}
+#loveSoloPane .solo-reveal-zone{border:1px solid #e7b1c9;border-radius:8px;background:#fff;padding:7px}
+#loveSoloPane .solo-reveal-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:4px}
+#loveSoloPane .solo-reveal-cards .solo-tap-card{max-width:90px}
