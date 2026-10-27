@@ -42,3 +42,23 @@
  #loveSoloPane .solo-zone{padding:3px}
  #loveSoloPane .solo-zone-title{font-size:9px}
 }
+
+/* Portrait playmat v2: three numbered horizontal live slots and vertical stage slots */
+#loveSoloPane .solo-portrait-mat{border:2px solid #eab0c8;border-radius:12px;padding:9px;background:#fff3f8;display:flex;flex-direction:column;gap:10px}
+#loveSoloPane .solo-slots-section h3{font-size:13px;margin:2px 0 6px;color:#a23a69}
+#loveSoloPane .solo-three-slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+#loveSoloPane .solo-slot{position:relative;min-width:0;border:2px solid #e9a5c1;border-radius:9px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:3px;color:#b23b6b}
+#loveSoloPane .solo-slot-live{aspect-ratio:1.5}
+#loveSoloPane .solo-slot-stage{aspect-ratio:.72}
+#loveSoloPane .solo-slot img{display:block;width:100%;height:100%;object-fit:contain}
+#loveSoloPane .solo-slot-live img{transform:rotate(90deg);width:66%;height:145%;max-width:none;max-height:none}
+#loveSoloPane .solo-slot-number{position:absolute;z-index:2;top:3px;left:4px;background:#fffdf9df;color:#b02e65;border-radius:4px;padding:1px 5px;font-size:12px;font-weight:800}
+#loveSoloPane .solo-empty{font-size:12px;opacity:.55}
+#loveSoloPane .solo-deck-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#loveSoloPane .solo-deck-row .solo-pile{min-height:48px;border:1px solid #e7b1c9;border-radius:8px;background:white;display:flex;flex-direction:row;gap:8px;align-items:center;justify-content:center;font-size:12px;color:#a33d6a}
+#loveSoloPane .solo-hand-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:4px}
+#loveSoloPane .solo-tap-card{min-width:0;width:100%;border:1px solid #e7b1c9;border-radius:5px;padding:1px;background:white}
+#loveSoloPane .solo-tap-card img{display:block;width:100%;aspect-ratio:.71;object-fit:contain}
+#loveSoloPane .solo-choice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0}
+#loveSoloPane .solo-choice-grid button{min-height:42px}
+@media(orientation:portrait){#loveSoloPane .solo-portrait-mat{width:100%;min-width:0}#loveSoloPane .solo-slot-stage{max-height:175px}#loveSoloPane .solo-hand-cards{grid-template-columns:repeat(auto-fit,minmax(0,1fr))}}
