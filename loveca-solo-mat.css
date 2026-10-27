@@ -62,3 +62,7 @@
 #loveSoloPane .solo-choice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0}
 #loveSoloPane .solo-choice-grid button{min-height:42px}
 @media(orientation:portrait){#loveSoloPane .solo-portrait-mat{width:100%;min-width:0}#loveSoloPane .solo-slot-stage{max-height:175px}#loveSoloPane .solo-hand-cards{grid-template-columns:repeat(auto-fit,minmax(0,1fr))}}
+
+#loveSoloPane .solo-success-zone{border:1px solid #e7b1c9;border-radius:8px;background:#fff;padding:7px;min-height:65px}
+#loveSoloPane .solo-success-cards{display:flex;gap:5px;flex-wrap:wrap}
+#loveSoloPane .solo-success-cards .solo-tap-card{width:55px;flex:none}
