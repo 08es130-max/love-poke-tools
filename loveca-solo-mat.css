@@ -1,0 +1,44 @@
+/* Landscape-first Loveca solo play mat */
+#loveSoloPane .panel{padding:10px}
+#loveSoloPane .solo-toolbar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:8px 0}
+#loveSoloPane .solo-toolbar button{font-size:12px;padding:6px 9px;border:1px solid #edb4cb;background:#fff;border-radius:8px;color:#9c2d61}
+#loveSoloPane .solo-mat{border:2px solid #eab0c8;border-radius:12px;padding:8px;background:linear-gradient(130deg,#fff8fb,#ffedf4);display:grid;grid-template-rows:minmax(145px,1fr) auto;gap:7px}
+#loveSoloPane .solo-upper{display:grid;grid-template-columns:25% minmax(0,1fr) 17%;gap:7px;min-height:145px}
+#loveSoloPane .solo-lower{display:grid;grid-template-rows:auto auto;gap:6px}
+#loveSoloPane .solo-zone{border:1px solid #e8b6c9;border-radius:8px;padding:5px;min-width:0;background:#ffffffb8}
+#loveSoloPane .solo-zone-title{font-size:11px;font-weight:800;color:#a33d6a;margin-bottom:5px}
+#loveSoloPane .solo-zone-title small{font-weight:500;color:#777}
+#loveSoloPane .solo-zone-cards{display:flex;gap:4px;align-items:flex-start;min-width:0;min-height:45px}
+#loveSoloPane .solo-live .solo-zone-cards{flex-wrap:wrap}
+#loveSoloPane .solo-stage .solo-zone-cards{justify-content:space-around}
+#loveSoloPane .solo-side{display:grid;grid-template-rows:1fr 1fr;gap:5px;min-width:0}
+#loveSoloPane .solo-pile{border:1px solid #e8b6c9;border-radius:8px;display:flex;flex-direction:column;justify-content:center;align-items:center;background:#fff;color:#b34271;font-size:11px}
+#loveSoloPane .solo-pile strong{font-size:21px}
+#loveSoloPane .solo-card{width:clamp(48px,8vw,92px);flex:0 1 auto;min-width:0;position:relative}
+#loveSoloPane .solo-card img{width:100%;aspect-ratio:0.71;object-fit:contain;display:block;border-radius:4px;background:#fff}
+#loveSoloPane .solo-card-back{aspect-ratio:0.71;display:grid;place-items:center;background:#f8d7e5;font-size:9px}
+#loveSoloPane .solo-card-tools{display:flex;flex-direction:column;gap:2px}
+#loveSoloPane .solo-card-tools button,#loveSoloPane .solo-card-tools select{font-size:10px;width:100%;padding:2px 0;min-height:20px;border-radius:3px}
+#loveSoloPane .solo-energy-row{display:flex;gap:6px;align-items:center;min-height:57px;flex-wrap:wrap}
+#loveSoloPane .solo-energy-card{width:43px;height:58px;border:2px solid #eaa3c0;border-radius:6px;background:linear-gradient(135deg,#fff,#f8cbdc);color:#9e3563;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:8px;font-weight:bold;transition:transform .15s;transform-origin:center}
+#loveSoloPane .solo-energy-card.used{transform:rotate(90deg);margin:0 8px;background:#eee}
+#loveSoloPane .solo-energy-card small{font-size:8px}
+#loveSoloPane .solo-hand .solo-zone-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:3px;align-items:start}
+#loveSoloPane .solo-hand .solo-card{width:100%;max-width:100px}
+#loveSoloPane .solo-hand .solo-card img{max-height:125px}
+#loveSoloPane .solo-history{margin:8px 0;font-size:11px}
+@media(orientation:landscape){
+ #loveSoloPane .solo-mat{min-height:calc(100dvh - 225px);grid-template-rows:minmax(125px,1fr) auto}
+ #loveSoloPane .solo-upper{grid-template-columns:27% minmax(0,1fr) 15%}
+ #loveSoloPane .solo-lower{grid-template-rows:auto auto}
+ #loveSoloPane .solo-hand .solo-zone-cards{grid-template-columns:repeat(auto-fit,minmax(0,1fr))}
+ #loveSoloPane .solo-hand .solo-card{max-width:78px}
+ #loveSoloPane .solo-hand .solo-card img{max-height:100px}
+}
+@media(orientation:portrait){
+ #loveSoloPane .solo-mat{min-width:0}
+ #loveSoloPane .solo-upper{grid-template-columns:26% 56% 18%;gap:2px}
+ #loveSoloPane .solo-card{width:clamp(28px,8vw,65px)}
+ #loveSoloPane .solo-zone{padding:3px}
+ #loveSoloPane .solo-zone-title{font-size:9px}
+}
