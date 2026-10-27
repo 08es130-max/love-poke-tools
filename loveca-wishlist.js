@@ -24,12 +24,15 @@ function setup(){
  const b=e.target.closest('[data-wish-action]');if(!b)return;
  const id=b.dataset.wishId, action=b.dataset.wishAction, list=read();
  if(action==='add'){if(!card(id))return;list[id]??={date:'',shop:'',price:'',quantity:1};if(write(list)){render();refreshButtons()}}
+ if(action==='offer-add'){const entry=list[id];if(!entry)return;entry.offers=Array.isArray(entry.offers)?entry.offers:[];entry.offers.push({shop:'',price:''});if(write(list))render();return}
+ if(action==='offer-remove'){const entry=list[id],i=Number(b.dataset.offerIndex);if(!entry||!Array.isArray(entry.offers)||!Number.isInteger(i))return;entry.offers.splice(i,1);if(write(list))render();return}
  if(action==='remove'){if(!confirm('欲しいものリストから削除しますか？'))return;delete list[id];if(write(list)){render();refreshButtons()}}
  });
  pane.addEventListener('change',e=>{
  const el=e.target.closest('[data-wish-field]');if(!el)return;
  const list=read(),entry=list[el.dataset.wishId];if(!entry)return;
  const field=el.dataset.wishField;
+ if(el.dataset.offerIndex!==undefined){const i=Number(el.dataset.offerIndex);entry.offers=Array.isArray(entry.offers)?entry.offers:[];if(!entry.offers[i]||!['shop','price'].includes(field))return;entry.offers[i][field]=field==='price'?(el.value===''?'':Math.max(0,Number(el.value)||0)):el.value.slice(0,150);write(list);return}
  if(!['date','shop','price','quantity'].includes(field))return;
  entry[field]=field==='price'||field==='quantity'?Math.max(0,Number(el.value)||0):el.value.slice(0,150);
  write(list);
@@ -58,6 +61,9 @@ function render(){
  target.innerHTML=entries.map(([id,v])=>{
  const c=card(id);
  if(!c)return '<div class="panel">カードID '+esc(id)+'（カードデータ未取得） '+button('削除',id,'remove')+'</div>';
+ const offers=Array.isArray(v.offers)?v.offers:[];
+ const offerRows=[{shop:v.shop??'',price:v.price??''},...offers];
+ const offerHtml=offerRows.map((o,i)=>'<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,100px) auto;gap:6px;align-items:end;margin:6px 0"><label>店名<input style="width:100%" type="text" data-wish-id="'+esc(id)+'" data-wish-field="shop" '+(i?'data-offer-index="'+(i-1)+'"':'')+' value="'+esc(o.shop)+'"></label><label>価格（円）<input style="width:100%" type="number" min="0" data-wish-id="'+esc(id)+'" data-wish-field="price" '+(i?'data-offer-index="'+(i-1)+'"':'')+' value="'+esc(o.price)+'"></label>'+(i?'<button type="button" class="ghost-btn" data-wish-action="offer-remove" data-wish-id="'+esc(id)+'" data-offer-index="'+(i-1)+'">削除</button>':'<span></span>')+'</div>').join('');
  const field=(key,type,label)=>'<label style="display:block;min-width:0">'+label+'<input style="width:100%" type="'+type+'" data-wish-id="'+esc(id)+'" data-wish-field="'+key+'" value="'+esc(v[key]??'')+'" '+(type==='number'?'min="0"':'')+'></label>';
  return '<article class="loveca-card-item" style="margin:10px 0"><div class="loveca-card-image-wrap">'+(c.imageUrl?'<img class="loveca-card-image" loading="lazy" src="'+esc(c.imageUrl)+'" alt="'+esc(c.name)+'">':'')+'</div><div class="loveca-card-body"><div class="loveca-card-meta">'+esc(c.cardNo)+'</div><h3>'+esc(c.name)+'</h3><p class="loveca-effect">'+esc(c.text)+'</p><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">'+field('date','date','日付')+field('shop','text','店名')+field('price','number','価格（円）')+field('quantity','number','希望枚数')+'</div><div class="loveca-card-actions" style="margin-top:8px">'+button('リストから削除',id,'remove')+'</div></div></article>';
  }).join('');
