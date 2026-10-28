@@ -33,6 +33,12 @@ match /lovecaOnlineRooms/{roomId} {
        && incoming()[request.auth.uid].joinedAt == players()[request.auth.uid].joinedAt
        && validPlayer(incoming()[request.auth.uid]))
       ||
+      // Participant may leave without changing anyone else's state.
+      (participant()
+       && incoming().keys().size() == players().keys().size() - 1
+       && !(request.auth.uid in incoming())
+       && incoming().diff(players()).affectedKeys().hasOnly([request.auth.uid]))
+      ||
       // One new participant may join, without changing the host.
       (!participant()
        && players().keys().size() == 1
