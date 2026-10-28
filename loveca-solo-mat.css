@@ -121,3 +121,6 @@
 #loveSoloCardDialog .solo-discard-list img{width:42px;max-height:65px;object-fit:contain}
 #loveSoloCardDialog .solo-discard-list span{font-size:11px;min-width:0;overflow-wrap:anywhere}
 #loveSoloCardDialog .solo-discard-list small{display:block;color:#888}
+
+/* Small cards attached under stage members */
+.solo-under-row{display:flex;gap:2px;justify-content:center;flex-wrap:wrap;min-height:0;margin:2px 0 5px}.solo-under-card{width:22px;height:32px;padding:1px;border:1px solid #d66c99;border-radius:3px;background:#fff5fa;overflow:hidden;display:flex;align-items:center;justify-content:center}.solo-under-card img{width:100%;height:100%;object-fit:cover}.solo-under-card span{font-size:13px}
