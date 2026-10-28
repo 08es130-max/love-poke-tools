@@ -68,6 +68,28 @@ function render(){
  if(toolbar&&hand){const dock=document.createElement('div');dock.className='solo-control-dock';dock.append(toolbar,hand);root.append(dock)}
  write(state);
 }
+function simpleDrawEffect(text){
+ const lines=String(text||'').split(/\n/).map(x=>x.trim()).filter(Boolean);
+ if(lines.length!==1)return null;
+ const line=lines[0].replace(/^【[^】]+】\s*/,'').replace(/[。．]$/,'').trim();
+ const m=line.match(/^(?:自分のデッキから)?カードを([0-9０-９一二三四五六七八九十]+)枚引く$/);
+ if(!m)return null;
+ const kanji={一:1,二:2,三:3,四:4,五:5,六:6,七:7,八:8,九:9,十:10};
+ const raw=m[1].replace(/[０-９]/g,c=>String(c.charCodeAt(0)-65296));
+ const n=/^\d+$/.test(raw)?Number(raw):kanji[raw];
+ return Number.isInteger(n)&&n>=1&&n<=10?{type:'draw',count:n}:null;
+}
+function applySimpleEffect(zone,index){
+ const id=state?.[zone]?.[index],c=card(id),effect=simpleDrawEffect(c?.text);
+ if(!id||!effect)return;
+ if(!state.deck.length&&!state.discard.length){alert('山札と控え室にカードがありません');return}
+ if(!confirm('「'+(c.name||c.cardNo)+'」の効果で'+effect.count+'枚ドローしますか？'))return;
+ snapshot();const before=state.hand.length;draw(effect.count);
+ const done=state.hand.length-before;
+ state.log.unshift('T'+state.turn+' 効果：'+(c.name||c.cardNo)+' → '+done+'枚ドロー');
+ write(state);$('#loveSoloCardDialog').close();render();
+ if(done<effect.count)alert('カードが足りないため'+done+'枚ドローしました');
+}
 function pick(zone,index){
  if(!state)return;
  const id=state[zone]?.[index];if(!id)return;
@@ -76,7 +98,7 @@ function pick(zone,index){
  const names={stageSlots:'ステージ',liveSlots:'ライブ'};
  const choices=targets.flatMap(k=>[0,1,2].map(i=>({key:k,index:i,label:names[k]+' '+(i+1),occupied:!!state[k][i]})));
  const dialog=$('#loveSoloCardDialog'),body=$('#loveSoloCardDetail');
- body.innerHTML='<div class="solo-detail-top"><div class="solo-detail-image">'+(c?.imageUrl?'<img src="'+esc(c.imageUrl)+'" alt="'+esc(c.name)+'">':'')+'</div><div class="solo-detail-info"><h3>'+esc(c?.name||id)+'</h3><p>'+esc(c?.cardNo||'')+' / '+esc(c?.cardType||'')+'</p><div class="solo-effect-box"><strong>カード効果</strong><p>'+esc(c?.text||'効果なし')+'</p></div></div></div><h4>移動先を選択</h4><div class="solo-choice-grid">'+choices.map(x=>'<button type="button" class="ghost-btn" data-solo-target="'+x.key+'" data-solo-target-index="'+x.index+'">'+x.label+(x.occupied?'（元のカードは控え室へ）':'')+'</button>').join('')+(zone==='stageSlots'?'<button type="button" class="ghost-btn" data-solo-wait="'+index+'">'+(state.stageWait[index]?'ウェイト解除':'ウェイト（横向き）')+'</button>':'')+(zone==='revealed'?'<button type="button" class="ghost-btn" data-solo-target="deckTop">山札の上へ戻す</button>':'')+(live&&zone!=='successLive'?'<button type="button" class="ghost-btn" data-solo-target="successLive">成功ライブへ</button>':'')+(zone==='hand'||zone==='discard'?state.stageSlots.map((id,i)=>id?'<button type="button" class="ghost-btn" data-solo-under-target="'+i+'">ステージ'+(i+1)+'の下に置く</button>':'').join(''):'')+'<button type="button" class="ghost-btn" data-solo-target="hand">手札へ戻す</button><button type="button" class="ghost-btn" data-solo-target="discard">控え室へ</button></div>';
+ body.innerHTML='<div class="solo-detail-top"><div class="solo-detail-image">'+(c?.imageUrl?'<img src="'+esc(c.imageUrl)+'" alt="'+esc(c.name)+'">':'')+'</div><div class="solo-detail-info"><h3>'+esc(c?.name||id)+'</h3><p>'+esc(c?.cardNo||'')+' / '+esc(c?.cardType||'')+'</p><div class="solo-effect-box"><strong>カード効果</strong><p>'+esc(c?.text||'効果なし')+'</p></div></div></div>'+(simpleDrawEffect(c?.text)?'<div class="solo-choice-grid"><button type="button" class="primary-btn" data-solo-effect="draw">効果を使用：'+simpleDrawEffect(c.text).count+'枚ドロー</button></div>':'')+'<h4>移動先を選択</h4><div class="solo-choice-grid">'+choices.map(x=>'<button type="button" class="ghost-btn" data-solo-target="'+x.key+'" data-solo-target-index="'+x.index+'">'+x.label+(x.occupied?'（元のカードは控え室へ）':'')+'</button>').join('')+(zone==='stageSlots'?'<button type="button" class="ghost-btn" data-solo-wait="'+index+'">'+(state.stageWait[index]?'ウェイト解除':'ウェイト（横向き）')+'</button>':'')+(zone==='revealed'?'<button type="button" class="ghost-btn" data-solo-target="deckTop">山札の上へ戻す</button>':'')+(live&&zone!=='successLive'?'<button type="button" class="ghost-btn" data-solo-target="successLive">成功ライブへ</button>':'')+(zone==='hand'||zone==='discard'?state.stageSlots.map((id,i)=>id?'<button type="button" class="ghost-btn" data-solo-under-target="'+i+'">ステージ'+(i+1)+'の下に置く</button>':'').join(''):'')+'<button type="button" class="ghost-btn" data-solo-target="hand">手札へ戻す</button><button type="button" class="ghost-btn" data-solo-target="discard">控え室へ</button></div>';
  dialog.dataset.from=zone;dialog.dataset.index=index;dialog.showModal();
 }
 function attachUnder(from,index,slot){
@@ -176,7 +198,7 @@ function init(){
  if(!nav||!browser){setTimeout(init,350);return}
  const tab=document.createElement('button');tab.className='love-tab';tab.dataset.lovePane='solo';tab.type='button';tab.textContent='1人回し';nav.append(tab);
  const pane=document.createElement('div');pane.id='loveSoloPane';pane.className='love-pane hidden';
- pane.innerHTML='<section class="panel"><div class="section-title-row"><h2>1人回し</h2><span class="badge ok">端末内保存</span></div><p class="hint">カード効果は手動処理です。手札のカードをタップして配置先を選びます。初期エネルギー4枚、次のターンごとに1枚追加（最大12枚）。タップで横向き（使用済み）にし、次のターンで戻します。</p><div style="display:flex;gap:8px"><select id="loveSoloDeckChoice" style="flex:1"></select><button type="button" id="loveSoloStart" class="primary-btn">開始／やり直し</button></div><div id="loveSoloBoard"></div></section><dialog id="loveSoloCardDialog" style="max-width:min(95vw,460px);max-height:85vh;overflow:auto;border-radius:12px;border:1px solid #aaa"><div id="loveSoloCardDetail"></div><button type="button" id="loveSoloClose" class="primary-btn">閉じる</button></dialog>';
+ pane.innerHTML='<section class="panel"><div class="section-title-row"><h2>1人回し</h2><span class="badge ok">端末内保存</span></div><p class="hint">カード効果は手動処理が基本です。単純なドロー効果のみ試験的に自動処理できます。手札のカードをタップして配置先を選びます。初期エネルギー4枚、次のターンごとに1枚追加（最大12枚）。タップで横向き（使用済み）にし、次のターンで戻します。</p><div style="display:flex;gap:8px"><select id="loveSoloDeckChoice" style="flex:1"></select><button type="button" id="loveSoloStart" class="primary-btn">開始／やり直し</button></div><div id="loveSoloBoard"></div></section><dialog id="loveSoloCardDialog" style="max-width:min(95vw,460px);max-height:85vh;overflow:auto;border-radius:12px;border:1px solid #aaa"><div id="loveSoloCardDetail"></div><button type="button" id="loveSoloClose" class="primary-btn">閉じる</button></dialog>';
  browser.after(pane);
  tab.onclick=()=>{nav.querySelectorAll('.love-tab').forEach(b=>b.classList.toggle('active',b===tab));['#loveCalcPane','#loveCardBrowserPane','#loveWishlistPane','#loveDeckBuilderPane'].forEach(s=>$(s)?.classList.add('hidden'));pane.classList.remove('hidden');$('#appTitle').textContent='ラブカ 1人回し';$('#resetAllBtn').style.display='none';render()};
  nav.querySelectorAll('.love-tab:not([data-love-pane="solo"])').forEach(b=>b.addEventListener('click',()=>pane.classList.add('hidden')));
@@ -192,6 +214,8 @@ function init(){
   if(discardReturn&&state){const count=$('#soloReturnCount')?.value;const indices=count==='all'?null:[...discardSelection];if(count!=='all'&&indices.length!==Number(count)){alert('戻すカードを'+count+'枚選択してください');return}if(returnDiscard(discardReturn.dataset.soloDiscardReturn,false,indices))$('#loveSoloCardDialog').close();return}
   const special=e.target.closest('[data-solo-special]');
   if(special&&state){$('#loveSoloCardDialog').close();if(special.dataset.soloSpecial==='mia13')returnDiscard('bottom',true);return}
+  const effectButton=e.target.closest('[data-solo-effect]');
+  if(effectButton&&state){const d=$('#loveSoloCardDialog');applySimpleEffect(d.dataset.from,Number(d.dataset.index));return}
   const underTarget=e.target.closest('[data-solo-under-target]');
   if(underTarget&&state){const dialog=$('#loveSoloCardDialog');if(attachUnder(dialog.dataset.from,Number(dialog.dataset.index),Number(underTarget.dataset.soloUnderTarget)))dialog.close();return}
   const underRemove=e.target.closest('[data-solo-under-remove]');
