@@ -1,0 +1,14 @@
+/* Online manual board, mobile-first */
+#lovecaOnlineBattle{margin:14px 0;padding:12px;border:1px solid #edc1d2;border-radius:14px}
+#lovecaOnlineBattle[hidden]{display:none!important}
+.online-slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:8px 0 12px}
+.online-slot{min-width:0;min-height:96px;display:flex;align-items:center;justify-content:center;background:#fff8fb;border:1px solid #ead0dc;border-radius:9px;padding:4px}
+.online-slot button{width:100%;height:100%;min-height:88px;border:0;background:transparent;padding:0}
+.online-card{display:inline-flex;align-items:center;justify-content:center;max-width:100%;font-size:11px;overflow-wrap:anywhere}
+.online-card img{display:block;width:100%;max-height:124px;object-fit:contain;border-radius:5px}
+.online-empty{color:#98818a;font-size:12px}
+.online-hand{display:flex;gap:6px;overflow-x:auto;padding:8px 0}
+.online-hand button{flex:0 0 75px;min-width:0;border:1px solid #ead0dc;border-radius:8px;background:#fff;padding:3px}
+.online-hand img{max-height:110px}
+#lovecaOnlineOpponent{padding:8px;background:#fff8fb;border-radius:10px;margin:12px 0}
+#lovecaOnlineBattle button[data-online-draw],#lovecaOnlineBattle button[data-online-energy]{margin:4px;padding:9px;border:1px solid #e58caf;border-radius:9px;background:white;color:#ba3869}
