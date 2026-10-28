@@ -89,7 +89,7 @@ function init(){
  $('#navLove')?.addEventListener('click',()=>{if(tab.classList.contains('active')){$('#appTitle').textContent='ラブカ 1人回し';$('#resetAllBtn').style.display='none'}});
  $('#loveSoloStart').onclick=()=>{const deck=read(DECKS,[]).find(d=>d.id===$('#loveSoloDeckChoice').value);if(!deck){alert('先にデッキを作成してください');return}if(state&&!confirm('現在の1人回しを初期化しますか？'))return;reset(deck)};
  pane.addEventListener('change',e=>{const sel=e.target.closest('[data-solo-from]');if(sel&&sel.value)move(sel.dataset.soloFrom,Number(sel.dataset.soloIndex),sel.value)});
- pane.addEventListener('click',e=>{
+ const handleSoloClick=e=>{
   const command=e.target.closest('[data-solo-command]')?.dataset.soloCommand;
   if(command&&state){if(command==='undo'){undo();return}if(command==='reveal'){const raw=prompt('山札の上から何枚めくりますか？（残り '+state.deck.length+'枚）','3');if(raw===null)return;const n=Number(raw);if(!Number.isInteger(n)||n<1||n>state.deck.length){alert('1〜'+state.deck.length+'の整数を指定してください');return}snapshot();for(let i=0;i<n;i++)state.revealed.push(state.deck.pop());state.log.unshift('山札から'+n+'枚めくる');write(state);render();return}snapshot();if(command==='draw')draw();if(command==='energy'&&state.energy.length<12)state.energy.push({token:state.energy.length+1,used:false});if(command==='next'){const finished=state.liveSlots.filter(Boolean);state.discard.push(...finished);state.liveSlots=[null,null,null];state.turn++;state.stageWait=[false,false,false];state.energy.forEach(e=>e.used=false);if(state.energy.length<12)state.energy.push({token:state.energy.length+1,used:false});draw();if(finished.length)state.log.unshift('ターン終了：ライブ'+finished.length+'枚を控え室へ')}if(command==='shuffle')state.deck=random(state.deck);state.log.unshift('T'+state.turn+'：'+command);write(state);render();return}
   const energy=e.target.closest('[data-solo-energy]');if(energy&&state){const item=state.energy[Number(energy.dataset.soloEnergy)];if(item){snapshot();item.used=!item.used;write(state);render()}return}
@@ -102,7 +102,9 @@ function init(){
   const c=card(detail.dataset.soloDetail);if(!c)return;
   $('#loveSoloCardDetail').innerHTML='<h3>'+esc(c.name)+'</h3><p>'+esc(c.cardNo)+'</p>'+(c.imageUrl?'<img src="'+esc(c.imageUrl)+'" style="max-width:100%;max-height:50vh;object-fit:contain">':'')+'<p style="white-space:pre-wrap">'+esc(c.text)+'</p>';
   $('#loveSoloCardDialog').showModal();
- });
+ };
+ pane.addEventListener('click',handleSoloClick);
+ $('#loveSoloCardDialog').addEventListener('click',handleSoloClick);
  $('#loveSoloClose').onclick=()=>$('#loveSoloCardDialog').close();
  const saved=read(SESSION,null);if(saved&&['deck','hand','stage','live','energy','energyUsed','discard'].every(k=>Array.isArray(saved[k])))state=saved;
  fetch('./loveca-cards.json').then(r=>r.json()).then(d=>{cards=Array.isArray(d.cards)?d.cards:[];render()}).catch(console.warn);
