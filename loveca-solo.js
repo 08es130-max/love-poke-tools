@@ -4,13 +4,15 @@ const DECKS='lovepoke_loveca_card_decks_v1',SESSION='lovepoke_loveca_solo_v1';
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const read=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key)||'null')??fallback}catch{return fallback}};
 const write=s=>{try{localStorage.setItem(SESSION,JSON.stringify(s))}catch{alert('進行状況の保存に失敗しました')}};
-let cards=[],state=null;
+let cards=[],state=null,undoStack=[];
+const snapshot=()=>{if(state){undoStack.push(JSON.stringify(state));if(undoStack.length>40)undoStack.shift()}};
+const undo=()=>{if(undoStack.length){state=JSON.parse(undoStack.pop());write(state);render()}};
 const card=id=>cards.find(c=>String(c.id)===String(id));
 const random=arr=>{const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
 function reset(deck){
  const pile=[];for(const [id,n] of Object.entries(deck.cards||{}))for(let i=0;i<Math.min(500,Number(n)||0);i++)pile.push(id);
  state={deckId:deck.id,turn:1,deck:random(pile),hand:[],stage:[],live:[],discard:[],energy:[],energyUsed:[],selected:null,stageSlots:[null,null,null],liveSlots:[null,null,null],successLive:[],revealed:[],stageWait:[false,false,false],log:[]};
- state.energy=Array.from({length:4},(_,i)=>({token:i+1,used:false}));draw(5);write(state);render();
+ undoStack=[];state.energy=Array.from({length:4},(_,i)=>({token:i+1,used:false}));draw(5);write(state);render();
 }
 function draw(n=1){for(let i=0;i<n;i++){if(!state.deck.length)break;state.hand.push(state.deck.pop())}}
 function move(from,index,to){
@@ -35,7 +37,7 @@ function render(){
  const tile=(id,zone,i)=>{const c=card(id);return '<button type="button" class="solo-tap-card" data-solo-pick="'+zone+'" data-solo-index="'+i+'">'+(c?.imageUrl?'<img loading="lazy" src="'+esc(c.imageUrl)+'" alt="'+esc(c.name)+'">':'<span>CARD</span>')+'</button>'};
  const slots=(key,label)=>'<section class="solo-slots-section"><h3>'+label+'</h3><div class="solo-three-slots">'+state[key].map((id,i)=>'<button type="button" class="solo-slot '+(key==='liveSlots'?'solo-slot-live':'solo-slot-stage')+(key==='stageSlots'&&state.stageWait[i]?' solo-wait':'')+'" data-solo-pick="'+key+'" data-solo-index="'+i+'"><span class="solo-slot-number">'+(i+1)+'</span>'+(id?(card(id)?.imageUrl?'<img src="'+esc(card(id).imageUrl)+'" alt="'+esc(card(id).name)+'">':'<span>'+esc(card(id)?.name||id)+'</span>'):'<span class="solo-empty">空き</span>')+'</button>').join('')+'</div></section>';
  const energies=state.energy.map((e,i)=>'<button type="button" class="solo-energy-card '+(e.used?'used':'')+'" data-solo-energy="'+i+'"><span>ENERGY</span><small>'+(e.used?'使用済':'使用可')+'</small></button>').join('');
- root.innerHTML='<div class="solo-toolbar"><strong>ターン '+state.turn+'</strong><button type="button" data-solo-command="draw">ドロー</button><button type="button" data-solo-command="next">次のターン</button><button type="button" data-solo-command="shuffle">シャッフル</button><button type="button" data-solo-command="reveal">山札をめくる</button><button type="button" data-solo-command="energy">＋エネルギー</button></div><div class="solo-portrait-mat">'+slots('liveSlots','ライブカード')+slots('stageSlots','ステージ')+'<div class="solo-deck-row"><div class="solo-pile">山札 <strong>'+state.deck.length+'</strong></div><button type="button" class="solo-pile" data-solo-zone="discard">控え室 <strong>'+state.discard.length+'</strong></button></div><section class="solo-success-zone"><div class="solo-zone-title">成功ライブカード置き場 <strong>'+state.successLive.length+'枚</strong></div><div class="solo-success-cards">'+state.successLive.map((id,i)=>tile(id,'successLive',i)).join('')+'</div></section><section class="solo-zone solo-energy"><div class="solo-zone-title">エネルギー '+state.energy.filter(e=>!e.used).length+'/'+state.energy.length+'</div><div class="solo-energy-row">'+energies+'</div></section><section class="solo-zone solo-hand"><div class="solo-zone-title">手札 '+state.hand.length+'枚（カードをタップして配置）</div><div class="solo-hand-cards">'+state.hand.map((id,i)=>tile(id,'hand',i)).join('')+'</div></section></div><details class="solo-history"><summary>操作履歴</summary><p>'+state.log.slice(0,20).map(esc).join(' ／ ')+'</p></details>';
+ root.innerHTML='<div class="solo-toolbar"><strong>ターン '+state.turn+'</strong><button type="button" data-solo-command="undo">↶ 1手戻る</button><button type="button" data-solo-command="draw">ドロー</button><button type="button" data-solo-command="next">次のターン</button><button type="button" data-solo-command="shuffle">シャッフル</button><button type="button" data-solo-command="reveal">山札をめくる</button><button type="button" data-solo-command="energy">＋エネルギー</button></div><div class="solo-portrait-mat">'+slots('liveSlots','ライブカード')+slots('stageSlots','ステージ')+'<div class="solo-deck-row"><div class="solo-pile">山札 <strong>'+state.deck.length+'</strong></div><button type="button" class="solo-pile" data-solo-zone="discard">控え室 <strong>'+state.discard.length+'</strong></button></div><section class="solo-success-zone"><div class="solo-zone-title">成功ライブカード置き場 <strong>'+state.successLive.length+'枚</strong></div><div class="solo-success-cards">'+state.successLive.map((id,i)=>tile(id,'successLive',i)).join('')+'</div></section><section class="solo-zone solo-energy"><div class="solo-zone-title">エネルギー '+state.energy.filter(e=>!e.used).length+'/'+state.energy.length+'</div><div class="solo-energy-row">'+energies+'</div></section><section class="solo-zone solo-hand"><div class="solo-zone-title">手札 '+state.hand.length+'枚（カードをタップして配置）</div><div class="solo-hand-cards">'+state.hand.map((id,i)=>tile(id,'hand',i)).join('')+'</div></section></div><details class="solo-history"><summary>操作履歴</summary><p>'+state.log.slice(0,20).map(esc).join(' ／ ')+'</p></details>';
  write(state);
 }
 function pick(zone,index){
@@ -55,6 +57,7 @@ function place(to,index){
  const id=state[from][fromIndex];if(!id)return;
  if(to===from&&index===fromIndex){dialog.close();return}
  if(to==='deckTop'&&from!=='revealed')return;
+ snapshot();
  if(from==='stageSlots')state.stageWait[fromIndex]=false;
  if(from==='hand'||from==='discard'||from==='successLive'||from==='revealed')state[from].splice(fromIndex,1);else state[from][fromIndex]=null;
  if(to==='deckTop')state.deck.push(id);
@@ -81,11 +84,11 @@ function init(){
  pane.addEventListener('change',e=>{const sel=e.target.closest('[data-solo-from]');if(sel&&sel.value)move(sel.dataset.soloFrom,Number(sel.dataset.soloIndex),sel.value)});
  pane.addEventListener('click',e=>{
   const command=e.target.closest('[data-solo-command]')?.dataset.soloCommand;
-  if(command&&state){if(command==='draw')draw();if(command==='energy'&&state.energy.length<12)state.energy.push({token:state.energy.length+1,used:false});if(command==='reveal'){const raw=prompt('山札の上から何枚めくりますか？（残り '+state.deck.length+'枚）','3');if(raw===null)return;const n=Number(raw);if(!Number.isInteger(n)||n<1||n>state.deck.length){alert('1〜'+state.deck.length+'の整数を指定してください');return}for(let i=0;i<n;i++)state.revealed.push(state.deck.pop());state.log.unshift('山札から'+n+'枚めくる')}
+  if(command&&state){if(command==='undo'){undo();return}snapshot();if(command==='draw')draw();if(command==='energy'&&state.energy.length<12)state.energy.push({token:state.energy.length+1,used:false});if(command==='reveal'){const raw=prompt('山札の上から何枚めくりますか？（残り '+state.deck.length+'枚）','3');if(raw===null)return;const n=Number(raw);if(!Number.isInteger(n)||n<1||n>state.deck.length){alert('1〜'+state.deck.length+'の整数を指定してください');return}for(let i=0;i<n;i++)state.revealed.push(state.deck.pop());state.log.unshift('山札から'+n+'枚めくる')}
   if(command==='next'){const finished=state.liveSlots.filter(Boolean);state.discard.push(...finished);state.liveSlots=[null,null,null];state.turn++;state.stageWait=[false,false,false];state.energy.forEach(e=>e.used=false);if(state.energy.length<12)state.energy.push({token:state.energy.length+1,used:false});draw();if(finished.length)state.log.unshift('ターン終了：ライブ'+finished.length+'枚を控え室へ')}if(command==='shuffle')state.deck=random(state.deck);state.log.unshift('T'+state.turn+'：'+command);write(state);render();return}
-  const energy=e.target.closest('[data-solo-energy]');if(energy&&state){const item=state.energy[Number(energy.dataset.soloEnergy)];if(item){item.used=!item.used;write(state);render()}return}
+  const energy=e.target.closest('[data-solo-energy]');if(energy&&state){const item=state.energy[Number(energy.dataset.soloEnergy)];if(item){snapshot();item.used=!item.used;write(state);render()}return}
   const selected=e.target.closest('[data-solo-pick]');if(selected){pick(selected.dataset.soloPick,Number(selected.dataset.soloIndex));return}
-  const wait=e.target.closest('[data-solo-wait]');if(wait&&state){const i=Number(wait.dataset.soloWait);if(state.stageSlots[i]){state.stageWait[i]=!state.stageWait[i];$('#loveSoloCardDialog').close();write(state);render()}return}
+  const wait=e.target.closest('[data-solo-wait]');if(wait&&state){const i=Number(wait.dataset.soloWait);if(state.stageSlots[i]){snapshot();state.stageWait[i]=!state.stageWait[i];$('#loveSoloCardDialog').close();write(state);render()}return}
   const target=e.target.closest('[data-solo-target]');if(target){place(target.dataset.soloTarget,Number(target.dataset.soloTargetIndex));return}
   const detail=e.target.closest('[data-solo-detail]');if(!detail)return;
   const c=card(detail.dataset.soloDetail);if(!c)return;
