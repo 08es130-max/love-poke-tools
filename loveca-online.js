@@ -32,7 +32,7 @@ function showBoard(){
 function showOpponent(d){
  const el=$('#lovecaOnlineOpponent');if(!el)return;
  if(!d){el.textContent='相手の公開盤面を待っています';return}
- el.innerHTML='<h3>相手の盤面（閲覧専用）</h3><p>手札 '+Number(d.handCount||0)+'枚 ／ 山札 '+Number(d.deckCount||0)+'枚 ／ エネルギー置き場 '+Number(d.energy||0)+'枚</p><p>ライブ</p><div class="online-slots">'+slots(d.live,'live',false)+'</div><p>ステージ</p><div class="online-slots">'+slots(d.stage,'stage',false,(d.stageUnder||[]).map(x=>x.cards||[]))+'</div><details><summary>控え室 '+(d.discard||[]).length+'枚</summary><p>'+(d.discard||[]).map(id=>esc(card(id)?.name||id)).join('、')+'</p></details>';
+ el.innerHTML='<h3>相手の盤面（閲覧専用）</h3><p>手札 '+Number(d.handCount||0)+'枚 ／ 山札 '+Number(d.deckCount||0)+'枚 ／ エネルギー置き場 '+Number(d.energy||0)+'枚</p><p>ライブ</p><div class="online-slots">'+slots([...(d.live||[null,null,null])].reverse(),'live',false)+'</div><p>ステージ</p><div class="online-slots">'+slots([...(d.stage||[null,null,null])].reverse(),'stage',false,[...(d.stageUnder||[{cards:[]},{cards:[]},{cards:[]}])].reverse().map(x=>x?.cards||[]))+'</div><details><summary>控え室 '+(d.discard||[]).length+'枚</summary><p>'+(d.discard||[]).map(id=>esc(card(id)?.name||id)).join('、')+'</p></details>';
 }
 async function publishBoard(){
  if(!board||!roomId)return;
