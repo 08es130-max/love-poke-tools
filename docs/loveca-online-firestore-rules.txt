@@ -1,0 +1,46 @@
+// Merge this match into the project's existing Firestore rules.
+// Do NOT replace unrelated collections' rules with this snippet.
+match /lovecaOnlineRooms/{roomId} {
+  function signedIn() { return request.auth != null; }
+  function players() { return resource.data.players; }
+  function incoming() { return request.resource.data.players; }
+  function participant() { return signedIn() && request.auth.uid in players(); }
+  function validPlayer(p) {
+    return p.keys().hasOnly(['ready','joinedAt']) &&
+      p.ready is bool && p.joinedAt is int;
+  }
+  allow get: if signedIn(); // Needed to look up a room by its shared 6-character code.
+  allow list: if false;
+  allow create: if signedIn()
+    && roomId.matches('^[A-HJ-NP-Z2-9]{6}$')
+    && request.resource.data.keys().hasOnly(['code','host','phase','createdAt','players'])
+    && request.resource.data.code == roomId
+    && request.resource.data.host == request.auth.uid
+    && request.resource.data.phase == 'lobby'
+    && incoming().keys().size() == 1
+    && request.auth.uid in incoming()
+    && validPlayer(incoming()[request.auth.uid])
+    && incoming()[request.auth.uid].ready == false;
+  allow update: if signedIn()
+    && resource.data.phase == 'lobby'
+    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['players'])
+    && incoming().keys().size() <= 2
+    && (
+      // Existing participant can only change their own ready flag.
+      (participant()
+       && incoming().keys().hasAll(players().keys())
+       && incoming().diff(players()).affectedKeys().hasOnly([request.auth.uid])
+       && incoming()[request.auth.uid].joinedAt == players()[request.auth.uid].joinedAt
+       && validPlayer(incoming()[request.auth.uid]))
+      ||
+      // One new participant may join, without changing the host.
+      (!participant()
+       && players().keys().size() == 1
+       && incoming().keys().size() == 2
+       && incoming().keys().hasAll(players().keys())
+       && incoming().diff(players()).affectedKeys().hasOnly([request.auth.uid])
+       && validPlayer(incoming()[request.auth.uid])
+       && incoming()[request.auth.uid].ready == false)
+    );
+  allow delete: if false;
+}
