@@ -14,7 +14,30 @@ function reset(deck){
  state={deckId:deck.id,turn:1,deck:random(pile),hand:[],stage:[],live:[],discard:[],energy:[],energyUsed:[],selected:null,stageSlots:[null,null,null],liveSlots:[null,null,null],successLive:[],revealed:[],stageWait:[false,false,false],log:[]};
  undoStack=[];state.energy=Array.from({length:4},(_,i)=>({token:i+1,used:false}));draw(5);write(state);render();
 }
-function draw(n=1){for(let i=0;i<n;i++){if(!state.deck.length)break;state.hand.push(state.deck.pop())}}
+let refreshNoticeTimer;
+function refreshDeck(){
+ if(!state||state.deck.length||!state.discard.length)return false;
+ state.deck=random(state.discard);
+ state.discard=[];
+ state.log.unshift('T'+state.turn+'：山札をリフレッシュ（'+state.deck.length+'枚）');
+ const notice=$('#lovecaSoloRefreshNotice')||document.createElement('div');
+ notice.id='lovecaSoloRefreshNotice';
+ notice.setAttribute('role','status');
+ notice.setAttribute('aria-live','polite');
+ notice.textContent='リフレッシュしました';
+ notice.style.cssText='position:fixed;z-index:99999;left:50%;bottom:125px;transform:translateX(-50%);padding:12px 18px;border-radius:12px;background:#9d2e61;color:white;font-weight:bold;box-shadow:0 5px 20px #0004;white-space:nowrap';
+ if(!notice.isConnected)document.body.append(notice);
+ clearTimeout(refreshNoticeTimer);
+ refreshNoticeTimer=setTimeout(()=>notice.remove(),2500);
+ return true;
+}
+function draw(n=1){
+ for(let i=0;i<n;i++){
+  if(!state.deck.length&&!refreshDeck())break;
+  state.hand.push(state.deck.pop());
+  if(!state.deck.length)refreshDeck();
+ }
+}
 function move(from,index,to){
  if(!state||!Array.isArray(state[from])||!Array.isArray(state[to])||from==='energy'||to==='energy'||from==='energyUsed'||to==='energyUsed')return;
  const id=state[from][index];if(id===undefined)return;
@@ -91,7 +114,7 @@ function init(){
  pane.addEventListener('change',e=>{const sel=e.target.closest('[data-solo-from]');if(sel&&sel.value)move(sel.dataset.soloFrom,Number(sel.dataset.soloIndex),sel.value)});
  const handleSoloClick=e=>{
   const command=e.target.closest('[data-solo-command]')?.dataset.soloCommand;
-  if(command&&state){if(command==='undo'){undo();return}if(command==='reveal'){const raw=prompt('山札の上から何枚めくりますか？（残り '+state.deck.length+'枚）','3');if(raw===null)return;const n=Number(raw);if(!Number.isInteger(n)||n<1||n>state.deck.length){alert('1〜'+state.deck.length+'の整数を指定してください');return}snapshot();for(let i=0;i<n;i++)state.revealed.push(state.deck.pop());state.log.unshift('山札から'+n+'枚めくる');write(state);render();return}snapshot();if(command==='draw')draw();if(command==='energy'&&state.energy.length<12)state.energy.push({token:state.energy.length+1,used:false});if(command==='next'){const finished=state.liveSlots.filter(Boolean);state.discard.push(...finished);state.liveSlots=[null,null,null];state.turn++;state.stageWait=[false,false,false];state.energy.forEach(e=>e.used=false);if(state.energy.length<12)state.energy.push({token:state.energy.length+1,used:false});draw();if(finished.length)state.log.unshift('ターン終了：ライブ'+finished.length+'枚を控え室へ')}if(command==='shuffle')state.deck=random(state.deck);state.log.unshift('T'+state.turn+'：'+command);write(state);render();return}
+  if(command&&state){if(command==='undo'){undo();return}if(command==='reveal'){const raw=prompt('山札の上から何枚めくりますか？（残り '+state.deck.length+'枚）','3');if(raw===null)return;const n=Number(raw);if(!Number.isInteger(n)||n<1||n>state.deck.length){alert('1〜'+state.deck.length+'の整数を指定してください');return}snapshot();for(let i=0;i<n;i++)state.revealed.push(state.deck.pop());if(!state.deck.length)refreshDeck();state.log.unshift('山札から'+n+'枚めくる');write(state);render();return}snapshot();if(command==='draw')draw();if(command==='energy'&&state.energy.length<12)state.energy.push({token:state.energy.length+1,used:false});if(command==='next'){const finished=state.liveSlots.filter(Boolean);state.discard.push(...finished);state.liveSlots=[null,null,null];state.turn++;state.stageWait=[false,false,false];state.energy.forEach(e=>e.used=false);if(state.energy.length<12)state.energy.push({token:state.energy.length+1,used:false});draw();if(finished.length)state.log.unshift('ターン終了：ライブ'+finished.length+'枚を控え室へ')}if(command==='shuffle')state.deck=random(state.deck);state.log.unshift('T'+state.turn+'：'+command);write(state);render();return}
   const energy=e.target.closest('[data-solo-energy]');if(energy&&state){const item=state.energy[Number(energy.dataset.soloEnergy)];if(item){snapshot();item.used=!item.used;write(state);render()}return}
   const zone=e.target.closest('[data-solo-zone]');if(zone&&state){if(zone.dataset.soloZone==='discard')showDiscard();return}
   const selected=e.target.closest('[data-solo-pick]');if(selected){pick(selected.dataset.soloPick,Number(selected.dataset.soloIndex));return}
