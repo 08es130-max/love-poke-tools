@@ -26,7 +26,7 @@ function showBoard(){
  $('#lovecaOnlineOwnInfo').textContent='山札 '+board.deck.length+'枚 ／ 控え室 '+board.discard.length+'枚 ／ エネルギー置き場 '+board.energy+'枚（全体 '+energyTotal()+'/12）';
  $('#lovecaOnlineOwnDiscard').innerHTML=board.discard.map((id,i)=>'<button type="button" data-online-discard="'+i+'">'+cardTile(id)+'</button>').join('')||'<span class="online-empty">なし</span>';
  $('#lovecaOnlineOwnEnergy').innerHTML=Array.from({length:board.energy},(_,i)=>'<button type="button" data-online-energy-card="'+i+'" class="'+(board.energyUsed.includes(i)?'online-energy-used':'')+'">⚡<small>'+(board.energyUsed.includes(i)?'使用済':'使用可')+'</small></button>').join('');
- $('#lovecaOnlineOwnExtras').textContent='公開中 '+board.revealed.length+'枚 ／ 成功ライブ '+board.successLive.length+'枚';
+ $('#lovecaOnlineOwnExtras').innerHTML='公開中 '+board.revealed.length+'枚 ／ 成功ライブ '+board.successLive.length+'枚'+(board.revealed.length?'<div class="online-hand">'+board.revealed.map((id,i)=>'<button type="button" data-online-revealed="'+i+'">'+cardTile(id)+'</button>').join('')+'</div>':'');
  diagnostics();
 }
 function showOpponent(d){
@@ -83,7 +83,7 @@ function chooseCard(from,index){
 }
 function boardAction(e){
  if(!battleActive||!board)return;
- const target=e.target,draw=target.closest('[data-online-draw]'),energy=target.closest('[data-online-energy]'),hand=target.closest('[data-online-hand]'),discard=target.closest('[data-online-discard]'),slot=target.closest('[data-online-slot]'),under=target.closest('[data-online-under-slot]'),energyCard=target.closest('[data-online-energy-card]'),extra=target.closest('[data-online-command]');
+ const target=e.target,draw=target.closest('[data-online-draw]'),energy=target.closest('[data-online-energy]'),hand=target.closest('[data-online-hand]'),discard=target.closest('[data-online-discard]'),revealed=target.closest('[data-online-revealed]'),slot=target.closest('[data-online-slot]'),under=target.closest('[data-online-under-slot]'),energyCard=target.closest('[data-online-energy-card]'),extra=target.closest('[data-online-command]');
  let changed=false;
  if(draw){if(!board.deck.length){if(board.discard.length){board.deck=shuffle(board.discard.splice(0));status('山札をリフレッシュしました')}else{status('山札がありません',true);return}}board.hand.push(board.deck.pop());changed=true}
  else if(energy){if(energyTotal()>=12){status('エネルギーはメンバーの下を含めて12枚が上限です',true);return}board.energy++;changed=true}
@@ -94,6 +94,7 @@ function boardAction(e){
  }
  else if(hand)changed=chooseCard('hand',Number(hand.dataset.onlineHand));
  else if(discard)changed=chooseCard('discard',Number(discard.dataset.onlineDiscard));
+ else if(revealed)changed=chooseCard('revealed',Number(revealed.dataset.onlineRevealed));
  else if(under){
   const i=Number(under.dataset.onlineUnderSlot),j=Number(under.dataset.onlineUnderIndex),item=board.stageUnder[i]?.[j];if(!item)return;
   const answer=prompt(item.kind==='energy'?'エネルギー置き場に戻しますか？（Y）':'移動先：H=手札、D=控え室','D');
