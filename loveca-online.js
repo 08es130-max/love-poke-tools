@@ -26,18 +26,20 @@ function showBoard(){
  $('#lovecaOnlineOwnInfo').textContent='山札 '+board.deck.length+'枚 ／ 控え室 '+board.discard.length+'枚 ／ エネルギー置き場 '+board.energy+'枚（全体 '+energyTotal()+'/12）';
  $('#lovecaOnlineOwnDiscard').innerHTML=board.discard.map((id,i)=>'<button type="button" data-online-discard="'+i+'">'+cardTile(id)+'</button>').join('')||'<span class="online-empty">なし</span>';
  $('#lovecaOnlineOwnEnergy').innerHTML=Array.from({length:board.energy},(_,i)=>'<button type="button" data-online-energy-card="'+i+'" class="'+(board.energyUsed.includes(i)?'online-energy-used':'')+'">⚡<small>'+(board.energyUsed.includes(i)?'使用済':'使用可')+'</small></button>').join('');
- $('#lovecaOnlineOwnExtras').innerHTML='公開中 '+board.revealed.length+'枚 ／ 成功ライブ '+board.successLive.length+'枚'+(board.revealed.length?'<div class="online-hand">'+board.revealed.map((id,i)=>'<button type="button" data-online-revealed="'+i+'">'+cardTile(id)+'</button>').join('')+'</div>':'');
+ $('#lovecaOnlineOwnExtras').innerHTML='公開中 '+board.revealed.length+'枚'+(board.revealed.length?'<div class="online-hand">'+board.revealed.map((id,i)=>'<button type="button" data-online-revealed="'+i+'">'+cardTile(id)+'</button>').join('')+'</div>':'');
+ $('#lovecaOnlineOwnSuccess').textContent='成功ライブ '+board.successLive.length+'枚';
+ $('#lovecaOnlineOwnSuccessList').innerHTML=board.successLive.map((id,i)=>'<button type="button" data-online-success="'+i+'">'+cardTile(id)+'</button>').join('')||'<span class="online-empty">なし</span>';
  diagnostics();
 }
 function showOpponent(d){
  const el=$('#lovecaOnlineOpponent');if(!el)return;
  if(!d){el.textContent='相手の公開盤面を待っています';return}
- el.innerHTML='<h3>相手の盤面（閲覧専用）</h3><p>手札 '+Number(d.handCount||0)+'枚 ／ 山札 '+Number(d.deckCount||0)+'枚 ／ エネルギー置き場 '+Number(d.energy||0)+'枚</p><p>ステージ</p><div class="online-slots">'+slots([...(d.stage||[null,null,null])].reverse(),'stage',false,[...(d.stageUnder||[{cards:[]},{cards:[]},{cards:[]}])].reverse().map(x=>x?.cards||[]))+'</div><p>ライブ</p><div class="online-slots">'+slots([...(d.live||[null,null,null])].reverse(),'live',false)+'</div><details><summary>控え室 '+(d.discard||[]).length+'枚</summary><p>'+(d.discard||[]).map(id=>esc(card(id)?.name||id)).join('、')+'</p></details>';
+ el.innerHTML='<h3>相手の盤面（閲覧専用）</h3><p>手札 '+Number(d.handCount||0)+'枚 ／ 山札 '+Number(d.deckCount||0)+'枚 ／ エネルギー置き場 '+Number(d.energy||0)+'枚</p><p>ステージ</p><div class="online-slots">'+slots([...(d.stage||[null,null,null])].reverse(),'stage',false,[...(d.stageUnder||[{cards:[]},{cards:[]},{cards:[]}])].reverse().map(x=>x?.cards||[]))+'</div><p>ライブ</p><div class="online-slots">'+slots([...(d.live||[null,null,null])].reverse(),'live',false)+'</div><details class="online-success-details"><summary>成功ライブ '+(d.successLive||[]).length+'枚</summary><div class="online-hand">'+(d.successLive||[]).map(id=>'<button type="button" data-online-view-card="'+esc(id)+'">'+cardTile(id)+'</button>').join('')+'</div></details><details><summary>控え室 '+(d.discard||[]).length+'枚</summary><p>'+(d.discard||[]).map(id=>esc(card(id)?.name||id)).join('、')+'</p></details>';
 }
 async function publishBoard(){
  if(!board||!roomId)return;
  localStorage.setItem(boardStorage(),JSON.stringify(board));showBoard();
- const visible={stage:board.stage,live:board.live,discard:board.discard.slice(-100),energy:board.energy,handCount:board.hand.length,deckCount:board.deck.length,stageUnder:board.stageUnder.map(items=>({cards:items.map(item=>item.kind==='energy'?{kind:'energy'}:{kind:'card',id:item.id})}))};
+ const visible={stage:board.stage,live:board.live,discard:board.discard.slice(-100),energy:board.energy,handCount:board.hand.length,deckCount:board.deck.length,successLive:board.successLive.slice(0,100),stageUnder:board.stageUnder.map(items=>({cards:items.map(item=>item.kind==='energy'?{kind:'energy'}:{kind:'card',id:item.id})}))};
  try{boardWriteState='送信中';diagnostics();await api.setDoc(api.doc(api.db,'lovecaOnlineRooms',roomId,'boards',uid),visible);boardWriteState='送信成功';diagnostics()}
  catch(e){boardWriteState='送信失敗（'+e.code+'）';diagnostics();status('盤面同期エラー：'+e.message+'（Firestoreの盤面ルールを確認してください）',true)}
 }
@@ -67,7 +69,7 @@ function clearUnder(i){
 function chooseCard(from,index){
  const id=board[from]?.[index];if(!id)return false;
  const isLive=card(id)?.cardType==='ライブ'||card(id)?.isLive;
- const answer=prompt('移動先：1〜3='+(isLive?'ライブ':'ステージ')+'、H=手札、D=控え室、T=山札の上、B=山札の下'+(!isLive&&board.stage.some(Boolean)?'、U1〜U3=メンバーの下':''),'1');
+ const answer=prompt('移動先：1〜3='+(isLive?'ライブ':'ステージ')+'、H=手札、D=控え室、T=山札の上、B=山札の下'+(isLive?'、S=成功ライブ':'')+(!isLive&&board.stage.some(Boolean)?'、U1〜U3=メンバーの下':''),'1');
  if(answer===null)return false;
  const v=answer.trim().toUpperCase(),kind=isLive?'live':'stage',i=Number(v)-1;
  if(/^U[123]$/.test(v)&&!isLive&&board.stage[Number(v[1])-1]){
@@ -77,14 +79,15 @@ function chooseCard(from,index){
   if(board[kind][i]){if(kind==='stage')clearUnder(i);board.discard.push(board[kind][i])}
   board[kind][i]=id;board[from].splice(index,1);return true;
  }
- const targets={H:'hand',D:'discard',T:'deck',B:'deck'};
+ const targets={H:'hand',D:'discard',T:'deck',B:'deck',S:'successLive'};
  if(!targets[v])return false;
  board[from].splice(index,1);if(v==='B')board.deck.unshift(id);else board[targets[v]].push(id);return true;
 }
 function boardAction(e){
  if(!battleActive||!board)return;
- const target=e.target,draw=target.closest('[data-online-draw]'),energy=target.closest('[data-online-energy]'),hand=target.closest('[data-online-hand]'),discard=target.closest('[data-online-discard]'),revealed=target.closest('[data-online-revealed]'),slot=target.closest('[data-online-slot]'),under=target.closest('[data-online-under-slot]'),energyCard=target.closest('[data-online-energy-card]'),extra=target.closest('[data-online-command]');
+ const target=e.target,draw=target.closest('[data-online-draw]'),energy=target.closest('[data-online-energy]'),hand=target.closest('[data-online-hand]'),discard=target.closest('[data-online-discard]'),revealed=target.closest('[data-online-revealed]'),success=target.closest('[data-online-success]'),viewCard=target.closest('[data-online-view-card]'),slot=target.closest('[data-online-slot]'),under=target.closest('[data-online-under-slot]'),energyCard=target.closest('[data-online-energy-card]'),extra=target.closest('[data-online-command]');
  let changed=false;
+ if(viewCard){const id=viewCard.dataset.onlineViewCard,c=card(id);alert((c?.name||id)+'\n'+(c?.cardNo||'')+'\n'+(c?.text||''));return}
  if(draw){if(!board.deck.length){if(board.discard.length){board.deck=shuffle(board.discard.splice(0));status('山札をリフレッシュしました')}else{status('山札がありません',true);return}}board.hand.push(board.deck.pop());changed=true}
  else if(energy){if(energyTotal()>=12){status('エネルギーはメンバーの下を含めて12枚が上限です',true);return}board.energy++;changed=true}
  else if(energyCard){
@@ -95,6 +98,7 @@ function boardAction(e){
  else if(hand)changed=chooseCard('hand',Number(hand.dataset.onlineHand));
  else if(discard)changed=chooseCard('discard',Number(discard.dataset.onlineDiscard));
  else if(revealed)changed=chooseCard('revealed',Number(revealed.dataset.onlineRevealed));
+ else if(success)changed=chooseCard('successLive',Number(success.dataset.onlineSuccess));
  else if(under){
   const i=Number(under.dataset.onlineUnderSlot),j=Number(under.dataset.onlineUnderIndex),item=board.stageUnder[i]?.[j];if(!item)return;
   const answer=prompt(item.kind==='energy'?'エネルギー置き場に戻しますか？（Y）':'移動先：H=手札、D=控え室','D');
@@ -103,11 +107,11 @@ function boardAction(e){
  }
  else if(slot){
   const kind=slot.dataset.onlineSlot,index=Number(slot.dataset.onlineIndex),id=board[kind]?.[index];if(!id)return;
-  const answer=prompt('移動先：H=手札、D=控え室、T=山札の上、B=山札の下'+(kind==='stage'?'、W=ウェイト切替':''),'D')?.toUpperCase();
+  const answer=prompt('移動先：H=手札、D=控え室、T=山札の上、B=山札の下'+(kind==='stage'?'、W=ウェイト切替':', S=成功ライブ'),'D')?.toUpperCase();
   if(answer==='W'&&kind==='stage'){board.stageWait[index]=!board.stageWait[index];changed=true}
-  else if(['H','D','T','B'].includes(answer)){
+  else if(['H','D','T','B','S'].includes(answer)){
    if(kind==='stage')clearUnder(index);
-   if(answer==='B')board.deck.unshift(id);else board[{H:'hand',D:'discard',T:'deck'}[answer]].push(id);
+   if(answer==='B')board.deck.unshift(id);else board[{H:'hand',D:'discard',T:'deck',S:'successLive'}[answer]].push(id);
    board[kind][index]=null;changed=true;
   }
  }else if(extra){
@@ -233,7 +237,7 @@ function init(){
  if($('#lovecaOnlinePane'))return;
  const tab=document.createElement('button');tab.type='button';tab.className='love-tab';tab.dataset.lovePane='online';tab.textContent='オンライン';nav.append(tab);
  const pane=document.createElement('div');pane.id='lovecaOnlinePane';pane.className='love-pane hidden';
- pane.innerHTML='<section class="panel"><h2>オンライン対戦・ルーム</h2><p class="hint">第2段階・試験版：双方準備完了で盤面を表示します。カード効果は手動処理です。手札・山札の中身は送信しません。</p><label class="block-label">使用するデッキ<select id="lovecaOnlineDeck"></select></label><div class="solo-choice-grid" style="margin:12px 0"><button type="button" id="lovecaOnlineCreate" class="primary-btn">ルームを作成</button></div><label class="block-label">ルームコード<input id="lovecaOnlineJoinCode" maxlength="6" placeholder="6文字"></label><button type="button" id="lovecaOnlineJoin" class="ghost-btn">ルームに参加</button><p id="lovecaOnlineStatus" role="status" style="margin-top:12px"></p><div id="lovecaOnlineRoom" hidden><h3>ルーム番号：<strong id="lovecaOnlineCode"></strong></h3><button type="button" id="lovecaOnlineCopy" class="ghost-btn">コードをコピー</button><p id="lovecaOnlinePlayers"></p><button type="button" id="lovecaOnlineReady" class="primary-btn">準備完了</button><p id="lovecaOnlineMatch"></p><div id="lovecaOnlineBattle" hidden><h3>オンライン対戦盤面（試験版）</h3><p id="lovecaOnlineDiagnostics" class="online-diagnostics"></p><div id="lovecaOnlineOpponent"></div><h3>自分の盤面</h3><div class="online-own-mat"><div class="online-section-title">ライブカード</div><div class="online-slots" id="lovecaOnlineOwnLive"></div><div class="online-section-title">ステージ</div><div class="online-slots" id="lovecaOnlineOwnStage"></div><div class="online-pile-row"><span id="lovecaOnlineOwnInfo"></span></div><div class="online-section-title">エネルギー（タップで操作）</div><div id="lovecaOnlineOwnEnergy" class="online-energy-row"></div><details><summary>控え室（タップで移動）</summary><div id="lovecaOnlineOwnDiscard" class="online-hand"></div></details><div class="online-toolbar"><button type="button" data-online-draw>1枚ドロー</button><button type="button" data-online-energy>＋エネルギー</button><button type="button" data-online-command="next">次ターン</button><button type="button" data-online-command="shuffle">山札シャッフル</button><button type="button" data-online-command="discard-return">控え室→山札</button><button type="button" data-online-command="reveal">山札公開</button></div><div class="online-section-title">手札（タップして配置）</div><div class="online-hand" id="lovecaOnlineOwnHand"></div><p id="lovecaOnlineOwnExtras"></p></div><p class="hint">試験版：カード効果は手動処理です。相手のカードは操作できません。</p></div><button type="button" id="lovecaOnlineLeave" class="ghost-btn">ルームから退出</button></div></section>';
+ pane.innerHTML='<section class="panel"><h2>オンライン対戦・ルーム</h2><p class="hint">第2段階・試験版：双方準備完了で盤面を表示します。カード効果は手動処理です。手札・山札の中身は送信しません。</p><label class="block-label">使用するデッキ<select id="lovecaOnlineDeck"></select></label><div class="solo-choice-grid" style="margin:12px 0"><button type="button" id="lovecaOnlineCreate" class="primary-btn">ルームを作成</button></div><label class="block-label">ルームコード<input id="lovecaOnlineJoinCode" maxlength="6" placeholder="6文字"></label><button type="button" id="lovecaOnlineJoin" class="ghost-btn">ルームに参加</button><p id="lovecaOnlineStatus" role="status" style="margin-top:12px"></p><div id="lovecaOnlineRoom" hidden><h3>ルーム番号：<strong id="lovecaOnlineCode"></strong></h3><button type="button" id="lovecaOnlineCopy" class="ghost-btn">コードをコピー</button><p id="lovecaOnlinePlayers"></p><button type="button" id="lovecaOnlineReady" class="primary-btn">準備完了</button><p id="lovecaOnlineMatch"></p><div id="lovecaOnlineBattle" hidden><h3>オンライン対戦盤面（試験版）</h3><p id="lovecaOnlineDiagnostics" class="online-diagnostics"></p><div id="lovecaOnlineOpponent"></div><h3>自分の盤面</h3><div class="online-own-mat"><div class="online-section-title">ライブカード</div><div class="online-slots" id="lovecaOnlineOwnLive"></div><div class="online-section-title">ステージ</div><div class="online-slots" id="lovecaOnlineOwnStage"></div><div class="online-pile-row"><span id="lovecaOnlineOwnInfo"></span></div><details class="online-success-details"><summary id="lovecaOnlineOwnSuccess">成功ライブ 0枚</summary><div id="lovecaOnlineOwnSuccessList" class="online-hand"></div></details><div class="online-section-title">エネルギー（タップで操作）</div><div id="lovecaOnlineOwnEnergy" class="online-energy-row"></div><details><summary>控え室（タップで移動）</summary><div id="lovecaOnlineOwnDiscard" class="online-hand"></div></details><div class="online-toolbar"><button type="button" data-online-draw>1枚ドロー</button><button type="button" data-online-energy>＋エネルギー</button><button type="button" data-online-command="next">次ターン</button><button type="button" data-online-command="shuffle">山札シャッフル</button><button type="button" data-online-command="discard-return">控え室→山札</button><button type="button" data-online-command="reveal">山札公開</button></div><div class="online-section-title">手札（タップして配置）</div><div class="online-hand" id="lovecaOnlineOwnHand"></div><p id="lovecaOnlineOwnExtras"></p></div><p class="hint">試験版：カード効果は手動処理です。相手のカードは操作できません。</p></div><button type="button" id="lovecaOnlineLeave" class="ghost-btn">ルームから退出</button></div></section>';
  $('#loveSoloPane').after(pane);
  const show=()=>{nav.querySelectorAll('.love-tab').forEach(b=>b.classList.toggle('active',b===tab));document.querySelectorAll('#loveScreen .love-pane').forEach(p=>p.classList.add('hidden'));pane.classList.remove('hidden');$('#appTitle').textContent='ラブカ オンライン';const reset=$('#resetAllBtn');if(reset)reset.style.display='none';paintDecks()};
  tab.addEventListener('click',show);
