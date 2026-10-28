@@ -34,3 +34,16 @@
 #lovecaOnlineBattle #lovecaOnlineOpponent{margin:8px 0 14px;padding:8px;border:1px solid #e7b1c9}
 #lovecaOnlineBattle .online-diagnostics{font-size:11px;color:#86546b;overflow-wrap:anywhere;margin:6px 0}
 #lovecaOnlinePane{min-width:0;max-width:100%;overflow-x:hidden}
+
+#lovecaOnlineBattle .online-slot-wrap{min-width:0}
+#lovecaOnlineBattle .online-under{display:flex;gap:2px;min-height:20px;align-items:center;overflow-x:auto}
+#lovecaOnlineBattle .online-under button{flex:0 0 22px;width:22px;height:32px;padding:1px;border:1px solid #e5a2c0;border-radius:4px;background:#fff;font-size:12px}
+#lovecaOnlineBattle .online-under .online-card img{width:100%;height:28px;object-fit:contain}
+#lovecaOnlineBattle .online-wait .online-card img{transform:rotate(90deg)}
+#lovecaOnlineBattle .online-energy-row{display:flex;flex-wrap:wrap;gap:4px}
+#lovecaOnlineBattle .online-energy-row button{min-width:42px;padding:5px 3px;border:1px solid #d98cae;border-radius:7px;background:#fff9ee;font-size:17px}
+#lovecaOnlineBattle .online-energy-row small{display:block;font-size:9px}
+#lovecaOnlineBattle .online-energy-used{opacity:.5;background:#ddd!important}
+#lovecaOnlineBattle details{border:1px solid #ecc1d5;border-radius:8px;padding:6px;margin:5px 0}
+#lovecaOnlineBattle summary{cursor:pointer;font-size:12px;font-weight:700}
+#lovecaOnlineBattle .online-hand button{min-height:65px}
