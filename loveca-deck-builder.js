@@ -8,7 +8,7 @@ const get=()=>{try{const v=JSON.parse(localStorage.getItem(KEY)||'[]');return Ar
 const put=v=>{try{localStorage.setItem(KEY,JSON.stringify(v));return true}catch{alert('保存に失敗しました');return false}};
 const lookup=id=>cards.find(c=>String(c.id)===String(id));
 function render(){
- const chooser=$('#lovecaDeckChooser'),stats=$('#lovecaDeckStats'),items=$('#lovecaDeckItems');
+ const chooser=$('#lovecaDeckChooser'),stats=$('#lovecaBuilderStats'),items=$('#lovecaDeckItems');
  if(!chooser)return;
  const decks=get();if(!decks.some(d=>d.id===selected))selected=decks[0]?.id||'';
  chooser.innerHTML=decks.length?decks.map(d=>'<option value="'+escape(d.id)+'">'+escape(d.name)+'</option>').join(''):'<option value="">未作成</option>';chooser.value=selected;
@@ -57,7 +57,7 @@ function init(){
  if(!nav||!browser){setTimeout(init,350);return}
  const tab=document.createElement('button');tab.className='love-tab';tab.type='button';tab.dataset.lovePane='builder';tab.textContent='デッキ構築';nav.append(tab);
  const pane=document.createElement('div');pane.id='loveDeckBuilderPane';pane.className='love-pane hidden';
- pane.innerHTML='<section class="panel"><div class="section-title-row"><h2>デッキ構築</h2><span class="badge ok">端末に保存</span></div><div style="display:flex;gap:8px;flex-wrap:wrap"><select id="lovecaDeckChooser" style="flex:1;min-width:120px"></select><button type="button" class="primary-btn" id="lovecaDeckNew">新規作成</button><button type="button" class="ghost-btn" id="lovecaDeckDelete">削除</button></div><div id="lovecaDeckStats"></div><div id="lovecaDeckItems"></div></section>';
+ pane.innerHTML='<section class="panel"><div class="section-title-row"><h2>デッキ構築</h2><span class="badge ok">端末に保存</span></div><div style="display:flex;gap:8px;flex-wrap:wrap"><select id="lovecaDeckChooser" style="flex:1;min-width:120px"></select><button type="button" class="primary-btn" id="lovecaDeckNew">新規作成</button><button type="button" class="ghost-btn" id="lovecaDeckDelete">削除</button></div><div id="lovecaBuilderStats"></div><div id="lovecaDeckItems"></div></section>';
  browser.after(pane);
  const addDialog=document.createElement('dialog');
  addDialog.id='lovecaDeckAddDialog';
