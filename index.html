@@ -16,13 +16,16 @@
   <style>
     .app-refresh-btn{font-size:10px;font-weight:800;min-height:25px;padding:3px 7px;color:white;background:#ffffff2b;border:1px solid #ffffff9c;border-radius:999px;white-space:nowrap;touch-action:manipulation}
     .app-refresh-btn:disabled{opacity:.65}
-    .app-header{flex-wrap:wrap;gap:8px}
-    .app-header > div:first-child{min-width:0;flex:1 1 auto}
-    #headerQuickActions{display:flex;align-items:center;justify-content:flex-end;gap:7px;flex:1 1 100%;margin-top:2px}
-    #headerQuickActions .mascot-live-test-btn,#headerQuickActions .mascot-lineup-btn,#headerQuickActions .mascot-top-btn,#headerQuickActions .mascot-settings-btn{position:static!important;inset:auto!important;right:auto!important;bottom:auto!important;left:auto!important;top:auto!important;z-index:auto!important;transform:none!important;box-shadow:none!important;min-height:36px!important;height:36px!important;width:42px!important;min-width:42px!important;padding:0!important;border:1px solid #ffffff9c!important;background:#ffffffee!important;color:#b93572!important;font-size:18px!important;flex:0 0 auto!important}
-    #headerQuickActions .mascot-lineup-btn{width:54px!important;min-width:54px!important;font-size:12px!important}
+    .app-header{display:grid!important;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto;align-items:center!important;gap:3px 8px!important;padding:9px 12px!important;min-height:0!important}
+    .app-header > div:first-child{display:contents}
+    .app-header .header-meta{grid-column:1 / -1;grid-row:1;gap:7px;min-width:0}
+    .app-header #appTitle{grid-column:1;grid-row:2;min-width:0;margin:0!important;font-size:clamp(15px,4vw,20px)!important;line-height:1.25;overflow-wrap:anywhere}
+    #headerQuickActions{grid-column:2;grid-row:2;display:flex;align-items:center;justify-content:flex-end;gap:5px;margin:0;min-width:0}
+    #headerQuickActions .mascot-live-test-btn,#headerQuickActions .mascot-lineup-btn,#headerQuickActions .mascot-top-btn,#headerQuickActions .mascot-settings-btn{position:static!important;inset:auto!important;right:auto!important;bottom:auto!important;left:auto!important;top:auto!important;z-index:auto!important;transform:none!important;box-shadow:none!important;min-height:32px!important;height:32px!important;width:34px!important;min-width:34px!important;padding:0!important;border:1px solid #ffffffa8!important;background:#ffffffee!important;color:#b93572!important;font-size:17px!important;flex:0 0 auto!important}
+    #headerQuickActions .mascot-lineup-btn{width:42px!important;min-width:42px!important;font-size:11px!important}
     #headerQuickActions .mascot-top-btn{background:#2865a4!important;color:#fff!important}
-    @media(max-width:380px){#headerQuickActions{gap:5px}}
+    #headerQuickActions #resetAllBtn{position:static!important;min-width:34px!important;width:34px!important;height:32px!important;min-height:32px!important;padding:0!important;margin:0!important;border:1px solid #ffffffa8!important;border-radius:50%!important;background:#ffffffee!important;color:#b93572!important;font-size:19px!important;line-height:1!important;box-shadow:none!important}
+    @media(max-width:380px){.app-header{padding:8px 9px!important;gap:3px 5px!important}#headerQuickActions{gap:3px}#headerQuickActions .mascot-live-test-btn,#headerQuickActions .mascot-top-btn,#headerQuickActions .mascot-settings-btn,#headerQuickActions #resetAllBtn{width:30px!important;min-width:30px!important;height:30px!important;min-height:30px!important}#headerQuickActions .mascot-lineup-btn{width:38px!important;min-width:38px!important}.app-header #appTitle{font-size:15px!important}}
 
   </style>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" defer></script>
@@ -30,10 +33,10 @@
 <body>
   <header class="app-header">
     <div>
-      <div class="header-meta"><span class="eyebrow">OFFLINE PWA</span><span class="app-version">Ver.0.9.252</span><button type="button" id="appCheckUpdate" class="app-refresh-btn" aria-label="最新版に更新">↻ 更新</button></div>
+      <div class="header-meta"><span class="eyebrow">OFFLINE PWA</span><span class="app-version">Ver.0.9.253</span><button type="button" id="appCheckUpdate" class="app-refresh-btn" aria-label="最新版に更新">↻ 更新</button></div>
       <h1 id="appTitle">ラブカ ハート計算</h1>
     </div>
-    <button id="resetAllBtn" class="ghost-btn">リセット</button>
+    <button id="resetAllBtn" class="ghost-btn" title="リセット" aria-label="リセット">↺</button>
     <div id="headerQuickActions" aria-label="クイック操作"></div>
   </header>
 
@@ -609,10 +612,12 @@
     const relocate=()=>{
       const target=document.getElementById('headerQuickActions');
       if(!target)return;
+      const reset=document.getElementById('resetAllBtn');
       for(const cls of classes){
         const btn=document.querySelector('.'+cls);
         if(btn&&btn.parentElement!==target)target.appendChild(btn);
       }
+      if(reset&&reset.parentElement!==target)target.appendChild(reset);
     };
     if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',relocate,{once:true});else relocate();
     const observer=new MutationObserver(relocate);
