@@ -15,17 +15,32 @@ function render(){
  const deck=decks.find(d=>d.id===selected);
  if(!deck){stats.textContent='「新規作成」からデッキを登録してください。';items.innerHTML='';return}
  const entries=Object.entries(deck.cards||{}).filter(([,n])=>n>0);
- let nonBlade=0;const costs={},colors={};let unknown=0;
- for(const [id,count] of entries){
-  const c=lookup(id);if(!c){unknown+=count;continue}
-  if(c.cardType==='メンバー'&&c.cost!==null&&c.cost!==undefined&&c.cost!==''){const k=String(c.cost);costs[k]=(costs[k]||0)+count}
-  const kinds=new Set([...(Array.isArray(c.bladeHeartTypes)?c.bladeHeartTypes:[]),...(c.specialHeart?[c.specialHeart]:[])]);
-  if(!c.hasBladeHeart&&!kinds.size)nonBlade+=count;
-  for(const kind of kinds)colors[kind]=(colors[kind]||0)+count;
+ let nonBlade=0,memberCount=0,liveCount=0,unknown=0;
+ const costs={},colors={pink:0,red:0,yellow:0,green:0,blue:0,purple:0,all:0,draw:0,note:0};
+ const colorLabels={pink:'桃',red:'赤',yellow:'黄',green:'緑',blue:'青',purple:'紫',all:'ALL',draw:'ドロー',note:'音符'};
+ for(const [id,rawCount] of entries){
+  const count=Number(rawCount)||0,c=lookup(id);
+  if(!c){unknown+=count;continue}
+  const isLive=!!c.isLive||c.cardType==='ライブ';
+  const isMember=c.cardType==='メンバー'||(!isLive&&c.cardType!=='エネルギー');
+  if(isLive)liveCount+=count;
+  if(isMember){
+   memberCount+=count;
+   if(c.cost!==null&&c.cost!==undefined&&String(c.cost).trim()!==''){
+    const cost=String(c.cost).trim();costs[cost]=(costs[cost]||0)+count;
+   }
+   const kinds=new Set(Array.isArray(c.bladeHeartTypes)?c.bladeHeartTypes:[]);
+   if(c.specialHeart==='draw'||c.specialHeart==='note')kinds.add(c.specialHeart);
+   if(!c.hasBladeHeart&&!kinds.size)nonBlade+=count;
+   for(const kind of kinds)if(Object.prototype.hasOwnProperty.call(colors,kind))colors[kind]+=count;
+  }
  }
- const total=entries.reduce((n,[,c])=>n+c,0);
+ const total=entries.reduce((n,[,c])=>n+(Number(c)||0),0);
  const max=Math.max(1,...Object.values(costs));
- stats.innerHTML='<h3>デッキ分析：'+total+'枚</h3><p>非ブレ（ライブ含む）：<strong>'+nonBlade+'枚</strong></p><h3>メンバーのコスト分布</h3>'+Object.entries(costs).sort((a,b)=>Number(a[0])-Number(b[0])).map(([cost,n])=>'<div style="display:flex;gap:8px;align-items:center;margin:6px 0"><span>'+escape(cost)+'</span><div style="flex:1;background:#aaa3;border-radius:5px"><div style="width:'+(100*n/max)+'%;height:15px;background:#ee7eaa;border-radius:5px"></div></div><strong>'+n+'</strong></div>').join('')+'<h3>ブレードハートの色別カード枚数</h3><p>'+Object.entries(colors).map(([color,n])=>escape(color)+'：'+n+'枚').join(' ／ ')+'</p><p class="hint">色別集計は該当色を持つカード枚数です。ブレードハートのシンボル個数とは異なります。通常ハートは加算していません。</p>'+(unknown?'<p class="hint">カード情報未取得：'+unknown+'枚</p>':'');
+ const costRows=Object.entries(costs).sort((a,b)=>Number(a[0])-Number(b[0])).map(([cost,n])=>'<div style="display:flex;gap:8px;align-items:center;margin:4px 0"><span style="width:40px">'+escape(cost)+'</span><div style="flex:1;background:#aaa3;border-radius:5px"><div style="width:'+(100*n/max)+'%;height:12px;background:#ee7eaa;border-radius:5px"></div></div><strong>'+n+'枚</strong></div>').join('');
+ const colorRows=Object.entries(colors).map(([key,n])=>'<span style="display:inline-flex;justify-content:space-between;gap:6px;padding:5px 8px;border:1px solid #e9c5d3;border-radius:8px;background:#fff;white-space:nowrap">'+colorLabels[key]+' <strong>'+n+'</strong></span>').join('');
+ stats.innerHTML='<div style="border:1px solid #e9c5d3;border-radius:12px;padding:12px;margin:12px 0"><h3 style="margin:0 0 8px">デッキ分析：'+total+'枚</h3><p style="margin:4px 0">メンバー <strong>'+memberCount+'枚</strong> ／ ライブ <strong>'+liveCount+'枚</strong></p><p style="margin:4px 0">非ブレ（メンバー） <strong>'+nonBlade+'枚</strong> ／ ライブを含む非ブレ <strong>'+(nonBlade+liveCount)+'枚</strong></p><h4 style="margin:12px 0 6px">メンバーのコスト分布</h4>'+(costRows||'<p class="hint">集計対象のメンバーなし</p>')+'<h4 style="margin:12px 0 6px">ブレードハートの色別カード枚数</h4><div style="display:flex;flex-wrap:wrap;gap:5px">'+colorRows+'</div><p class="hint" style="margin:8px 0 0">色別は該当シンボルを持つメンバーカードの枚数（重複色はそれぞれ加算）。シンボル個数ではありません。</p>'+(unknown?'<p class="hint">カード情報未取得：'+unknown+'枚</p>':'')+'</div>';
+
  items.innerHTML=entries.map(([id,n])=>{const c=lookup(id);return '<div style="display:flex;gap:8px;align-items:center;border-bottom:1px solid #aaa4;padding:8px 0">'+(c?.imageUrl?'<img src="'+escape(c.imageUrl)+'" loading="lazy" style="width:45px">':'')+'<div style="flex:1;min-width:0"><strong>'+escape(c?.name||id)+'</strong><div class="hint">'+escape(c?.cardNo||'')+'</div></div><button class="ghost-btn" data-deck-adjust="'+escape(id)+'" data-delta="-1">−</button><strong>'+n+'</strong><button class="ghost-btn" data-deck-adjust="'+escape(id)+'" data-delta="1">＋</button></div>'}).join('')||'<p class="note">カード検索から追加してください。</p>';
 }
 function addButtons(){
