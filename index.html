@@ -16,16 +16,25 @@
   <style>
     .app-refresh-btn{font-size:10px;font-weight:800;min-height:25px;padding:3px 7px;color:white;background:#ffffff2b;border:1px solid #ffffff9c;border-radius:999px;white-space:nowrap;touch-action:manipulation}
     .app-refresh-btn:disabled{opacity:.65}
+    .app-header{flex-wrap:wrap;gap:8px}
+    .app-header > div:first-child{min-width:0;flex:1 1 auto}
+    #headerQuickActions{display:flex;align-items:center;justify-content:flex-end;gap:7px;flex:1 1 100%;margin-top:2px}
+    #headerQuickActions .mascot-live-test-btn,#headerQuickActions .mascot-lineup-btn,#headerQuickActions .mascot-top-btn,#headerQuickActions .mascot-settings-btn{position:static!important;inset:auto!important;right:auto!important;bottom:auto!important;left:auto!important;top:auto!important;z-index:auto!important;transform:none!important;box-shadow:none!important;min-height:36px!important;height:36px!important;width:42px!important;min-width:42px!important;padding:0!important;border:1px solid #ffffff9c!important;background:#ffffffee!important;color:#b93572!important;font-size:18px!important;flex:0 0 auto!important}
+    #headerQuickActions .mascot-lineup-btn{width:54px!important;min-width:54px!important;font-size:12px!important}
+    #headerQuickActions .mascot-top-btn{background:#2865a4!important;color:#fff!important}
+    @media(max-width:380px){#headerQuickActions{gap:5px}}
+
   </style>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" defer></script>
 </head>
 <body>
   <header class="app-header">
     <div>
-      <div class="header-meta"><span class="eyebrow">OFFLINE PWA</span><span class="app-version">Ver.0.9.251</span><button type="button" id="appCheckUpdate" class="app-refresh-btn" aria-label="最新版に更新">↻ 更新</button></div>
+      <div class="header-meta"><span class="eyebrow">OFFLINE PWA</span><span class="app-version">Ver.0.9.252</span><button type="button" id="appCheckUpdate" class="app-refresh-btn" aria-label="最新版に更新">↻ 更新</button></div>
       <h1 id="appTitle">ラブカ ハート計算</h1>
     </div>
     <button id="resetAllBtn" class="ghost-btn">リセット</button>
+    <div id="headerQuickActions" aria-label="クイック操作"></div>
   </header>
 
   <nav class="top-nav">
@@ -592,6 +601,22 @@
       url.searchParams.set('app-update',version+'-'+Date.now());
       location.replace(url.href);
     });
+  })();
+  </script>
+  <script>
+  (() => {
+    const classes=['mascot-live-test-btn','mascot-lineup-btn','mascot-top-btn','mascot-settings-btn'];
+    const relocate=()=>{
+      const target=document.getElementById('headerQuickActions');
+      if(!target)return;
+      for(const cls of classes){
+        const btn=document.querySelector('.'+cls);
+        if(btn&&btn.parentElement!==target)target.appendChild(btn);
+      }
+    };
+    if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',relocate,{once:true});else relocate();
+    const observer=new MutationObserver(relocate);
+    observer.observe(document.documentElement,{childList:true,subtree:true});
   })();
   </script>
 </body>
