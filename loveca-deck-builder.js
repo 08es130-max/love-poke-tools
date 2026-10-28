@@ -44,6 +44,26 @@ function init(){
  const pane=document.createElement('div');pane.id='loveDeckBuilderPane';pane.className='love-pane hidden';
  pane.innerHTML='<section class="panel"><div class="section-title-row"><h2>デッキ構築</h2><span class="badge ok">端末に保存</span></div><div style="display:flex;gap:8px;flex-wrap:wrap"><select id="lovecaDeckChooser" style="flex:1;min-width:120px"></select><button type="button" class="primary-btn" id="lovecaDeckNew">新規作成</button><button type="button" class="ghost-btn" id="lovecaDeckDelete">削除</button></div><div id="lovecaDeckStats"></div><div id="lovecaDeckItems"></div></section>';
  browser.after(pane);
+ const addDialog=document.createElement('dialog');
+ addDialog.id='lovecaDeckAddDialog';
+ addDialog.style.cssText='width:min(92vw,420px);max-height:80dvh;overflow:auto;border:1px solid #e7b1c9;border-radius:14px;padding:18px;background:#fff;color:#333;box-shadow:0 12px 40px #0005';
+ addDialog.innerHTML='<form method="dialog"><h3 style="margin:0 0 8px">デッキに追加</h3><p id="lovecaDeckAddCardName" style="margin:0 0 12px;overflow-wrap:anywhere"></p><label style="display:block;margin-bottom:12px">追加するデッキ<select id="lovecaDeckAddChoice" style="display:block;width:100%;min-height:44px;margin-top:6px"></select></label><p id="lovecaDeckAddEmpty" class="hint" style="display:none">デッキがありません。先にデッキ構築から作成してください。</p><div style="display:flex;gap:8px;justify-content:flex-end"><button type="button" id="lovecaDeckAddCancel" class="ghost-btn">キャンセル</button><button type="button" id="lovecaDeckAddConfirm" class="primary-btn">OK・追加</button></div></form>';
+ document.body.append(addDialog);
+ const toast=document.createElement('div');toast.id='lovecaDeckAddToast';toast.setAttribute('role','status');toast.setAttribute('aria-live','polite');toast.style.cssText='position:fixed;left:50%;bottom:105px;transform:translateX(-50%);z-index:99999;background:#a82e65;color:white;border-radius:12px;padding:12px 18px;font-weight:bold;box-shadow:0 5px 20px #0003;max-width:90vw;text-align:center;display:none';document.body.append(toast);
+ let pendingAdd='',toastTimer;
+ const notify=message=>{toast.textContent=message;toast.style.display='block';clearTimeout(toastTimer);toastTimer=setTimeout(()=>toast.style.display='none',2400)};
+ $('#lovecaDeckAddCancel').onclick=()=>addDialog.close();
+ $('#lovecaDeckAddConfirm').onclick=()=>{
+  const deckId=$('#lovecaDeckAddChoice').value,all=get(),deck=all.find(d=>d.id===deckId);
+  if(!deck||!pendingAdd)return;
+  deck.cards=deck.cards||{};
+  deck.cards[pendingAdd]=(Number(deck.cards[pendingAdd])||0)+1;
+  if(!put(all))return;
+  selected=deckId;
+  const name=lookup(pendingAdd)?.name||'カード';
+  addDialog.close();pendingAdd='';render();notify('「'+name+'」を「'+deck.name+'」に追加しました');
+ };
+
  tab.onclick=()=>{nav.querySelectorAll('.love-tab').forEach(b=>b.classList.toggle('active',b===tab));$('#loveCalcPane')?.classList.add('hidden');browser.classList.add('hidden');$('#loveWishlistPane')?.classList.add('hidden');pane.classList.remove('hidden');$('#appTitle').textContent='ラブカ デッキ構築';$('#resetAllBtn').style.display='none';render()};
  nav.querySelectorAll('.love-tab:not([data-love-pane="builder"])').forEach(b=>b.addEventListener('click',()=>pane.classList.add('hidden')));
  $('#navLove')?.addEventListener('click',()=>{if(tab.classList.contains('active')){$('#appTitle').textContent='ラブカ デッキ構築';$('#resetAllBtn').style.display='none'}});
@@ -51,10 +71,20 @@ function init(){
  $('#lovecaDeckNew').onclick=()=>{const name=prompt('デッキ名','新しいデッキ');if(!name?.trim())return;const all=get(),id='d'+Date.now();all.push({id,name:name.trim(),cards:{}});if(put(all)){selected=id;render()}};
  $('#lovecaDeckDelete').onclick=()=>{if(!selected||!confirm('デッキを削除しますか？'))return;const all=get().filter(d=>d.id!==selected);if(put(all)){selected='';render()}};
  document.addEventListener('click',e=>{
-  const add=e.target.closest('[data-deck-add]'),adjust=e.target.closest('[data-deck-adjust]');if(!add&&!adjust)return;
-  const id=add?.dataset.deckAdd||adjust.dataset.deckAdjust,delta=add?1:Number(adjust.dataset.delta);
-  const all=get();let deck=all.find(d=>d.id===selected);
-  if(!deck){if(!add)return;const name=prompt('新しいデッキ名','新しいデッキ');if(!name?.trim())return;deck={id:'d'+Date.now(),name:name.trim(),cards:{}};all.push(deck);selected=deck.id}
+  const add=e.target.closest('[data-deck-add]'),adjust=e.target.closest('[data-deck-adjust]');
+  if(!add&&!adjust)return;
+  if(add){
+   const all=get();pendingAdd=String(add.dataset.deckAdd);
+   const choice=$('#lovecaDeckAddChoice');
+   choice.innerHTML=all.map(d=>'<option value="'+escape(d.id)+'">'+escape(d.name)+'</option>').join('');
+   choice.value=all.some(d=>d.id===selected)?selected:(all[0]?.id||'');
+   $('#lovecaDeckAddCardName').textContent=lookup(pendingAdd)?.name||'選択したカード';
+   $('#lovecaDeckAddEmpty').style.display=all.length?'none':'block';
+   $('#lovecaDeckAddConfirm').disabled=!all.length;
+   addDialog.showModal();return;
+  }
+  const id=adjust.dataset.deckAdjust,delta=Number(adjust.dataset.delta),all=get(),deck=all.find(d=>d.id===selected);
+  if(!deck)return;
   deck.cards[id]=Math.max(0,(deck.cards[id]||0)+delta);if(!deck.cards[id])delete deck.cards[id];
   if(put(all))render();
  });
