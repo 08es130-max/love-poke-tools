@@ -80,3 +80,44 @@
 #loveSoloPane .solo-reveal-zone{border:1px solid #e7b1c9;border-radius:8px;background:#fff;padding:7px}
 #loveSoloPane .solo-reveal-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:4px}
 #loveSoloPane .solo-reveal-cards .solo-tap-card{max-width:90px}
+
+/* v0.9.246: compact solo view, legible dialogs, and visible revealed cards */
+#loveSoloPane .panel{padding:7px!important}
+#loveSoloPane .section-title-row{margin-bottom:3px}
+#loveSoloPane .panel>.hint{font-size:11px;line-height:1.35;margin:3px 0 6px}
+#loveSoloPane #loveSoloBoard{display:flex;flex-direction:column;gap:4px}
+#loveSoloPane .solo-portrait-mat{gap:5px;padding:6px}
+#loveSoloPane .solo-three-slots{gap:4px}
+#loveSoloPane .solo-slot-live{aspect-ratio:1.8}
+#loveSoloPane .solo-slot-stage{aspect-ratio:.9;max-height:140px}
+#loveSoloPane .solo-slots-section h3{font-size:11px;margin:1px 0 3px}
+#loveSoloPane .solo-reveal-zone{border:1px solid #e7b1c9;border-radius:8px;background:#fff;padding:6px}
+#loveSoloPane .solo-reveal-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:4px}
+#loveSoloPane .solo-reveal-cards .solo-tap-card{max-width:90px}
+#loveSoloPane .solo-control-dock{position:sticky;bottom:70px;z-index:8;background:#fff7fb;border:1px solid #eab0c8;border-radius:10px;padding:5px;box-shadow:0 -3px 12px #00000014}
+#loveSoloPane .solo-control-dock .solo-toolbar{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin:0 0 5px}
+#loveSoloPane .solo-control-dock .solo-toolbar strong{grid-column:1/-1;font-size:12px}
+#loveSoloPane .solo-control-dock .solo-toolbar button{font-size:11px;padding:6px 2px;min-width:0;white-space:nowrap}
+#loveSoloPane .solo-control-dock .solo-hand{padding:4px}
+#loveSoloPane .solo-control-dock .solo-hand-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:3px}
+#loveSoloPane .solo-control-dock .solo-hand .solo-tap-card{max-width:90px}
+#loveSoloPane .solo-control-dock .solo-hand .solo-tap-card img{max-height:95px;object-fit:contain}
+#loveSoloCardDialog{box-sizing:border-box!important;position:fixed!important;inset:50% auto auto 50%!important;transform:translate(-50%,-50%)!important;margin:0!important;width:min(94vw,500px)!important;max-width:94vw!important;max-height:78dvh!important;padding:12px!important;background:#fff!important;color:#333!important;border:1px solid #e7b1c9!important;box-shadow:0 10px 40px #0004!important;overflow-y:auto!important}
+#loveSoloCardDialog::backdrop{background:#0008}
+#loveSoloCardDialog #loveSoloCardDetail{font-size:13px;line-height:1.5}
+#loveSoloCardDialog .solo-detail-top{display:grid;grid-template-columns:95px minmax(0,1fr);gap:10px;align-items:start}
+#loveSoloCardDialog .solo-detail-image img{display:block;width:95px;height:auto;max-height:140px;object-fit:contain}
+#loveSoloCardDialog .solo-detail-info{min-width:0;overflow-wrap:anywhere}
+#loveSoloCardDialog .solo-detail-info h3{font-size:15px;margin:0 0 4px}
+#loveSoloCardDialog .solo-detail-info>p{font-size:11px;margin:2px 0 8px}
+#loveSoloCardDialog .solo-effect-box{padding:8px;border:1px solid #e6c7d4;border-radius:8px;background:#fff9fc;max-height:170px;overflow:auto}
+#loveSoloCardDialog .solo-effect-box p{white-space:pre-wrap;overflow-wrap:anywhere;margin:4px 0 0;font-size:12px}
+#loveSoloCardDialog h4{font-size:13px;margin:12px 0 6px}
+#loveSoloCardDialog .solo-choice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+#loveSoloCardDialog .solo-choice-grid button{font-size:12px;min-height:38px;white-space:normal;padding:5px}
+#loveSoloCardDialog #loveSoloClose{position:sticky;bottom:0;margin-top:10px;width:100%;min-height:40px}
+#loveSoloCardDialog .solo-discard-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+#loveSoloCardDialog .solo-discard-list button{display:flex;align-items:center;gap:5px;text-align:left;background:#fff;border:1px solid #e7b1c9;border-radius:7px;padding:4px;min-width:0}
+#loveSoloCardDialog .solo-discard-list img{width:42px;max-height:65px;object-fit:contain}
+#loveSoloCardDialog .solo-discard-list span{font-size:11px;min-width:0;overflow-wrap:anywhere}
+#loveSoloCardDialog .solo-discard-list small{display:block;color:#888}
