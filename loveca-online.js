@@ -19,6 +19,7 @@ function renderRoom(data){
  $('#lovecaOnlinePlayers').textContent='あなた：'+(player?.ready?'準備完了':'準備中')+' ／ 相手：'+(others.length?(others[0][1].ready?'準備完了':'準備中'):'参加待ち');
  $('#lovecaOnlineReady').textContent=myReady?'準備を取り消す':'準備完了';
  $('#lovecaOnlineReady').disabled=!player;
+ $('#lovecaOnlineDeck').disabled=myReady;
  const both=others.length===1&&myReady&&others[0][1].ready;
  $('#lovecaOnlineMatch').textContent=both?'双方準備完了（対戦盤面は第2段階で実装）':'相手の参加・準備完了を待っています';
 }
@@ -29,7 +30,7 @@ function listen(id){
   const data=snap.data();
   if(!data.players?.[uid]){status('ルームの参加権限がありません',true);roomId='';sessionStorage.removeItem(ROOM_KEY);renderRoom(null);$('#lovecaOnlineCreate').disabled=false;$('#lovecaOnlineJoin').disabled=false;return}
   renderRoom(data);status('ルームに接続中');
- },e=>status('同期エラー：'+e.message,true));
+ },e=>{status('同期エラー：'+e.message+'。FirebaseのFirestoreルールと匿名認証を確認してください',true)});
 }
 async function connect(){
  if(api)return true;
@@ -122,7 +123,7 @@ function init(){
  const show=()=>{nav.querySelectorAll('.love-tab').forEach(b=>b.classList.toggle('active',b===tab));document.querySelectorAll('#loveScreen .love-pane').forEach(p=>p.classList.add('hidden'));pane.classList.remove('hidden');$('#appTitle').textContent='ラブカ オンライン';const reset=$('#resetAllBtn');if(reset)reset.style.display='none';paintDecks()};
  tab.addEventListener('click',show);
  nav.querySelectorAll('.love-tab:not([data-love-pane="online"])').forEach(b=>b.addEventListener('click',()=>pane.classList.add('hidden')));
- $('#lovecaOnlineDeck').addEventListener('change',e=>{ownDeck=e.target.value;if(myReady&&roomId)ready()});
+ $('#lovecaOnlineDeck').addEventListener('change',e=>{ownDeck=e.target.value});
  $('#lovecaOnlineCreate').addEventListener('click',create);
  $('#lovecaOnlineJoin').addEventListener('click',join);
  $('#lovecaOnlineReady').addEventListener('click',ready);
