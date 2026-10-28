@@ -1,0 +1,42 @@
+// Add this nested match INSIDE match /lovecaOnlineRooms/{roomId}
+// in the current Firestore rules. Keep all existing rules unchanged.
+// Phase 2: only public board state; never upload deck/hand contents.
+match /boards/{playerId} {
+  function inRoom() {
+    return request.auth != null
+      && exists(/databases/$(database)/documents/lovecaOnlineRooms/$(roomId))
+      && request.auth.uid in get(/databases/$(database)/documents/lovecaOnlineRooms/$(roomId)).data.players;
+  }
+  function ownBoard() {
+    return inRoom() && request.auth.uid == playerId;
+  }
+  function validBoard() {
+    return request.resource.data.keys().hasAll([
+      'stage','live','discard','energy','handCount','deckCount','stageUnder'
+    ])
+    && request.resource.data.keys().hasOnly([
+      'stage','live','discard','energy','handCount','deckCount','stageUnder'
+    ])
+    && request.resource.data.stage is list
+    && request.resource.data.stage.size() == 3
+    && request.resource.data.live is list
+    && request.resource.data.live.size() == 3
+    && request.resource.data.discard is list
+    && request.resource.data.discard.size() <= 100
+    && request.resource.data.stageUnder is list
+    && request.resource.data.stageUnder.size() == 3
+    && request.resource.data.energy is int
+    && request.resource.data.energy >= 0
+    && request.resource.data.energy <= 12
+    && request.resource.data.handCount is int
+    && request.resource.data.handCount >= 0
+    && request.resource.data.handCount <= 500
+    && request.resource.data.deckCount is int
+    && request.resource.data.deckCount >= 0
+    && request.resource.data.deckCount <= 500;
+  }
+  allow get: if inRoom();
+  allow list: if false;
+  allow create, update: if ownBoard() && validBoard();
+  allow delete: if false;
+}
