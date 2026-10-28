@@ -130,13 +130,36 @@ function showUnder(slot,index){
  body.innerHTML='<h3>ステージ'+(slot+1)+'の下のカード</h3>'+(c?.imageUrl?'<img style="max-width:140px;max-height:200px;object-fit:contain" src="'+esc(c.imageUrl)+'">':'<p>エネルギー</p>')+'<p>'+esc(c?.name||'')+'</p><div class="solo-choice-grid">'+(item.kind==='energy'?'<button type="button" data-solo-under-remove="energy">エネルギー置き場に戻す</button>':'<button type="button" data-solo-under-remove="hand">手札へ</button><button type="button" data-solo-under-remove="discard">控え室へ</button>')+'</div>';
  const dialog=$('#loveSoloCardDialog');dialog.dataset.underSlot=slot;dialog.dataset.underIndex=index;dialog.showModal();
 }
+function memberCost(id){
+ const raw=String(card(id)?.cost??'').trim();
+ if(!/^\d+$/.test(raw))return null;
+ const n=Number(raw);return Number.isSafeInteger(n)&&n>=0?n:null;
+}
+function payStageCost(id,to,index,from){
+ if(to!=='stageSlots'||from==='stageSlots')return {used:0,manual:false};
+ const cost=memberCost(id),oldId=state.stageSlots[index],oldCost=oldId?memberCost(oldId):0;
+ const base=cost===null||oldCost===null?null:Math.max(0,cost-oldCost);
+ const available=state.energy.filter(e=>!e.used).length;
+ const desc=oldId?'バトンタッチ（元のコスト '+(oldCost??'不明')+'）':'空きステージへの登場';
+ const raw=prompt(desc+'\n新メンバーのコスト：'+(cost??'不明')+'\n必要エネルギー：'+(base??'不明')+'\n使用可能：'+available+'枚\n\n必要枚数を入力して確定すると自動で使用済みにします。\n効果による軽減は枚数を変更してください。\nM＝手動処理（エネルギーを自動使用しない）',base===null?'M':String(base));
+ if(raw===null)return null;
+ if(raw.trim().toUpperCase()==='M')return {used:0,manual:true};
+ if(!/^\d+$/.test(raw.trim())){alert('0以上の整数、またはMを入力してください');return null}
+ const n=Number(raw.trim());
+ if(!Number.isSafeInteger(n)||n<0||n>12){alert('必要エネルギーは0〜12枚で指定してください');return null}
+ if(n>available){alert('エネルギーが足りません（必要'+n+'枚／使用可能'+available+'枚）。登場は取り消されました');return null}
+ return {used:n,manual:false};
+}
 function place(to,index){
  const dialog=$('#loveSoloCardDialog'),from=dialog.dataset.from,fromIndex=Number(dialog.dataset.index);
  if(!state||!Array.isArray(state[from]))return;
  const id=state[from][fromIndex];if(!id)return;
  if(to===from&&index===fromIndex){dialog.close();return}
  if(to==='deckTop'&&from!=='revealed')return;
+ const payment=payStageCost(id,to,index,from);
+ if(payment===null)return;
  snapshot();
+ if(payment.used){let left=payment.used;for(const e of state.energy){if(!e.used&&left>0){e.used=true;left--}}}
  if(from==='stageSlots'){state.stageWait[fromIndex]=false;if(to!=='stageSlots'){for(const item of state.stageUnder[fromIndex]||[]){if(item.kind==='energy')state.energy.push(item.energy);else state.discard.push(item.id)}state.stageUnder[fromIndex]=[]}}
  if(from==='hand'||from==='discard'||from==='successLive'||from==='revealed')state[from].splice(fromIndex,1);else state[from][fromIndex]=null;
  if(to==='deckTop')state.deck.push(id);
@@ -146,7 +169,7 @@ function place(to,index){
   if(displaced){state.discard.push(displaced);if(to==='stageSlots'){for(const item of state.stageUnder[index]||[]){if(item.kind==='energy')state.energy.push(item.energy);else state.discard.push(item.id)}state.stageUnder[index]=[]}}
   if(to==='stageSlots')state.stageWait[index]=false
  }else return;
- state.log.unshift('T'+state.turn+' '+(card(id)?.name||id)+' → '+to+(Number.isInteger(index)?index+1:''));
+ state.log.unshift('T'+state.turn+' '+(card(id)?.name||id)+' → '+to+(Number.isInteger(index)?index+1:'')+(to==='stageSlots'&&from!=='stageSlots'?(payment.manual?'（コスト手動）':'（エネルギー'+payment.used+'枚使用）'):''));
  dialog.close();write(state);render();
 }
 let discardSelection=[];
