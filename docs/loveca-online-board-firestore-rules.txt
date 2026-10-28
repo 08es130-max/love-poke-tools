@@ -12,7 +12,7 @@ match /boards/{playerId} {
   }
   function validBoard() {
     return request.resource.data.keys().hasAll([
-      'stage','live','discard','energy','handCount','deckCount','stageUnder'
+      'stage','live','discard','energy','handCount','deckCount','stageUnder','successLive'
     ])
     && request.resource.data.keys().hasOnly([
       'stage','live','discard','energy','handCount','deckCount','stageUnder'
@@ -23,6 +23,8 @@ match /boards/{playerId} {
     && request.resource.data.live.size() == 3
     && request.resource.data.discard is list
     && request.resource.data.discard.size() <= 100
+    && request.resource.data.successLive is list
+    && request.resource.data.successLive.size() <= 100
     && request.resource.data.stageUnder is list
     && request.resource.data.stageUnder.size() == 3
     && request.resource.data.energy is int
