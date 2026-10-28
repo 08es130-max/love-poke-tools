@@ -1,17 +1,82 @@
-/* LoveCa online lobby: phase 1 only. No card/deck contents leave this device. */
+/* LoveCa online manual board: private deck and hand remain local. */
 (()=>{'use strict';
 const DECKS='lovepoke_loveca_card_decks_v1';
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','"':'&quot;',"'":'&#39;'}[c]));
-let api=null,uid='',roomId='',unsub=null,creating=false,ownDeck='',myReady=false;
+let api=null,uid='',roomId='',unsub=null,boardUnsub=null,creating=false,ownDeck='',myReady=false,board=null,catalog=[],players={},battleActive=false;
+const card=id=>catalog.find(c=>String(c.id)===String(id));
+const boardStorage=()=>`loveca_online_board_${roomId}_${uid}`;
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
 const ROOM_KEY='loveca_online_last_room_v1';
 const status=(s,error=false)=>{const el=$('#lovecaOnlineStatus');if(el){el.textContent=s;el.style.color=error?'#c03550':''}};
 const decks=()=>{try{return JSON.parse(localStorage.getItem(DECKS)||'[]')}catch{return []}};
 function paintDecks(){const sel=$('#lovecaOnlineDeck'),prev=sel.value;sel.innerHTML=decks().map(d=>'<option value="'+esc(d.id)+'">'+esc(d.name)+'</option>').join('')||'<option value="">デッキがありません</option>';sel.value=ownDeck||prev||sel.options[0]?.value||'';ownDeck=sel.value}
+function cardTile(id){const c=card(id);return id?'<span class="online-card">'+(c?.imageUrl?'<img src="'+esc(c.imageUrl)+'" alt="'+esc(c.name)+'">':esc(c?.name||id))+'</span>':'<span class="online-empty">空き</span>'}
+function slots(arr,kind,editable){return (arr||[null,null,null]).map((id,i)=>'<div class="online-slot">'+(editable?'<button type="button" data-online-slot="'+kind+'" data-online-index="'+i+'">'+cardTile(id)+'</button>':cardTile(id))+'</div>').join('')}
+function showBoard(){
+ const panel=$('#lovecaOnlineBattle');if(!panel||!board)return;
+ panel.hidden=false;
+ $('#lovecaOnlineOwnStage').innerHTML=slots(board.stage,'stage',true);
+ $('#lovecaOnlineOwnLive').innerHTML=slots(board.live,'live',true);
+ $('#lovecaOnlineOwnHand').innerHTML=board.hand.map((id,i)=>'<button type="button" data-online-hand="'+i+'">'+cardTile(id)+'</button>').join('');
+ $('#lovecaOnlineOwnInfo').textContent='山札 '+board.deck.length+'枚 ／ 控え室 '+board.discard.length+'枚 ／ エネルギー '+board.energy+'/12';
+}
+function showOpponent(d){
+ const el=$('#lovecaOnlineOpponent');if(!el)return;
+ if(!d){el.textContent='相手の公開盤面を待っています';return}
+ el.innerHTML='<h3>相手の盤面（閲覧専用）</h3><p>手札 '+Number(d.handCount||0)+'枚 ／ 山札 '+Number(d.deckCount||0)+'枚 ／ エネルギー '+Number(d.energy||0)+'/12</p><p>ライブ</p><div class="online-slots">'+slots(d.live,'',false)+'</div><p>ステージ</p><div class="online-slots">'+slots(d.stage,'',false)+'</div><p>控え室 '+(d.discard||[]).map(id=>esc(card(id)?.name||id)).join('、')+'</p>';
+}
+async function publishBoard(){
+ if(!board||!roomId)return;
+ localStorage.setItem(boardStorage(),JSON.stringify(board));showBoard();
+ const visible={stage:board.stage,live:board.live,discard:board.discard.slice(-100),energy:board.energy,handCount:board.hand.length,deckCount:board.deck.length,stageUnder:[[],[],[]]};
+ try{await api.setDoc(api.doc(api.db,'lovecaOnlineRooms',roomId,'boards',uid),visible)}
+ catch(e){status('盤面同期エラー：'+e.message+'（Firestoreの盤面ルールを追加してください）',true)}
+}
+function startBattle(){
+ if(battleActive||!roomId||!api)return;
+ const deck=decks().find(d=>d.id===ownDeck);
+ if(!deck){status('使用するデッキがありません',true);return}
+ battleActive=true;
+ try{board=JSON.parse(localStorage.getItem(boardStorage())||'null')}catch{board=null}
+ if(!board||!Array.isArray(board.deck)||!Array.isArray(board.hand)){
+  const pile=[];for(const [id,count] of Object.entries(deck.cards||{}))for(let i=0;i<Math.min(100,Math.max(0,Number(count)||0));i++)pile.push(id);
+  board={deck:shuffle(pile),hand:[],stage:[null,null,null],live:[null,null,null],discard:[],energy:4};
+  for(let i=0;i<5&&board.deck.length;i++)board.hand.push(board.deck.pop());
+ }
+ publishBoard();
+ const opponent=Object.keys(players).find(id=>id!==uid);
+ if(opponent){
+  if(boardUnsub)boardUnsub();
+  boardUnsub=api.onSnapshot(api.doc(api.db,'lovecaOnlineRooms',roomId,'boards',opponent),snap=>showOpponent(snap.exists()?snap.data():null),e=>status('相手の盤面を読めません：'+e.message,true));
+ }
+}
+function boardAction(e){
+ if(!battleActive||!board)return;
+ const draw=e.target.closest('[data-online-draw]'),energy=e.target.closest('[data-online-energy]'),hand=e.target.closest('[data-online-hand]'),slot=e.target.closest('[data-online-slot]');
+ if(draw){if(!board.deck.length){status('山札がありません',true);return}board.hand.push(board.deck.pop())}
+ else if(energy){board.energy=Math.min(12,board.energy+1)}
+ else if(hand){
+  const index=Number(hand.dataset.onlineHand),id=board.hand[index];if(!id)return;
+  const kind=card(id)?.cardType==='ライブ'||card(id)?.isLive?'live':'stage';
+  const answer=prompt((kind==='live'?'ライブ':'ステージ')+'の配置先（1〜3）','1');if(answer===null)return;
+  const i=Number(answer)-1;if(!Number.isInteger(i)||i<0||i>2){status('1〜3を入力してください',true);return}
+  if(board[kind][i])board.discard.push(board[kind][i]);
+  board[kind][i]=id;board.hand.splice(index,1);
+ }else if(slot){
+  const kind=slot.dataset.onlineSlot,index=Number(slot.dataset.onlineIndex),id=board[kind]?.[index];if(!id)return;
+  const answer=prompt('移動先：1=手札、2=控え室','2');
+  if(answer==='1')board.hand.push(id);else if(answer==='2')board.discard.push(id);else return;
+  board[kind][index]=null;
+ }else return;
+ publishBoard();
+}
+
 function renderRoom(data){
+ players=data?.players||{};
  const panel=$('#lovecaOnlineRoom');if(!panel)return;
  panel.hidden=!data;
- if(!data)return;
+ if(!data){battleActive=false;board=null;const b=$('#lovecaOnlineBattle');if(b)b.hidden=true;return;}
  const player=data.players?.[uid],others=Object.entries(data.players||{}).filter(([id])=>id!==uid);
  myReady=!!player?.ready;
  $('#lovecaOnlineCode').textContent=data.code||'';
@@ -21,10 +86,11 @@ function renderRoom(data){
  $('#lovecaOnlineReady').disabled=!player;
  $('#lovecaOnlineDeck').disabled=myReady;
  const both=others.length===1&&myReady&&others[0][1].ready;
- $('#lovecaOnlineMatch').textContent=both?'双方準備完了（対戦盤面は第2段階で実装）':'相手の参加・準備完了を待っています';
+ $('#lovecaOnlineMatch').textContent=both?'双方準備完了・対戦盤面を表示中':'相手の参加・準備完了を待っています';
+ if(both)startBattle();
 }
 function listen(id){
- if(unsub){unsub();unsub=null}roomId=id;sessionStorage.setItem(ROOM_KEY,id);
+ if(unsub){unsub();unsub=null}if(boardUnsub){boardUnsub();boardUnsub=null}battleActive=false;roomId=id;sessionStorage.setItem(ROOM_KEY,id);
  unsub=api.onSnapshot(api.doc(api.db,'lovecaOnlineRooms',id),snap=>{
   if(!snap.exists()){status('ルームが終了しました');roomId='';sessionStorage.removeItem(ROOM_KEY);renderRoom(null);$('#lovecaOnlineCreate').disabled=false;$('#lovecaOnlineJoin').disabled=false;return}
   const data=snap.data();
@@ -94,7 +160,7 @@ async function leave(){
    delete players[uid];
    tx.update(ref,{players});
   });
-  if(unsub){unsub();unsub=null}
+  if(unsub){unsub();unsub=null}if(boardUnsub){boardUnsub();boardUnsub=null}
   roomId='';myReady=false;sessionStorage.removeItem(ROOM_KEY);
   renderRoom(null);$('#lovecaOnlineCreate').disabled=false;$('#lovecaOnlineJoin').disabled=false;
   status('ルームから退出しました');
@@ -118,7 +184,7 @@ function init(){
  if($('#lovecaOnlinePane'))return;
  const tab=document.createElement('button');tab.type='button';tab.className='love-tab';tab.dataset.lovePane='online';tab.textContent='オンライン';nav.append(tab);
  const pane=document.createElement('div');pane.id='lovecaOnlinePane';pane.className='love-pane hidden';
- pane.innerHTML='<section class="panel"><h2>オンライン対戦・ルーム</h2><p class="hint">第1段階：2人の接続と準備完了を確認します。対戦盤面・カード同期はまだ利用できません。デッキの中身は送信しません。</p><label class="block-label">使用するデッキ<select id="lovecaOnlineDeck"></select></label><div class="solo-choice-grid" style="margin:12px 0"><button type="button" id="lovecaOnlineCreate" class="primary-btn">ルームを作成</button></div><label class="block-label">ルームコード<input id="lovecaOnlineJoinCode" maxlength="6" placeholder="6文字"></label><button type="button" id="lovecaOnlineJoin" class="ghost-btn">ルームに参加</button><p id="lovecaOnlineStatus" role="status" style="margin-top:12px"></p><div id="lovecaOnlineRoom" hidden><h3>ルーム番号：<strong id="lovecaOnlineCode"></strong></h3><button type="button" id="lovecaOnlineCopy" class="ghost-btn">コードをコピー</button><p id="lovecaOnlinePlayers"></p><button type="button" id="lovecaOnlineReady" class="primary-btn">準備完了</button><p id="lovecaOnlineMatch"></p><button type="button" id="lovecaOnlineLeave" class="ghost-btn">ルームから退出</button></div></section>';
+ pane.innerHTML='<section class="panel"><h2>オンライン対戦・ルーム</h2><p class="hint">第2段階・試験版：双方準備完了で盤面を表示します。カード効果は手動処理です。手札・山札の中身は送信しません。</p><label class="block-label">使用するデッキ<select id="lovecaOnlineDeck"></select></label><div class="solo-choice-grid" style="margin:12px 0"><button type="button" id="lovecaOnlineCreate" class="primary-btn">ルームを作成</button></div><label class="block-label">ルームコード<input id="lovecaOnlineJoinCode" maxlength="6" placeholder="6文字"></label><button type="button" id="lovecaOnlineJoin" class="ghost-btn">ルームに参加</button><p id="lovecaOnlineStatus" role="status" style="margin-top:12px"></p><div id="lovecaOnlineRoom" hidden><h3>ルーム番号：<strong id="lovecaOnlineCode"></strong></h3><button type="button" id="lovecaOnlineCopy" class="ghost-btn">コードをコピー</button><p id="lovecaOnlinePlayers"></p><button type="button" id="lovecaOnlineReady" class="primary-btn">準備完了</button><p id="lovecaOnlineMatch"></p><div id="lovecaOnlineBattle" hidden><h3>オンライン対戦盤面（試験版）</h3><div id="lovecaOnlineOpponent"></div><h3>自分の盤面</h3><p>ライブ</p><div class="online-slots" id="lovecaOnlineOwnLive"></div><p>ステージ</p><div class="online-slots" id="lovecaOnlineOwnStage"></div><p id="lovecaOnlineOwnInfo"></p><button type="button" data-online-draw>1枚ドロー</button><button type="button" data-online-energy>＋エネルギー</button><p>手札（タップして配置）</p><div class="online-hand" id="lovecaOnlineOwnHand"></div><p class="hint">試験版：自分のカードだけ操作できます。カード効果・メンバー下のカード移動などは未対応です。</p></div><button type="button" id="lovecaOnlineLeave" class="ghost-btn">ルームから退出</button></div></section>';
  $('#loveSoloPane').after(pane);
  const show=()=>{nav.querySelectorAll('.love-tab').forEach(b=>b.classList.toggle('active',b===tab));document.querySelectorAll('#loveScreen .love-pane').forEach(p=>p.classList.add('hidden'));pane.classList.remove('hidden');$('#appTitle').textContent='ラブカ オンライン';const reset=$('#resetAllBtn');if(reset)reset.style.display='none';paintDecks()};
  tab.addEventListener('click',show);
@@ -127,6 +193,8 @@ function init(){
  $('#lovecaOnlineCreate').addEventListener('click',create);
  $('#lovecaOnlineJoin').addEventListener('click',join);
  $('#lovecaOnlineReady').addEventListener('click',ready);
+ pane.addEventListener('click',boardAction);
+ fetch('./loveca-cards.json').then(r=>r.json()).then(d=>{catalog=Array.isArray(d.cards)?d.cards:[];if(board)showBoard()}).catch(console.warn);
  $('#lovecaOnlineLeave').addEventListener('click',leave);
  $('#lovecaOnlineCopy').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(roomId);status('ルームコードをコピーしました')}catch{status('コピーできませんでした。表示されたコードを共有してください',true)}});
  paintDecks();resume();
