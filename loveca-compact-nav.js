@@ -6,8 +6,8 @@ function init(){
  if(!nav||!nav.querySelector('[data-love-pane="solo"]')){setTimeout(init,300);return}
  if(document.querySelector('#loveCompactSubnav'))return;
  const lookup=id=>nav.querySelector('[data-love-pane="'+id+'"]');
- const search=lookup('cards'),wishlist=lookup('wishlist'),deck=lookup('builder'),solo=lookup('solo');
- if(!search||!wishlist||!deck||!solo)return;
+ const search=lookup('cards'),wishlist=lookup('wishlist'),deck=lookup('builder'),solo=lookup('solo'),online=lookup('online');
+ if(!search||!wishlist||!deck||!solo||!online)return;
  // Keep original tab nodes and their listeners; secondary buttons invoke them.
  const secondary=document.createElement('nav');
  secondary.id='loveCompactSubnav';
@@ -18,7 +18,8 @@ function init(){
   {id:'cards',label:'カードを探す',group:'cards'},
   {id:'wishlist',label:'欲しいもの',group:'cards'},
   {id:'builder',label:'デッキ編集',group:'builder'},
-  {id:'solo',label:'1人回し',group:'builder'}
+  {id:'solo',label:'1人回し',group:'builder'},
+  {id:'online',label:'オンライン',group:'builder'}
  ];
  for(const item of options){
   const b=document.createElement('button');b.type='button';b.className='love-compact-option';
@@ -31,7 +32,8 @@ function init(){
  #loveScreen > .love-subnav{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
  #loveScreen > .love-subnav > .love-tab{min-width:0!important;width:100%;padding:12px 5px!important;font-size:clamp(13px,3.4vw,16px)!important;white-space:nowrap}
  #loveScreen > .love-subnav > .love-tab[data-love-pane="wishlist"],
- #loveScreen > .love-subnav > .love-tab[data-love-pane="solo"]{display:none!important}
+ #loveScreen > .love-subnav > .love-tab[data-love-pane="solo"],
+ #loveScreen > .love-subnav > .love-tab[data-love-pane="online"]{display:none!important}
  #loveCompactSubnav{display:flex;gap:8px;margin:8px 0 12px;padding:0 2px}
  #loveCompactSubnav.hidden{display:none!important}
  #loveCompactSubnav .love-compact-option{flex:1;min-width:0;padding:9px 6px;border:1px solid #e7b8ca;border-radius:999px;background:transparent;color:inherit;font-weight:700;font-size:13px}
@@ -40,7 +42,7 @@ function init(){
  document.head.append(style);
  search.textContent='カード検索';deck.textContent='デッキ';
  function sync(id){
-  const group=id==='cards'||id==='wishlist'?'cards':id==='builder'||id==='solo'?'builder':'calc';
+  const group=id==='cards'||id==='wishlist'?'cards':id==='builder'||id==='solo'||id==='online'?'builder':'calc';
   secondary.classList.toggle('hidden',group==='calc');
   secondary.querySelectorAll('button').forEach(b=>{
    const item=options.find(x=>x.id===b.dataset.compactPane);
@@ -50,7 +52,7 @@ function init(){
   });
   nav.querySelectorAll('.love-tab').forEach(b=>b.classList.toggle('active',b.dataset.lovePane===group));
  }
- for(const id of ['calc','cards','wishlist','builder','solo']){
+ for(const id of ['calc','cards','wishlist','builder','solo','online']){
   lookup(id)?.addEventListener('click',()=>sync(id));
  }
  const selected=nav.querySelector('.love-tab.active')?.dataset.lovePane||'calc';
