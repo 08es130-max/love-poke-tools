@@ -98,7 +98,7 @@ function place(to,index){
 let discardSelection=[];
 function returnDiscard(mode,onlyMembers=false,indices=null){
  if(!state)return false;
- const chosen=indices===null?state.discard.map((_,i)=>i):[...new Set(indices)].sort((a,b)=>a-b);
+ const chosen=indices===null?state.discard.flatMap((id,i)=>!onlyMembers||card(id)?.cardType==='メンバー'?[i]:[]):[...new Set(indices)].sort((a,b)=>a-b);
  if(!chosen.length){alert('戻すカードを選択してください');return false}
  if(chosen.some(i=>!Number.isInteger(i)||i<0||i>=state.discard.length))return false;
  const moved=chosen.map(i=>state.discard[i]);
