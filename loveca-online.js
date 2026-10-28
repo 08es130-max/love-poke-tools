@@ -31,7 +31,7 @@ function showOpponent(d){
 async function publishBoard(){
  if(!board||!roomId)return;
  localStorage.setItem(boardStorage(),JSON.stringify(board));showBoard();
- const visible={stage:board.stage,live:board.live,discard:board.discard.slice(-100),energy:board.energy,handCount:board.hand.length,deckCount:board.deck.length,stageUnder:[[],[],[]]};
+ const visible={stage:board.stage,live:board.live,discard:board.discard.slice(-100),energy:board.energy,handCount:board.hand.length,deckCount:board.deck.length,stageUnder:[{cards:[]},{cards:[]},{cards:[]}]};
  try{boardWriteState='送信中';diagnostics();await api.setDoc(api.doc(api.db,'lovecaOnlineRooms',roomId,'boards',uid),visible);boardWriteState='送信成功';diagnostics()}
  catch(e){boardWriteState='送信失敗（'+e.code+'）';diagnostics();status('盤面同期エラー：'+e.message+'（Firestoreの盤面ルールを確認してください）',true)}
 }
