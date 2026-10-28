@@ -95,22 +95,38 @@ function place(to,index){
  state.log.unshift('T'+state.turn+' '+(card(id)?.name||id)+' → '+to+(Number.isInteger(index)?index+1:''));
  dialog.close();write(state);render();
 }
-function returnDiscard(mode,onlyMembers=false){
- if(!state)return;
- const moved=onlyMembers?state.discard.filter(id=>card(id)?.cardType==='メンバー'):[...state.discard];
- if(!moved.length){alert(onlyMembers?'控え室にメンバーカードがありません':'控え室にカードがありません');return}
+let discardSelection=[];
+function returnDiscard(mode,onlyMembers=false,indices=null){
+ if(!state)return false;
+ const chosen=indices===null?state.discard.map((_,i)=>i):[...new Set(indices)].sort((a,b)=>a-b);
+ if(!chosen.length){alert('戻すカードを選択してください');return false}
+ if(chosen.some(i=>!Number.isInteger(i)||i<0||i>=state.discard.length))return false;
+ const moved=chosen.map(i=>state.discard[i]);
+ if(onlyMembers&&moved.some(id=>card(id)?.cardType!=='メンバー'))return false;
  snapshot();
- state.discard=onlyMembers?state.discard.filter(id=>card(id)?.cardType!=='メンバー'):[];
+ const selectedSet=new Set(chosen);
+ state.discard=state.discard.filter((_,i)=>!selectedSet.has(i));
  if(mode==='shuffle')state.deck=random([...state.deck,...moved]);
  else if(mode==='bottom')state.deck=[...(onlyMembers?random(moved):moved),...state.deck];
  else if(mode==='top')state.deck.push(...moved);
+ else return false;
  state.log.unshift('T'+state.turn+'：控え室から'+moved.length+'枚を山札'+(mode==='shuffle'?'に戻してシャッフル':mode==='bottom'?'の下へ':'の上へ')+(onlyMembers?'（13ミア：メンバーのみ）':''));
- write(state);render();
+ write(state);render();return true;
 }
 function showDiscardReturn(){
+ discardSelection=[];
  const dialog=$('#loveSoloCardDialog'),body=$('#loveSoloCardDetail');
- body.innerHTML='<h3>控え室のカードを山札へ戻す</h3><p>控え室 '+state.discard.length+'枚をまとめて移動します。</p><div class="solo-choice-grid"><button type="button" class="ghost-btn" data-solo-discard-return="shuffle">戻してシャッフル</button><button type="button" class="ghost-btn" data-solo-discard-return="bottom">山札の下に置く</button><button type="button" class="ghost-btn" data-solo-discard-return="top">山札の上に置く</button></div><p class="hint">山札の上・下に置く場合、控え室内の並び順を維持します。</p>';
- dialog.showModal();
+ body.innerHTML='<h3>控え室から山札へ</h3><p>控え室 '+state.discard.length+'枚</p><label style="display:block;margin:8px 0">戻す枚数 <select id="soloReturnCount" style="width:100%;min-height:42px"><option value="all">すべて戻す（'+state.discard.length+'枚）</option>'+state.discard.map((_,i)=>'<option value="'+(i+1)+'">'+(i+1)+'枚を選ぶ</option>').join('')+'</select></label><div id="soloReturnPicker" style="display:none"></div><p style="margin:10px 0 4px">戻し方</p><div class="solo-choice-grid"><button type="button" class="ghost-btn" data-solo-discard-return="shuffle">戻してシャッフル</button><button type="button" class="ghost-btn" data-solo-discard-return="bottom">山札の下に置く</button><button type="button" class="ghost-btn" data-solo-discard-return="top">山札の上に置く</button></div><p class="hint">枚数指定時は控え室からカードを選んでください。上・下へ置く際は選択したカードの控え室内の並び順を維持します。</p>';
+ body.querySelector('#soloReturnCount').addEventListener('change',updateDiscardPicker);
+ updateDiscardPicker();dialog.showModal();
+}
+function updateDiscardPicker(){
+ const body=$('#loveSoloCardDetail'),value=body.querySelector('#soloReturnCount')?.value,picker=body.querySelector('#soloReturnPicker');
+ if(!picker)return;
+ if(value==='all'){discardSelection=[];picker.style.display='none';return}
+ const limit=Number(value);discardSelection=discardSelection.slice(0,limit);
+ picker.style.display='block';
+ picker.innerHTML='<p style="margin:8px 0">カードを選択 <strong>'+discardSelection.length+' / '+limit+'枚</strong></p><div class="solo-discard-list">'+state.discard.map((id,i)=>{const c=card(id),chosen=discardSelection.includes(i);return '<button type="button" data-solo-return-pick="'+i+'" aria-pressed="'+chosen+'" style="border:2px solid '+(chosen?'#d43c81':'#ddd')+';background:'+(chosen?'#fff0f6':'#fff')+'">'+(c?.imageUrl?'<img src="'+esc(c.imageUrl)+'" alt="">':'')+'<span>'+(chosen?'✓ ':'')+esc(c?.name||id)+'<small>'+esc(c?.cardNo||'')+'</small></span></button>'}).join('')+'</div>';
 }
 function showSpecial(){
  const dialog=$('#loveSoloCardDialog'),body=$('#loveSoloCardDetail');
@@ -138,8 +154,10 @@ function init(){
  const handleSoloClick=e=>{
   const command=e.target.closest('[data-solo-command]')?.dataset.soloCommand;
   if(command&&state){if(command==='undo'){undo();return}if(command==='discard-return'){showDiscardReturn();return}if(command==='special'){showSpecial();return}if(command==='reveal'){const raw=prompt('山札の上から何枚めくりますか？（山札 '+state.deck.length+'枚／控え室 '+state.discard.length+'枚）','3');if(raw===null)return;const n=Number(raw);if(!Number.isSafeInteger(n)||n<1||n>500){alert('1〜500の整数を指定してください');return}if(!state.deck.length&&!state.discard.length){alert('山札と控え室にカードがありません');return}snapshot();let revealedCount=0;for(let i=0;i<n;i++){if(!state.deck.length&&!refreshDeck())break;state.revealed.push(state.deck.pop());revealedCount++;if(!state.deck.length)refreshDeck()}state.log.unshift('山札から'+revealedCount+'枚めくる'+(revealedCount<n?'（指定'+n+'枚・残りなし）':''));write(state);render();if(revealedCount<n)alert('カードが足りないため、'+revealedCount+'枚だけ公開しました');return}snapshot();if(command==='draw')draw();if(command==='energy'&&state.energy.length<12)state.energy.push({token:state.energy.length+1,used:false});if(command==='next'){const finished=state.liveSlots.filter(Boolean);state.discard.push(...finished);state.liveSlots=[null,null,null];state.turn++;state.stageWait=[false,false,false];state.energy.forEach(e=>e.used=false);if(state.energy.length<12)state.energy.push({token:state.energy.length+1,used:false});draw();if(finished.length)state.log.unshift('ターン終了：ライブ'+finished.length+'枚を控え室へ')}if(command==='shuffle')state.deck=random(state.deck);state.log.unshift('T'+state.turn+'：'+command);write(state);render();return}
+  const returnPick=e.target.closest('[data-solo-return-pick]');
+  if(returnPick&&state){const i=Number(returnPick.dataset.soloReturnPick),limit=Number($('#soloReturnCount')?.value);if(!Number.isInteger(i)||!Number.isInteger(limit))return;const pos=discardSelection.indexOf(i);if(pos>=0)discardSelection.splice(pos,1);else if(discardSelection.length<limit)discardSelection.push(i);updateDiscardPicker();return}
   const discardReturn=e.target.closest('[data-solo-discard-return]');
-  if(discardReturn&&state){$('#loveSoloCardDialog').close();returnDiscard(discardReturn.dataset.soloDiscardReturn);return}
+  if(discardReturn&&state){const count=$('#soloReturnCount')?.value;const indices=count==='all'?null:[...discardSelection];if(count!=='all'&&indices.length!==Number(count)){alert('戻すカードを'+count+'枚選択してください');return}if(returnDiscard(discardReturn.dataset.soloDiscardReturn,false,indices))$('#loveSoloCardDialog').close();return}
   const special=e.target.closest('[data-solo-special]');
   if(special&&state){$('#loveSoloCardDialog').close();if(special.dataset.soloSpecial==='mia13')returnDiscard('bottom',true);return}
   const energy=e.target.closest('[data-solo-energy]');if(energy&&state){const item=state.energy[Number(energy.dataset.soloEnergy)];if(item){snapshot();item.used=!item.used;write(state);render()}return}
