@@ -4,6 +4,7 @@ const DECKS='lovepoke_loveca_card_decks_v1';
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','"':'&quot;',"'":'&#39;'}[c]));
 let api=null,uid='',roomId='',unsub=null,creating=false,ownDeck='',myReady=false;
+const ROOM_KEY='loveca_online_last_room_v1';
 const status=(s,error=false)=>{const el=$('#lovecaOnlineStatus');if(el){el.textContent=s;el.style.color=error?'#c03550':''}};
 const decks=()=>{try{return JSON.parse(localStorage.getItem(DECKS)||'[]')}catch{return []}};
 function paintDecks(){const sel=$('#lovecaOnlineDeck'),prev=sel.value;sel.innerHTML=decks().map(d=>'<option value="'+esc(d.id)+'">'+esc(d.name)+'</option>').join('')||'<option value="">デッキがありません</option>';sel.value=ownDeck||prev||sel.options[0]?.value||'';ownDeck=sel.value}
@@ -14,6 +15,7 @@ function renderRoom(data){
  const player=data.players?.[uid],others=Object.entries(data.players||{}).filter(([id])=>id!==uid);
  myReady=!!player?.ready;
  $('#lovecaOnlineCode').textContent=data.code||'';
+ $('#lovecaOnlineCreate').disabled=true;$('#lovecaOnlineJoin').disabled=true;
  $('#lovecaOnlinePlayers').textContent='あなた：'+(player?.ready?'準備完了':'準備中')+' ／ 相手：'+(others.length?(others[0][1].ready?'準備完了':'準備中'):'参加待ち');
  $('#lovecaOnlineReady').textContent=myReady?'準備を取り消す':'準備完了';
  $('#lovecaOnlineReady').disabled=!player;
@@ -21,11 +23,11 @@ function renderRoom(data){
  $('#lovecaOnlineMatch').textContent=both?'双方準備完了（対戦盤面は第2段階で実装）':'相手の参加・準備完了を待っています';
 }
 function listen(id){
- if(unsub){unsub();unsub=null}roomId=id;
+ if(unsub){unsub();unsub=null}roomId=id;sessionStorage.setItem(ROOM_KEY,id);
  unsub=api.onSnapshot(api.doc(api.db,'lovecaOnlineRooms',id),snap=>{
-  if(!snap.exists()){status('ルームが終了しました');roomId='';renderRoom(null);return}
+  if(!snap.exists()){status('ルームが終了しました');roomId='';sessionStorage.removeItem(ROOM_KEY);renderRoom(null);$('#lovecaOnlineCreate').disabled=false;$('#lovecaOnlineJoin').disabled=false;return}
   const data=snap.data();
-  if(!data.players?.[uid]){status('ルームの参加権限がありません',true);roomId='';renderRoom(null);return}
+  if(!data.players?.[uid]){status('ルームの参加権限がありません',true);roomId='';sessionStorage.removeItem(ROOM_KEY);renderRoom(null);$('#lovecaOnlineCreate').disabled=false;$('#lovecaOnlineJoin').disabled=false;return}
   renderRoom(data);status('ルームに接続中');
  },e=>status('同期エラー：'+e.message,true));
 }
@@ -79,6 +81,30 @@ async function join(){
   listen(id);
  }catch(e){status('参加失敗：'+e.message,true)}
 }
+async function leave(){
+ if(!roomId||!api)return;
+ const id=roomId;
+ try{
+  await api.runTransaction(api.db,async tx=>{
+   const ref=api.doc(api.db,'lovecaOnlineRooms',id),snap=await tx.get(ref);
+   if(!snap.exists())return;
+   const data=snap.data(),players={...(data.players||{})};
+   delete players[uid];
+   tx.update(ref,{players});
+  });
+  if(unsub){unsub();unsub=null}
+  roomId='';myReady=false;sessionStorage.removeItem(ROOM_KEY);
+  renderRoom(null);$('#lovecaOnlineCreate').disabled=false;$('#lovecaOnlineJoin').disabled=false;
+  status('ルームから退出しました');
+ }catch(e){status('退出失敗：'+e.message,true)}
+}
+async function resume(){
+ const id=sessionStorage.getItem(ROOM_KEY);
+ if(!id||roomId)return;
+ if(!await connect())return;
+ try{const snap=await api.getDoc(api.doc(api.db,'lovecaOnlineRooms',id));if(snap.exists()&&snap.data().players?.[uid])listen(id);else sessionStorage.removeItem(ROOM_KEY)}
+ catch(e){status('ルーム復帰失敗：'+e.message,true)}
+}
 async function ready(){
  if(!roomId||!api)return;
  if(!ownDeck){status('デッキを選択してください',true);return}
@@ -99,7 +125,9 @@ function init(){
  $('#lovecaOnlineCreate').addEventListener('click',create);
  $('#lovecaOnlineJoin').addEventListener('click',join);
  $('#lovecaOnlineReady').addEventListener('click',ready);
- paintDecks();
+ $('#lovecaOnlineLeave').addEventListener('click',leave);
+ $('#lovecaOnlineCopy').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(roomId);status('ルームコードをコピーしました')}catch{status('コピーできませんでした。表示されたコードを共有してください',true)}});
+ paintDecks();resume();
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
