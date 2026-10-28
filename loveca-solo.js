@@ -113,13 +113,13 @@ function place(to,index){
  if(to===from&&index===fromIndex){dialog.close();return}
  if(to==='deckTop'&&from!=='revealed')return;
  snapshot();
- if(from==='stageSlots')state.stageWait[fromIndex]=false;
+ if(from==='stageSlots'){state.stageWait[fromIndex]=false;if(to!=='stageSlots'){for(const item of state.stageUnder[fromIndex]||[]){if(item.kind==='energy')state.energy.push(item.energy);else state.discard.push(item.id)}state.stageUnder[fromIndex]=[]}}
  if(from==='hand'||from==='discard'||from==='successLive'||from==='revealed')state[from].splice(fromIndex,1);else state[from][fromIndex]=null;
  if(to==='deckTop')state.deck.push(id);
  else if(to==='hand'||to==='discard'||to==='successLive')state[to].push(id);
  else if(Array.isArray(state[to])&&index>=0&&index<3){
   const displaced=state[to][index];state[to][index]=id;
-  if(displaced)state.discard.push(displaced);
+  if(displaced){state.discard.push(displaced);if(to==='stageSlots'){for(const item of state.stageUnder[index]||[]){if(item.kind==='energy')state.energy.push(item.energy);else state.discard.push(item.id)}state.stageUnder[index]=[]}}
   if(to==='stageSlots')state.stageWait[index]=false
  }else return;
  state.log.unshift('T'+state.turn+' '+(card(id)?.name||id)+' → '+to+(Number.isInteger(index)?index+1:''));
