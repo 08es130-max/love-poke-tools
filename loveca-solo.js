@@ -104,7 +104,7 @@ function init(){
   $('#loveSoloCardDialog').showModal();
  };
  pane.addEventListener('click',handleSoloClick);
- $('#loveSoloCardDialog').addEventListener('click',handleSoloClick);
+ // Dialog is nested inside pane: its clicks bubble to the pane handler exactly once.
  $('#loveSoloClose').onclick=()=>$('#loveSoloCardDialog').close();
  const saved=read(SESSION,null);if(saved&&['deck','hand','stage','live','energy','energyUsed','discard'].every(k=>Array.isArray(saved[k])))state=saved;
  fetch('./loveca-cards.json').then(r=>r.json()).then(d=>{cards=Array.isArray(d.cards)?d.cards:[];render()}).catch(console.warn);
