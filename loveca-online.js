@@ -49,7 +49,8 @@ async function connect(){
   status('接続できました。ルームを作成または参加してください');return true;
  }catch(e){status('接続できません：'+e.message+'（匿名認証の有効化が必要です）',true);return false}
 }
-const code=()=>Array.from(crypto.getRandomValues(new Uint32Array(6)),v=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[v%32]).join('');
+const CODE_CHARS='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const code=()=>Array.from(crypto.getRandomValues(new Uint32Array(6)),v=>CODE_CHARS[v%CODE_CHARS.length]).join('');
 async function create(){
  if(creating||roomId)return;creating=true;
  try{
@@ -116,7 +117,7 @@ function init(){
  if($('#lovecaOnlinePane'))return;
  const tab=document.createElement('button');tab.type='button';tab.className='love-tab';tab.dataset.lovePane='online';tab.textContent='オンライン';nav.append(tab);
  const pane=document.createElement('div');pane.id='lovecaOnlinePane';pane.className='love-pane hidden';
- pane.innerHTML='<section class="panel"><h2>オンライン対戦・ルーム</h2><p class="hint">第1段階：2人の接続と準備完了を確認します。対戦盤面・カード同期はまだ利用できません。デッキの中身は送信しません。</p><label class="block-label">使用するデッキ<select id="lovecaOnlineDeck"></select></label><div class="solo-choice-grid" style="margin:12px 0"><button type="button" id="lovecaOnlineCreate" class="primary-btn">ルームを作成</button></div><label class="block-label">ルームコード<input id="lovecaOnlineJoinCode" maxlength="6" placeholder="6文字"></label><button type="button" id="lovecaOnlineJoin" class="ghost-btn">ルームに参加</button><p id="lovecaOnlineStatus" role="status" style="margin-top:12px"></p><div id="lovecaOnlineRoom" hidden><h3>ルーム番号：<strong id="lovecaOnlineCode"></strong></h3><p id="lovecaOnlinePlayers"></p><button type="button" id="lovecaOnlineReady" class="primary-btn">準備完了</button><p id="lovecaOnlineMatch"></p></div></section>';
+ pane.innerHTML='<section class="panel"><h2>オンライン対戦・ルーム</h2><p class="hint">第1段階：2人の接続と準備完了を確認します。対戦盤面・カード同期はまだ利用できません。デッキの中身は送信しません。</p><label class="block-label">使用するデッキ<select id="lovecaOnlineDeck"></select></label><div class="solo-choice-grid" style="margin:12px 0"><button type="button" id="lovecaOnlineCreate" class="primary-btn">ルームを作成</button></div><label class="block-label">ルームコード<input id="lovecaOnlineJoinCode" maxlength="6" placeholder="6文字"></label><button type="button" id="lovecaOnlineJoin" class="ghost-btn">ルームに参加</button><p id="lovecaOnlineStatus" role="status" style="margin-top:12px"></p><div id="lovecaOnlineRoom" hidden><h3>ルーム番号：<strong id="lovecaOnlineCode"></strong></h3><button type="button" id="lovecaOnlineCopy" class="ghost-btn">コードをコピー</button><p id="lovecaOnlinePlayers"></p><button type="button" id="lovecaOnlineReady" class="primary-btn">準備完了</button><p id="lovecaOnlineMatch"></p><button type="button" id="lovecaOnlineLeave" class="ghost-btn">ルームから退出</button></div></section>';
  $('#loveSoloPane').after(pane);
  const show=()=>{nav.querySelectorAll('.love-tab').forEach(b=>b.classList.toggle('active',b===tab));document.querySelectorAll('#loveScreen .love-pane').forEach(p=>p.classList.add('hidden'));pane.classList.remove('hidden');$('#appTitle').textContent='ラブカ オンライン';const reset=$('#resetAllBtn');if(reset)reset.style.display='none';paintDecks()};
  tab.addEventListener('click',show);
