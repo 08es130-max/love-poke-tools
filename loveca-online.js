@@ -88,6 +88,7 @@ function renderRoom(data){
  const both=others.length===1&&myReady&&others[0][1].ready;
  $('#lovecaOnlineMatch').textContent=both?'双方準備完了・対戦盤面を表示中':'相手の参加・準備完了を待っています';
  if(both)startBattle();
+ else if(battleActive){battleActive=false;if(boardUnsub){boardUnsub();boardUnsub=null}$('#lovecaOnlineBattle').hidden=true;}
 }
 function listen(id){
  if(unsub){unsub();unsub=null}if(boardUnsub){boardUnsub();boardUnsub=null}battleActive=false;roomId=id;sessionStorage.setItem(ROOM_KEY,id);
