@@ -7,7 +7,7 @@ function init(){
  if(document.querySelector('#loveCompactSubnav'))return;
  const lookup=id=>nav.querySelector('[data-love-pane="'+id+'"]');
  const search=lookup('cards'),wishlist=lookup('wishlist'),deck=lookup('builder'),solo=lookup('solo'),online=lookup('online');
- if(!search||!wishlist||!deck||!solo||!online)return;
+ if(!search||!wishlist||!deck||!solo){setTimeout(init,300);return;}
  // Keep original tab nodes and their listeners; secondary buttons invoke them.
  const secondary=document.createElement('nav');
  secondary.id='loveCompactSubnav';
@@ -19,7 +19,7 @@ function init(){
   {id:'wishlist',label:'欲しいもの',group:'cards'},
   {id:'builder',label:'デッキ編集',group:'builder'},
   {id:'solo',label:'1人回し',group:'builder'},
-  {id:'online',label:'オンライン',group:'builder'}
+  ...(online?[{id:'online',label:'オンライン',group:'builder'}]:[])
  ];
  for(const item of options){
   const b=document.createElement('button');b.type='button';b.className='love-compact-option';
@@ -52,7 +52,7 @@ function init(){
   });
   nav.querySelectorAll('.love-tab').forEach(b=>b.classList.toggle('active',b.dataset.lovePane===group));
  }
- for(const id of ['calc','cards','wishlist','builder','solo','online']){
+ for(const id of ['calc','cards','wishlist','builder','solo',...(online?['online']:[])]){
   lookup(id)?.addEventListener('click',()=>sync(id));
  }
  const selected=nav.querySelector('.love-tab.active')?.dataset.lovePane||'calc';
