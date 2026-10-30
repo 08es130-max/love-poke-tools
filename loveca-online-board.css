@@ -58,3 +58,7 @@
 #lovecaOnlineTurnLabel{font-weight:900;color:#a32258;white-space:nowrap}
 #lovecaOnlinePhaseLabel{font-size:12px;white-space:nowrap}
 #lovecaOnlineTurnSelect{max-width:76px;padding:5px;border:1px solid #e5a0bf;border-radius:7px;background:#fff;color:#9f2c60;font-size:12px}
+
+#lovecaOnlinePhaseBar button{padding:5px 8px;border:1px solid #e5a0bf;border-radius:7px;background:white;color:#9f2c60;font-size:12px}
+#lovecaOnlinePhaseBar button[hidden]{display:none!important}
+#lovecaOnlinePhaseBar select:disabled,#lovecaOnlinePhaseBar button:disabled{opacity:.55}
