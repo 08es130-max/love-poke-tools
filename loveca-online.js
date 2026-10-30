@@ -65,7 +65,7 @@ async function publishBoard(){
  if(!board||!roomId)return;
  localStorage.setItem(boardStorage(),JSON.stringify(board));showBoard();
  const visible={stage:board.stage,live:board.live,discard:board.discard.slice(-100),energy:board.energy,handCount:board.hand.length,deckCount:board.deck.length,successLive:board.successLive.slice(0,100),stageUnder:board.stageUnder.map(items=>({cards:items.map(item=>item.kind==='energy'?{kind:'energy'}:{kind:'card',id:item.id})}))};
- try{boardWriteState='送信中';diagnostics();await api.setDoc(api.doc(api.db,'lovecaOnlineRooms',roomId,'boards',uid),visible);boardWriteState='送信成功';diagnostics()}
+ try{boardWriteState='送信中';diagnostics();await api.setDoc(api.doc(api.db,'lovecaOnlineRooms',roomId,'boards',String(roomGame),uid),visible);boardWriteState='送信成功';diagnostics()}
  catch(e){boardWriteState='送信失敗（'+e.code+'）';diagnostics();status('盤面同期エラー：'+e.message+'（Firestoreの盤面ルールを確認してください）',true)}
 }
 function startBattle(){
@@ -86,7 +86,7 @@ function startBattle(){
  if(opponent){
   if(boardUnsub)boardUnsub();
   opponentReadState='受信待ち';diagnostics();
-  boardUnsub=api.onSnapshot(api.doc(api.db,'lovecaOnlineRooms',roomId,'boards',opponent),snap=>{opponentReadState=snap.exists()?'受信成功':'相手の送信待ち';diagnostics();showOpponent(snap.exists()?snap.data():null)},e=>{opponentReadState='受信失敗（'+e.code+'）';diagnostics();status('相手の盤面を読めません：'+e.message,true)});
+  boardUnsub=api.onSnapshot(api.doc(api.db,'lovecaOnlineRooms',roomId,'boards',String(roomGame),opponent),snap=>{opponentReadState=snap.exists()?'受信成功':'相手の送信待ち';diagnostics();showOpponent(snap.exists()?snap.data():null)},e=>{opponentReadState='受信失敗（'+e.code+'）';diagnostics();status('相手の盤面を読めません：'+e.message,true)});
  }
 }
 function clearUnder(i){
