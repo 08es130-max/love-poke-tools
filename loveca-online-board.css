@@ -47,3 +47,9 @@
 #lovecaOnlineBattle details{border:1px solid #ecc1d5;border-radius:8px;padding:6px;margin:5px 0}
 #lovecaOnlineBattle summary{cursor:pointer;font-size:12px;font-weight:700}
 #lovecaOnlineBattle .online-hand button{min-height:65px}
+
+/* Phase indicator remains visible during vertical scrolling in online battle. */
+#lovecaOnlinePhaseBar[hidden]{display:none!important}
+#lovecaOnlinePhaseBar{position:fixed;z-index:900;top:calc(env(safe-area-inset-top,0px) + 6px);left:50%;transform:translateX(-50%);width:min(92vw,430px);box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 10px;border:1px solid #e69cbd;border-radius:12px;background:#fff7fbf2;color:#9f2c60;box-shadow:0 3px 12px #0003;font-size:12px;backdrop-filter:blur(8px)}
+#lovecaOnlinePhaseBar strong{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#lovecaOnlinePhaseSelect{min-width:100px;max-width:48%;padding:5px;border:1px solid #e5a0bf;border-radius:7px;background:white;color:#9f2c60;font-size:12px}
