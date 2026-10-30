@@ -5,12 +5,12 @@ const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','"':'&quot;',"'":'&#39;'}[c]));
 let api=null,uid='',roomId='',unsub=null,boardUnsub=null,creating=false,ownDeck='',myReady=false,board=null,catalog=[],players={},battleActive=false,boardWriteState='未送信',opponentReadState='未購読';
 const card=id=>catalog.find(c=>String(c.id)===String(id));
-const boardStorage=()=>`loveca_online_board_${roomId}_${uid}`;
+const boardStorage=()=>`loveca_online_board_${roomId}_${uid}_game_${roomGame}`;
 const shuffle=a=>{for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
 const ROOM_KEY='loveca_online_last_room_v1';
 const PHASES=['メイン','ライブ','ライブ勝敗'];
 const COIN_CHARACTERS=[["ayumu","上原歩夢"],["kasumi","中須かすみ"],["shizuku","桜坂しずく"],["karin","朝香果林"],["ai","宮下愛"],["kanata","近江彼方"],["setsuna","優木せつ菜"],["emma","エマ・ヴェルデ"],["rina","天王寺璃奈"],["shioriko","三船栞子"],["mia","ミア・テイラー"],["lanzhu","鐘嵐珠"],["yu","高咲侑"]];
-let lastCoinShown='';
+let lastCoinShown='',activeGame=0,roomGame=1;
 let currentPhase=0,turnUid='',phaseBusy=false,coinBusy=false;
 function renderPhase(){const bar=$('#lovecaOnlinePhaseBar');if(!bar)return;bar.hidden=!battleActive||!roomId||$('#lovecaOnlinePane')?.classList.contains('hidden');const mine=turnUid===uid;$('#lovecaOnlineTurnLabel').textContent=mine?'あなたのターン':'相手のターン';$('#lovecaOnlinePhaseLabel').textContent=PHASES[currentPhase]+'フェイズ';const sel=$('#lovecaOnlinePhaseSelect');sel.value=String(currentPhase);sel.disabled=!mine||phaseBusy;const btn=$('#lovecaOnlineTurnSelect');btn.hidden=currentPhase!==2;btn.disabled=!mine||phaseBusy;const end=$('#lovecaOnlineEndTurn');if(end){end.hidden=currentPhase!==0;end.disabled=!mine||phaseBusy}}
 function coinCharacter(key){return COIN_CHARACTERS.find(c=>c[0]===key)||COIN_CHARACTERS[0]}
@@ -18,17 +18,20 @@ function coinSide(key){const c=coinCharacter(key);return '<div class="online-coi
 function showCoin(data,both){
  const coin=$('#lovecaOnlineCoinResult'),modal=$('#lovecaOnlineCoinModal');if(!coin||!modal)return;
  const toss=data.coinToss;
+ if(toss?.face==='手動'){coin.textContent='手動決定：'+(toss.firstUid===uid?'あなたが先攻':'相手が先攻');modal.hidden=true;return}
  if(!both||!toss?.done){coin.textContent=both?'コイントス中…':'';modal.hidden=true;return}
  const ids=Object.keys(data.players||{}).sort(),mine=ids.indexOf(uid),myChar=coinCharacter(toss.characters?.[mine]),otherChar=coinCharacter(toss.characters?.[1-mine]);
  coin.textContent='コイントス：あなた＝'+myChar[1]+' ／ 相手＝'+otherChar[1]+' ｜ '+(toss.firstUid===uid?'あなたが先攻':'相手が先攻');
- const key=roomId+':'+toss.firstUid+':'+(toss.characters||[]).join('-');
+ const key=roomId+':'+roomGame+':'+toss.firstUid+':'+(toss.characters||[]).join('-');
  if(lastCoinShown===key||sessionStorage.getItem('coin_seen_'+key))return;
  lastCoinShown=key;sessionStorage.setItem('coin_seen_'+key,'1');
  const front=coinSide(toss.characters?.[0]),back=coinSide(toss.characters?.[1]),winnerIndex=ids.indexOf(toss.firstUid);
  modal.innerHTML='<div class="online-coin-dialog"><h3>先攻決定コイントス！</h3><p>あなた：'+esc(myChar[1])+' ／ 相手：'+esc(otherChar[1])+'</p><div class="online-coin-3d '+(winnerIndex===1?'online-coin-back-wins':'')+'"><div class="online-coin-face online-coin-front">'+front+'</div><div class="online-coin-face online-coin-back">'+back+'</div></div><strong class="online-coin-winner">'+(toss.firstUid===uid?'あなたが先攻！':'相手が先攻！')+'</strong><button type="button" id="lovecaOnlineCoinClose">対戦へ進む</button></div>';
  modal.hidden=false;modal.querySelector('#lovecaOnlineCoinClose').addEventListener('click',()=>{modal.hidden=true});
 }
-async function tossCoin(){if(coinBusy||!api||!roomId)return;coinBusy=true;try{const random=new Uint32Array(3);crypto.getRandomValues(random);const flip=random[0]%2;const a=random[1]%COIN_CHARACTERS.length;const b=(a+1+random[2]%(COIN_CHARACTERS.length-1))%COIN_CHARACTERS.length;await api.runTransaction(api.db,async tx=>{const ref=api.doc(api.db,'lovecaOnlineRooms',roomId),snap=await tx.get(ref);if(!snap.exists())return;const d=snap.data(),ids=Object.keys(d.players||{}).sort();if(ids.length!==2||!ids.every(id=>d.players[id].ready)||d.coinToss?.done)return;const winner=ids[flip];tx.update(ref,{coinToss:{done:true,firstUid:winner,face:flip===0?'表':'裏',characters:[COIN_CHARACTERS[a][0],COIN_CHARACTERS[b][0]]},phaseState:{phase:0,turnUid:winner}})})}catch(e){status('コイントス失敗：'+e.message,true)}finally{coinBusy=false}}
+async function tossCoin(){if(coinBusy||!api||!roomId)return;coinBusy=true;try{const random=new Uint32Array(3);crypto.getRandomValues(random);const flip=random[0]%2;const a=random[1]%COIN_CHARACTERS.length;const b=(a+1+random[2]%(COIN_CHARACTERS.length-1))%COIN_CHARACTERS.length;await api.runTransaction(api.db,async tx=>{const ref=api.doc(api.db,'lovecaOnlineRooms',roomId),snap=await tx.get(ref);if(!snap.exists())return;const d=snap.data(),ids=Object.keys(d.players||{}).sort();if(ids.length!==2||!ids.every(id=>d.players[id].ready)||d.coinToss?.done||d.gameSetup?.mode==='manual')return;const winner=ids[flip];tx.update(ref,{coinToss:{done:true,firstUid:winner,face:flip===0?'表':'裏',characters:[COIN_CHARACTERS[a][0],COIN_CHARACTERS[b][0]]},phaseState:{phase:0,turnUid:winner}})})}catch(e){status('コイントス失敗：'+e.message,true)}finally{coinBusy=false}}
+async function newGame(){if(!roomId||!api||!confirm('次のゲームへ進みますか？ 両者の盤面を新しくします。'))return;try{await api.runTransaction(api.db,async tx=>{const ref=api.doc(api.db,'lovecaOnlineRooms',roomId),snap=await tx.get(ref);if(!snap.exists())throw Error('ルームなし');const d=snap.data();if(!d.players?.[uid]||Object.keys(d.players).length!==2||!d.coinToss?.done)throw Error('対戦中の2名が必要です');tx.update(ref,{gameNumber:(Number(d.gameNumber)||1)+1,coinToss:null,gameSetup:{mode:'choose',pending:true},phaseState:{phase:0,turnUid:''}})})}catch(e){status('新ゲーム開始エラー：'+e.message,true)}}
+async function chooseGameStart(mode,selected){if(!roomId||!api)return;try{await api.runTransaction(api.db,async tx=>{const ref=api.doc(api.db,'lovecaOnlineRooms',roomId),snap=await tx.get(ref);if(!snap.exists())throw Error('ルームなし');const d=snap.data();if(!d.players?.[uid]||d.coinToss?.done||Number(d.gameNumber||1)<2)throw Error('設定できません');const ids=Object.keys(d.players).sort();if(ids.length!==2)throw Error('2名必要です');if(mode==='manual'){if(!ids.includes(selected))throw Error('先攻が不正です');tx.update(ref,{gameSetup:{mode:'manual',pending:false},coinToss:{done:true,firstUid:selected,face:'手動',characters:[]},phaseState:{phase:0,turnUid:selected}})}else{tx.update(ref,{gameSetup:{mode:'coin',pending:false}})}})}catch(e){status('先攻設定エラー：'+e.message,true)}}
 async function changePhase(next,first){if(!api||!roomId||phaseBusy||turnUid!==uid)return;phaseBusy=true;renderPhase();try{await api.runTransaction(api.db,async tx=>{const ref=api.doc(api.db,'lovecaOnlineRooms',roomId),snap=await tx.get(ref);if(!snap.exists())throw Error('ルームなし');const d=snap.data(),v=d.phaseState||{phase:0,turnUid:d.host};if(v.turnUid!==uid)throw Error('相手のターンです');let state;if(v.phase===2&&next===0){if(!d.players?.[first])throw Error('先攻を選択してください');state={phase:0,turnUid:first}}else if(next===0&&v.phase!==2){const other=Object.keys(d.players||{}).find(x=>x!==uid);if(!other)throw Error('相手がいません');state={phase:0,turnUid:other}}else{state={phase:next,turnUid:uid}}tx.update(ref,{phaseState:state})})}catch(e){status('フェイズ同期エラー：'+e.message,true)}finally{phaseBusy=false;renderPhase()}}
 const status=(s,error=false)=>{const el=$('#lovecaOnlineStatus');if(el){el.textContent=s;el.style.color=error?'#c03550':''}};
 const decks=()=>{try{return JSON.parse(localStorage.getItem(DECKS)||'[]')}catch{return []}};
@@ -69,7 +72,7 @@ function startBattle(){
  if(battleActive||!roomId||!api)return;
  const deck=decks().find(d=>d.id===ownDeck);
  if(!deck){status('使用するデッキがありません',true);return}
- battleActive=true;
+ battleActive=true;activeGame=roomGame;
  renderPhase();
  renderPhase();
  try{board=JSON.parse(localStorage.getItem(boardStorage())||'null')}catch{board=null}
@@ -153,6 +156,7 @@ function renderRoom(data){
  const panel=$('#lovecaOnlineRoom');if(!panel)return;
  panel.hidden=!data;
  if(!data){battleActive=false;renderPhase();board=null;const b=$('#lovecaOnlineBattle');if(b)b.hidden=true;return;}
+ roomGame=Number(data.gameNumber)||1;
  const player=data.players?.[uid],others=Object.entries(data.players||{}).filter(([id])=>id!==uid);
  myReady=!!player?.ready;const phaseState=data.phaseState||{phase:0,turnUid:data.host};currentPhase=Number(phaseState.phase)||0;turnUid=phaseState.turnUid||data.host;renderPhase();
  $('#lovecaOnlineCode').textContent=data.code||'';
@@ -162,10 +166,13 @@ function renderRoom(data){
  $('#lovecaOnlineReady').disabled=!player;
  $('#lovecaOnlineDeck').disabled=myReady;
  const both=others.length===1&&myReady&&others[0][1].ready;
- if(both&&!data.coinToss?.done&&data.host===uid)tossCoin();
+ if(both&&!data.coinToss?.done&&data.host===uid&&(!data.gameSetup||data.gameSetup.mode==='coin'))tossCoin();
  showCoin(data,both);
+ const setup=$('#lovecaOnlineGameSetup');if(setup){setup.hidden=!!data.coinToss?.done||roomGame===1;setup.querySelectorAll('button').forEach(b=>b.disabled=!both||!!data.coinToss?.done)}
+ const next=$('#lovecaOnlineNewGame');if(next){next.hidden=!both||!data.coinToss?.done;next.disabled=!!data.gameSetup?.pending}
+ const gameLabel=$('#lovecaOnlineGameNumber');if(gameLabel)gameLabel.textContent='第'+roomGame+'ゲーム';
  $('#lovecaOnlineMatch').textContent=both?'双方準備完了・対戦盤面を表示中':'相手の参加・準備完了を待っています';
- if(both&&data.coinToss?.done)startBattle();
+ if(both&&data.coinToss?.done){if(battleActive&&activeGame!==roomGame){battleActive=false;board=null;if(boardUnsub){boardUnsub();boardUnsub=null}$('#lovecaOnlineBattle').hidden=true}startBattle();}
  else if(battleActive){battleActive=false;renderPhase();if(boardUnsub){boardUnsub();boardUnsub=null}$('#lovecaOnlineBattle').hidden=true;}
 }
 function listen(id){
@@ -205,7 +212,7 @@ async function create(){
   let id='',c='';
   for(let n=0;n<5;n++){c=code();id=c;const ref=api.doc(api.db,'lovecaOnlineRooms',id);if(!(await api.getDoc(ref)).exists())break;id=''}
   if(!id)throw Error('ルーム番号を確保できません');
-  await api.setDoc(api.doc(api.db,'lovecaOnlineRooms',id),{code:c,host:uid,phase:'lobby',phaseState:{phase:0,turnUid:uid},createdAt:api.serverTimestamp(),players:{[uid]:{ready:false,joinedAt:Date.now()}}});
+  await api.setDoc(api.doc(api.db,'lovecaOnlineRooms',id),{code:c,host:uid,phase:'lobby',phaseState:{phase:0,turnUid:uid},gameNumber:1,createdAt:api.serverTimestamp(),players:{[uid]:{ready:false,joinedAt:Date.now()}}});
   listen(id);
  }catch(e){status('作成失敗：'+e.message+'（Firestoreルールを確認してください）',true)}
  finally{creating=false}
@@ -263,7 +270,7 @@ function init(){
  if($('#lovecaOnlinePane'))return;
  const tab=document.createElement('button');tab.type='button';tab.className='love-tab';tab.dataset.lovePane='online';tab.textContent='オンライン';nav.append(tab);
  const pane=document.createElement('div');pane.id='lovecaOnlinePane';pane.className='love-pane hidden';
- pane.innerHTML='<div id="lovecaOnlinePhaseBar" hidden role="group" aria-label="現在のフェイズ"><strong id="lovecaOnlineTurnLabel">あなたのターン</strong><span id="lovecaOnlinePhaseLabel">現在：メインフェイズ</span><select id="lovecaOnlinePhaseSelect" aria-label="フェイズを選択"><option value="0">メイン</option><option value="1">ライブ</option><option value="2">ライブ勝敗</option></select><button type="button" id="lovecaOnlineEndTurn" hidden>ターン終了・相手へ</button><button type="button" id="lovecaOnlineTurnSelect" hidden>次の先攻を選択</button></div><section class="panel"><h2>オンライン対戦・ルーム</h2><p class="hint">第2段階・試験版：双方準備完了で盤面を表示します。カード効果は手動処理です。手札・山札の中身は送信しません。</p><label class="block-label">使用するデッキ<select id="lovecaOnlineDeck"></select></label><div class="solo-choice-grid" style="margin:12px 0"><button type="button" id="lovecaOnlineCreate" class="primary-btn">ルームを作成</button></div><label class="block-label">ルームコード<input id="lovecaOnlineJoinCode" maxlength="6" placeholder="6文字"></label><button type="button" id="lovecaOnlineJoin" class="ghost-btn">ルームに参加</button><p id="lovecaOnlineStatus" role="status" style="margin-top:12px"></p><div id="lovecaOnlineRoom" hidden><h3>ルーム番号：<strong id="lovecaOnlineCode"></strong></h3><button type="button" id="lovecaOnlineCopy" class="ghost-btn">コードをコピー</button><p id="lovecaOnlinePlayers"></p><button type="button" id="lovecaOnlineReady" class="primary-btn">準備完了</button><p id="lovecaOnlineMatch"></p><p id="lovecaOnlineCoinResult" role="status"></p><div id="lovecaOnlineCoinModal" class="online-coin-modal" hidden></div><div id="lovecaOnlineBattle" hidden><h3>オンライン対戦盤面（試験版）</h3><p id="lovecaOnlineDiagnostics" class="online-diagnostics"></p><div id="lovecaOnlineOpponent"></div><h3>自分の盤面</h3><div class="online-own-mat"><div class="online-section-title">ライブカード</div><div class="online-slots" id="lovecaOnlineOwnLive"></div><div class="online-section-title">ステージ</div><div class="online-slots" id="lovecaOnlineOwnStage"></div><div class="online-pile-row"><span id="lovecaOnlineOwnInfo"></span></div><details class="online-success-details"><summary id="lovecaOnlineOwnSuccess">成功ライブ 0枚</summary><div id="lovecaOnlineOwnSuccessList" class="online-hand"></div></details><div class="online-section-title">エネルギー（タップで操作）</div><div id="lovecaOnlineOwnEnergy" class="online-energy-row"></div><details><summary>控え室（タップで移動）</summary><div id="lovecaOnlineOwnDiscard" class="online-hand"></div></details><div class="online-toolbar"><button type="button" data-online-draw>1枚ドロー</button><button type="button" data-online-energy>＋エネルギー</button><button type="button" data-online-command="next">次ターン</button><button type="button" data-online-command="shuffle">山札シャッフル</button><button type="button" data-online-command="discard-return">控え室→山札</button><button type="button" data-online-command="reveal">山札公開</button></div><div class="online-section-title">手札（タップして配置）</div><div class="online-hand" id="lovecaOnlineOwnHand"></div><p id="lovecaOnlineOwnExtras"></p></div><p class="hint">試験版：カード効果は手動処理です。相手のカードは操作できません。</p></div><button type="button" id="lovecaOnlineLeave" class="ghost-btn">ルームから退出</button></div></section>';
+ pane.innerHTML='<div id="lovecaOnlinePhaseBar" hidden role="group" aria-label="現在のフェイズ"><strong id="lovecaOnlineTurnLabel">あなたのターン</strong><span id="lovecaOnlinePhaseLabel">現在：メインフェイズ</span><select id="lovecaOnlinePhaseSelect" aria-label="フェイズを選択"><option value="0">メイン</option><option value="1">ライブ</option><option value="2">ライブ勝敗</option></select><button type="button" id="lovecaOnlineEndTurn" hidden>ターン終了・相手へ</button><button type="button" id="lovecaOnlineTurnSelect" hidden>次の先攻を選択</button></div><section class="panel"><h2>オンライン対戦・ルーム</h2><p class="hint">第2段階・試験版：双方準備完了で盤面を表示します。カード効果は手動処理です。手札・山札の中身は送信しません。</p><label class="block-label">使用するデッキ<select id="lovecaOnlineDeck"></select></label><div class="solo-choice-grid" style="margin:12px 0"><button type="button" id="lovecaOnlineCreate" class="primary-btn">ルームを作成</button></div><label class="block-label">ルームコード<input id="lovecaOnlineJoinCode" maxlength="6" placeholder="6文字"></label><button type="button" id="lovecaOnlineJoin" class="ghost-btn">ルームに参加</button><p id="lovecaOnlineStatus" role="status" style="margin-top:12px"></p><div id="lovecaOnlineRoom" hidden><h3>ルーム番号：<strong id="lovecaOnlineCode"></strong></h3><button type="button" id="lovecaOnlineCopy" class="ghost-btn">コードをコピー</button><p id="lovecaOnlinePlayers"></p><button type="button" id="lovecaOnlineReady" class="primary-btn">準備完了</button><p id="lovecaOnlineMatch"></p><strong id="lovecaOnlineGameNumber">第1ゲーム</strong><div id="lovecaOnlineGameSetup" hidden><p>次のゲームの先攻決定方法</p><button type="button" id="lovecaOnlineCoinAgain">コイントス</button><button type="button" id="lovecaOnlineManualFirst">手動で先攻を決定</button></div><button type="button" id="lovecaOnlineNewGame" hidden>次のゲームへ</button><p id="lovecaOnlineCoinResult" role="status"></p><div id="lovecaOnlineCoinModal" class="online-coin-modal" hidden></div><div id="lovecaOnlineBattle" hidden><h3>オンライン対戦盤面（試験版）</h3><p id="lovecaOnlineDiagnostics" class="online-diagnostics"></p><div id="lovecaOnlineOpponent"></div><h3>自分の盤面</h3><div class="online-own-mat"><div class="online-section-title">ライブカード</div><div class="online-slots" id="lovecaOnlineOwnLive"></div><div class="online-section-title">ステージ</div><div class="online-slots" id="lovecaOnlineOwnStage"></div><div class="online-pile-row"><span id="lovecaOnlineOwnInfo"></span></div><details class="online-success-details"><summary id="lovecaOnlineOwnSuccess">成功ライブ 0枚</summary><div id="lovecaOnlineOwnSuccessList" class="online-hand"></div></details><div class="online-section-title">エネルギー（タップで操作）</div><div id="lovecaOnlineOwnEnergy" class="online-energy-row"></div><details><summary>控え室（タップで移動）</summary><div id="lovecaOnlineOwnDiscard" class="online-hand"></div></details><div class="online-toolbar"><button type="button" data-online-draw>1枚ドロー</button><button type="button" data-online-energy>＋エネルギー</button><button type="button" data-online-command="next">次ターン</button><button type="button" data-online-command="shuffle">山札シャッフル</button><button type="button" data-online-command="discard-return">控え室→山札</button><button type="button" data-online-command="reveal">山札公開</button></div><div class="online-section-title">手札（タップして配置）</div><div class="online-hand" id="lovecaOnlineOwnHand"></div><p id="lovecaOnlineOwnExtras"></p></div><p class="hint">試験版：カード効果は手動処理です。相手のカードは操作できません。</p></div><button type="button" id="lovecaOnlineLeave" class="ghost-btn">ルームから退出</button></div></section>';
  $('#loveSoloPane').after(pane);
  const show=()=>{nav.querySelectorAll('.love-tab').forEach(b=>b.classList.toggle('active',b===tab));document.querySelectorAll('#loveScreen .love-pane').forEach(p=>p.classList.add('hidden'));pane.classList.remove('hidden');$('#appTitle').textContent='ラブカ オンライン';const reset=$('#resetAllBtn');if(reset)reset.style.display='none';paintDecks();renderPhase()};
  tab.addEventListener('click',show);
@@ -272,6 +279,9 @@ function init(){
  $('#lovecaOnlinePhaseSelect').addEventListener('change',e=>{const n=Number(e.target.value);if(currentPhase===2&&n===0){renderPhase();return}changePhase(n)});
  $('#lovecaOnlineEndTurn').addEventListener('click',()=>changePhase(0));
  $('#lovecaOnlineTurnSelect').addEventListener('click',()=>{const other=Object.keys(players).find(id=>id!==uid);if(!other)return;changePhase(0,confirm('次の先攻はあなたですか？ OK：自分／キャンセル：相手')?uid:other)});
+ $('#lovecaOnlineNewGame').addEventListener('click',newGame);
+ $('#lovecaOnlineCoinAgain').addEventListener('click',()=>chooseGameStart('coin'));
+ $('#lovecaOnlineManualFirst').addEventListener('click',()=>{const other=Object.keys(players).find(x=>x!==uid);if(other)chooseGameStart('manual',confirm('先攻はあなたですか？ OK：自分／キャンセル：相手')?uid:other)});
  $('#lovecaOnlineCreate').addEventListener('click',create);
  $('#lovecaOnlineJoin').addEventListener('click',join);
  $('#lovecaOnlineReady').addEventListener('click',ready);
