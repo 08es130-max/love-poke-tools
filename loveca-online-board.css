@@ -53,3 +53,8 @@
 #lovecaOnlinePhaseBar{position:fixed;z-index:900;top:calc(env(safe-area-inset-top,0px) + 6px);left:50%;transform:translateX(-50%);width:min(92vw,430px);box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 10px;border:1px solid #e69cbd;border-radius:12px;background:#fff7fbf2;color:#9f2c60;box-shadow:0 3px 12px #0003;font-size:12px;backdrop-filter:blur(8px)}
 #lovecaOnlinePhaseBar strong{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #lovecaOnlinePhaseSelect{min-width:100px;max-width:48%;padding:5px;border:1px solid #e5a0bf;border-radius:7px;background:white;color:#9f2c60;font-size:12px}
+
+#lovecaOnlinePhaseBar{flex-wrap:wrap;justify-content:center;gap:5px 8px}
+#lovecaOnlineTurnLabel{font-weight:900;color:#a32258;white-space:nowrap}
+#lovecaOnlinePhaseLabel{font-size:12px;white-space:nowrap}
+#lovecaOnlineTurnSelect{max-width:76px;padding:5px;border:1px solid #e5a0bf;border-radius:7px;background:#fff;color:#9f2c60;font-size:12px}
