@@ -75,10 +75,10 @@ def normalize_special_heart(value) -> str:
     text = str(value if value is not None else "").strip()
     if not text or text in {"-", "0"} or text.isdigit():
         return ""
+    if text in {"スコア", "スコア+1", "スコア＋１"} or "音符" in text or any(mark in text for mark in ("♪", "♫", "♬", "♩")):
+        return "note"
     if "ドロー" in text:
         return "draw"
-    if "音符" in text or any(mark in text for mark in ("♪", "♫", "♬", "♩")):
-        return "note"
     return text
 
 
@@ -216,10 +216,11 @@ def main():
         no = card.get("cardNo", "")
         card["bladeHeartTypes"] = [key for key, _ in BLADE_HEART_FILTERS if no in blade_sets[key]]
         # Special symbols may coexist with colored blade hearts.
-        if "note" in card["bladeHeartTypes"]:
-            card["specialHeart"] = "note"
-        elif "draw" in card["bladeHeartTypes"]:
-            card["specialHeart"] = "draw"
+        if card["specialHeart"] not in {"note", "draw"}:
+            if "note" in card["bladeHeartTypes"]:
+                card["specialHeart"] = "note"
+            elif "draw" in card["bladeHeartTypes"]:
+                card["specialHeart"] = "draw"
         card["hasBladeHeart"] = no in any_blade or bool(card["bladeHeartTypes"])
 
     payload = {
