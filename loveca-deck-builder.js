@@ -41,7 +41,7 @@ function render(){
   if(isLive){
    const labels={桃:'pink',赤:'red',黄:'yellow',緑:'green',青:'blue',紫:'purple',ALL:'all'};
    const raw=String(c.bladeHeart||'');
-   const matches=[...raw.matchAll(/(ALL|桃|赤|黄|緑|青|紫)\\s*(\\d+)/g)];
+   const matches=[...raw.matchAll(/(ALL|桃|赤|黄|緑|青|紫)\s*(\d+)/g)];
    for(const match of matches)colors[labels[match[1]]]+=count*Number(match[2]);
    if(!matches.length&&raw.includes('[全ブレード]'))colors.all+=count;
    if(!matches.length&&!raw.includes('[全ブレード]')&&!kinds.some(k=>['pink','red','yellow','green','blue','purple','all','draw'].includes(k))&&c.specialHeart!=='draw')liveNonBlade+=count;
