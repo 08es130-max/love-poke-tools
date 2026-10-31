@@ -11,6 +11,7 @@ function render(){
  const chooser=$('#lovecaDeckChooser'),stats=$('#lovecaBuilderStats'),items=$('#lovecaDeckItems');
  if(!chooser)return;
  const decks=get();if(!decks.some(d=>d.id===selected))selected=decks[0]?.id||'';
+ const rename=$('#lovecaDeckRename');if(rename)rename.disabled=!selected;
  chooser.innerHTML=decks.length?decks.map(d=>'<option value="'+escape(d.id)+'">'+escape(d.name)+'</option>').join(''):'<option value="">未作成</option>';chooser.value=selected;
  const deck=decks.find(d=>d.id===selected);
  if(!deck){stats.innerHTML='<section style="border:2px solid #e98aaf;border-radius:12px;padding:12px;margin:12px 0"><h3>デッキ集計</h3><p>デッキを作成すると、コスト・ブレードハート・非ブレの枚数がここに表示されます。</p></section>';items.innerHTML='';return}
@@ -57,7 +58,7 @@ function init(){
  if(!nav||!browser){setTimeout(init,350);return}
  const tab=document.createElement('button');tab.className='love-tab';tab.type='button';tab.dataset.lovePane='builder';tab.textContent='デッキ構築';nav.append(tab);
  const pane=document.createElement('div');pane.id='loveDeckBuilderPane';pane.className='love-pane hidden';
- pane.innerHTML='<section class="panel"><div class="section-title-row"><h2>デッキ構築</h2><span class="badge ok">端末に保存</span></div><div style="display:flex;gap:8px;flex-wrap:wrap"><select id="lovecaDeckChooser" style="flex:1;min-width:120px"></select><button type="button" class="primary-btn" id="lovecaDeckNew">新規作成</button><button type="button" class="ghost-btn" id="lovecaDeckDelete">削除</button></div><div id="lovecaBuilderStats"></div><div id="lovecaDeckItems"></div></section>';
+ pane.innerHTML='<section class="panel"><div class="section-title-row"><h2>デッキ構築</h2><span class="badge ok">端末に保存</span></div><div style="display:flex;gap:8px;flex-wrap:wrap"><select id="lovecaDeckChooser" style="flex:1;min-width:120px"></select><button type="button" class="primary-btn" id="lovecaDeckNew">新規作成</button><button type="button" class="ghost-btn" id="lovecaDeckRename">名前変更</button><button type="button" class="ghost-btn" id="lovecaDeckDelete">削除</button></div><div id="lovecaBuilderStats"></div><div id="lovecaDeckItems"></div></section>';
  browser.after(pane);
  const addDialog=document.createElement('dialog');
  addDialog.id='lovecaDeckAddDialog';
@@ -84,6 +85,7 @@ function init(){
  $('#navLove')?.addEventListener('click',()=>{if(tab.classList.contains('active')){$('#appTitle').textContent='ラブカ デッキ構築';$('#resetAllBtn').style.display='none'}});
  $('#lovecaDeckChooser').onchange=e=>{selected=e.target.value;render()};
  $('#lovecaDeckNew').onclick=()=>{const name=prompt('デッキ名','新しいデッキ');if(!name?.trim())return;const all=get(),id='d'+Date.now();all.push({id,name:name.trim(),cards:{}});if(put(all)){selected=id;render()}};
+ $('#lovecaDeckRename').onclick=()=>{const all=get(),deck=all.find(d=>d.id===selected);if(!deck)return;const name=prompt('新しいデッキ名',deck.name);if(name===null)return;const trimmed=name.trim();if(!trimmed){alert('デッキ名を入力してください');return}if(trimmed.length>60){alert('デッキ名は60文字以内にしてください');return}if(all.some(d=>d.id!==deck.id&&d.name===trimmed)){alert('同じ名前のデッキが既にあります');return}deck.name=trimmed;if(put(all)){render();notify('デッキ名を変更しました')}};
  $('#lovecaDeckDelete').onclick=()=>{if(!selected||!confirm('デッキを削除しますか？'))return;const all=get().filter(d=>d.id!==selected);if(put(all)){selected='';render()}};
  document.addEventListener('click',e=>{
   const add=e.target.closest('[data-deck-add]'),adjust=e.target.closest('[data-deck-adjust]');
