@@ -79,7 +79,7 @@ function startBattle(){
  if(!board||!Array.isArray(board.deck)||!Array.isArray(board.hand)){
   const pile=[];for(const [id,count] of Object.entries(deck.cards||{}))for(let i=0;i<Math.min(100,Math.max(0,Number(count)||0));i++)pile.push(id);
   board={deck:shuffle(pile),hand:[],stage:[null,null,null],live:[null,null,null],discard:[],energy:4};
-  for(let i=0;i<5&&board.deck.length;i++)board.hand.push(board.deck.pop());
+  for(let i=0;i<6&&board.deck.length;i++)board.hand.push(board.deck.pop());
  }
  normalizeBoard();publishBoard();
  const opponent=Object.keys(players).find(id=>id!==uid);
