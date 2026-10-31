@@ -47,7 +47,7 @@ function render(){
   }else{
    for(const kind of kinds)if(Object.prototype.hasOwnProperty.call(colors,kind))colors[kind]+=count;
   }
-  if((c.specialHeart==='draw'||c.specialHeart==='note')&&!kinds.includes(c.specialHeart))colors[c.specialHeart]+=count;
+  for(const special of ['draw','note'])if(kinds.includes(special)||c.specialHeart===special)colors[special]+=count;
  }
  const total=entries.reduce((n,[,c])=>n+(Number(c)||0),0);
  const max=Math.max(1,...Object.values(costs));
