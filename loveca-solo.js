@@ -92,7 +92,7 @@ function showCheerJudge(){
  for(const id of cheer){
   const c=card(id);if(!c){unknown++;continue}
   const raw=String(c.bladeHeart||'');
-  const matches=[...raw.matchAll(/(ALL|桃|赤|黄|緑|青|紫)\\s*(\\d+)/g)];
+  const matches=[...raw.matchAll(/(ALL|桃|赤|黄|緑|青|紫)\s*(\d+)/g)];
   if(matches.length){for(const m of matches)owned[labels[m[1]]]+=Number(m[2])}
   else if(raw.includes('[全ブレード]'))owned.all++;
   else if(Array.isArray(c.bladeHeartTypes)&&c.bladeHeartTypes.length){for(const k of c.bladeHeartTypes)if(k in owned)owned[k]++}
