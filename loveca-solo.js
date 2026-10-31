@@ -14,7 +14,7 @@ const random=arr=>{const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.f
 function reset(deck){
  const pile=[];for(const [id,n] of Object.entries(deck.cards||{}))for(let i=0;i<Math.min(500,Number(n)||0);i++)pile.push(id);
  state={deckId:deck.id,turn:1,deck:random(pile),hand:[],stage:[],live:[],discard:[],energy:[],energyUsed:[],selected:null,stageSlots:[null,null,null],liveSlots:[null,null,null],successLive:[],revealed:[],stageWait:[false,false,false],stageUnder:[[],[],[]],log:[]};
- undoStack=[];state.energy=Array.from({length:4},(_,i)=>({token:i+1,used:false}));draw(5);write(state);render();
+ undoStack=[];state.energy=Array.from({length:4},(_,i)=>({token:i+1,used:false}));draw(6);write(state);render();
 }
 let refreshNoticeTimer;
 function refreshDeck(){
