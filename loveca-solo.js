@@ -98,7 +98,7 @@ function pick(zone,index){
  const names={stageSlots:'ステージ',liveSlots:'ライブ'};
  const choices=targets.flatMap(k=>[0,1,2].map(i=>({key:k,index:i,label:names[k]+' '+(i+1),occupied:!!state[k][i]})));
  const dialog=$('#loveSoloCardDialog'),body=$('#loveSoloCardDetail');
- body.innerHTML='<div class="solo-detail-top"><div class="solo-detail-image">'+(c?.imageUrl?'<img src="'+esc(c.imageUrl)+'" alt="'+esc(c.name)+'">':'')+'</div><div class="solo-detail-info"><h3>'+esc(c?.name||id)+'</h3><p>'+esc(c?.cardNo||'')+' / '+esc(c?.cardType||'')+'</p><div class="solo-effect-box"><strong>カード効果</strong><p>'+esc(c?.text||'効果なし')+'</p></div></div></div>'+(simpleDrawEffect(c?.text)?'<div class="solo-choice-grid"><button type="button" class="primary-btn" data-solo-effect="draw">効果を使用：'+simpleDrawEffect(c.text).count+'枚ドロー</button></div>':'')+'<h4>移動先を選択</h4><div class="solo-choice-grid">'+choices.map(x=>'<button type="button" class="ghost-btn" data-solo-target="'+x.key+'" data-solo-target-index="'+x.index+'">'+x.label+(x.occupied?'（元のカードは控え室へ）':'')+'</button>').join('')+(zone==='stageSlots'?'<button type="button" class="ghost-btn" data-solo-wait="'+index+'">'+(state.stageWait[index]?'ウェイト解除':'ウェイト（横向き）')+'</button>':'')+(zone==='revealed'?'<button type="button" class="ghost-btn" data-solo-target="deckTop">山札の上へ戻す</button>':'')+(live&&zone!=='successLive'?'<button type="button" class="ghost-btn" data-solo-target="successLive">成功ライブへ</button>':'')+(zone==='hand'||zone==='discard'?state.stageSlots.map((id,i)=>id?'<button type="button" class="ghost-btn" data-solo-under-target="'+i+'">ステージ'+(i+1)+'の下に置く</button>':'').join(''):'')+'<button type="button" class="ghost-btn" data-solo-target="hand">手札へ戻す</button><button type="button" class="ghost-btn" data-solo-target="discard">控え室へ</button></div>';
+ body.innerHTML='<div class="solo-detail-top"><div class="solo-detail-image">'+(c?.imageUrl?'<img src="'+esc(c.imageUrl)+'" alt="'+esc(c.name)+'">':'')+'</div><div class="solo-detail-info"><h3>'+esc(c?.name||id)+'</h3><p>'+esc(c?.cardNo||'')+' / '+esc(c?.cardType||'')+'</p><div class="solo-effect-box"><strong>カード効果</strong><p>'+esc(c?.text||'効果なし')+'</p></div></div></div>'+(simpleDrawEffect(c?.text)?'<div class="solo-choice-grid"><button type="button" class="primary-btn" data-solo-effect="draw">効果を使用：'+simpleDrawEffect(c.text).count+'枚ドロー</button></div>':'')+'<h4>移動先を選択</h4><div class="solo-choice-grid">'+choices.map(x=>'<button type="button" class="ghost-btn" data-solo-target="'+x.key+'" data-solo-target-index="'+x.index+'">'+x.label+(x.occupied?'（元のカードは控え室へ）':'')+'</button>').join('')+(zone==='stageSlots'?'<button type="button" class="ghost-btn" data-solo-wait="'+index+'">'+(state.stageWait[index]?'ウェイト解除':'ウェイト（横向き）')+'</button>':'')+(zone==='revealed'?'<button type="button" class="ghost-btn" data-solo-target="deckTop">山札の上へ戻す</button>':'')+(live&&zone!=='successLive'?'<button type="button" class="ghost-btn" data-solo-target="successLive">成功ライブへ</button>':'')+((zone==='hand'||zone==='discard')&&c?.cardType==='メンバー'?state.stageSlots.map((id,i)=>id?'<button type="button" class="ghost-btn" data-solo-under-target="'+i+'">ステージ'+(i+1)+'の下に置く</button>':'').join(''):'')+'<button type="button" class="ghost-btn" data-solo-target="hand">手札へ戻す</button><button type="button" class="ghost-btn" data-solo-target="discard">控え室へ</button></div>';
  dialog.dataset.from=zone;dialog.dataset.index=index;dialog.showModal();
 }
 function attachUnder(from,index,slot){
@@ -108,7 +108,7 @@ function attachUnder(from,index,slot){
   if(!state.energy[index])return false;
   snapshot();item={kind:'energy',energy:state.energy.splice(index,1)[0]};
  }else if(from==='hand'||from==='discard'){
-  if(!state[from][index])return false;
+  if(!state[from][index]||card(state[from][index])?.cardType!=='メンバー')return false;
   snapshot();item={kind:'card',id:state[from].splice(index,1)[0]};
  }else return false;
  state.stageUnder[slot].push(item);
@@ -286,7 +286,16 @@ function init(){
   if(underRemove&&state){const dialog=$('#loveSoloCardDialog');detachUnder(Number(dialog.dataset.underSlot),Number(dialog.dataset.underIndex),underRemove.dataset.soloUnderRemove);return}
   const underCard=e.target.closest('[data-solo-under-slot]');
   if(underCard&&state){showUnder(Number(underCard.dataset.soloUnderSlot),Number(underCard.dataset.soloUnderIndex));return}
-  const energy=e.target.closest('[data-solo-energy]');if(energy&&state){if(state.stageSlots.some(Boolean)){const slot=prompt('エネルギーをステージメンバーの下に置く場合は番号（1〜3）を入力。使用済み切替は空欄でOK','');if(slot===null)return;if(slot.trim()){const i=Number(slot)-1;if(!attachUnder('energy',Number(energy.dataset.soloEnergy),i))alert('指定したステージにメンバーがいません');return}}const item=state.energy[Number(energy.dataset.soloEnergy)];if(item){snapshot();item.used=!item.used;write(state);render()}return}
+  const energyUnder=e.target.closest('[data-solo-energy-under]');
+  if(energyUnder&&state){const d=$('#loveSoloCardDialog');if(attachUnder('energy',Number(d.dataset.energyIndex),Number(energyUnder.dataset.soloEnergyUnder)))d.close();return}
+  const energyToggle=e.target.closest('[data-solo-energy-toggle]');
+  if(energyToggle&&state){const d=$('#loveSoloCardDialog'),item=state.energy[Number(d.dataset.energyIndex)];if(item){snapshot();item.used=!item.used;d.close();write(state);render()}return}
+  const energy=e.target.closest('[data-solo-energy]');if(energy&&state){
+   const i=Number(energy.dataset.soloEnergy),item=state.energy[i];if(!item)return;
+   const d=$('#loveSoloCardDialog');d.dataset.energyIndex=i;
+   $('#loveSoloCardDetail').innerHTML='<h3>エネルギー置き場のカード</h3><p>このエネルギーの操作を選んでください。</p><div class="solo-choice-grid"><button type="button" class="ghost-btn" data-solo-energy-toggle>'+(item.used?'使用済みを解除':'使用済みにする')+'</button>'+state.stageSlots.map((id,slot)=>id?'<button type="button" class="ghost-btn" data-solo-energy-under="'+slot+'">ステージ'+(slot+1)+'のメンバーの下に置く</button>':'').join('')+'</div>';
+   d.showModal();return
+  }
   const zone=e.target.closest('[data-solo-zone]');if(zone&&state){if(zone.dataset.soloZone==='discard')showDiscard();return}
   const selected=e.target.closest('[data-solo-pick]');if(selected){pick(selected.dataset.soloPick,Number(selected.dataset.soloIndex));return}
   const wait=e.target.closest('[data-solo-wait]');if(wait&&state){const i=Number(wait.dataset.soloWait);if(state.stageSlots[i]){snapshot();state.stageWait[i]=!state.stageWait[i];$('#loveSoloCardDialog').close();write(state);render()}return}
