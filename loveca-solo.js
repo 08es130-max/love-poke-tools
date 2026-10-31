@@ -78,7 +78,7 @@ function cheerAndJudge(){
  if(raw===null)return;
  const n=Number(raw);
  if(!Number.isSafeInteger(n)||n<1||n>100){alert('1〜100枚で指定してください');return}
- snapshot();state.cheer=[];
+ snapshot();if(state.cheer?.length)state.discard.push(...state.cheer);state.cheer=[];
  for(let i=0;i<n;i++){if(!state.deck.length&&!refreshDeck())break;state.cheer.push(state.deck.pop())}
  state.phase=1;state.log.unshift('T'+state.turn+'：エール'+state.cheer.length+'枚');
  write(state);render();window.LovecaBoardCalc?.open({kind:'solo',board:()=>state,card,livePhase:()=>true,cheer:cheerAndJudge});
