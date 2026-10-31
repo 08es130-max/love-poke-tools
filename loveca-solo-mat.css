@@ -132,4 +132,4 @@
 
 /* Placed live cards are landscape; other card previews remain unchanged. */
 #loveSoloPane .solo-slot-live:has(img){padding:0;overflow:hidden;position:relative}
-#loveSoloPane .solo-slot-live img{position:absolute;left:50%;top:50%;width:auto;height:auto;max-width:none;max-height:none;object-fit:fill;transform:translate(-50%,-50%) rotate(90deg);width:calc(100% / 1.8);height:calc(100% * 1.8);pointer-events:none}
+#loveSoloPane .solo-slot-live img{position:absolute;left:50%;top:50%;width:auto;height:auto;max-width:none;max-height:none;object-fit:contain;transform:translate(-50%,-50%) rotate(-90deg);width:calc(100% / 1.8);height:calc(100% * 1.8);pointer-events:none}
