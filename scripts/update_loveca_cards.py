@@ -26,6 +26,8 @@ BLADE_HEART_FILTERS = (
     ("blue", "青"),
     ("purple", "紫"),
     ("all", "ALL"),
+    ("note", "音符"),
+    ("draw", "ドロー"),
 )
 
 
@@ -213,6 +215,11 @@ def main():
     for card in cards:
         no = card.get("cardNo", "")
         card["bladeHeartTypes"] = [key for key, _ in BLADE_HEART_FILTERS if no in blade_sets[key]]
+        # Special symbols may coexist with colored blade hearts.
+        if "note" in card["bladeHeartTypes"]:
+            card["specialHeart"] = "note"
+        elif "draw" in card["bladeHeartTypes"]:
+            card["specialHeart"] = "draw"
         card["hasBladeHeart"] = no in any_blade or bool(card["bladeHeartTypes"])
 
     payload = {
