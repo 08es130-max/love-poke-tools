@@ -20,14 +20,19 @@ function resolveLive(reports,first,ids){
  let winner=null,tie=false;
  if(sa&&sb){if(ra.score>rb.score)winner=a;else if(rb.score>ra.score)winner=b;else tie=true}
  else if(sa)winner=a;else if(sb)winner=b;
- const placements={};for(const id of ids)placements[id]=!!((winner===id||(tie&&reports[id].success&&reports[id].hasLive))&&reports[id].successCount<2);
- return {winner,tie,nextFirst:winner||first,placements,score:{[a]:ra.score,[b]:rb.score},success:{[a]:sa,[b]:sb}};
+ const placements={};for(const id of ids)placements[id]=!!((winner===id||(tie&&reports[id].success&&reports[id].hasLive))&&(winner===id?reports[id].successCount<3:reports[id].successCount<2));
+ const rewards={};for(const id of ids)if(placements[id]&&reports[id].reward)rewards[id]=reports[id].reward;
+ return {winner,tie,nextFirst:winner||first,placements,rewards,score:{[a]:ra.score,[b]:rb.score},success:{[a]:sa,[b]:sb}};
 }
 async function submitLive(){
  if(!api||!roomId||currentPhase!==2||!battleActive||!board)return;
  const hasLive=board.live.some(Boolean),success=hasLive&&$('#onlineLiveSuccess').value==='yes',score=success?Number($('#onlineLiveScore').value):0;
  if(!Number.isSafeInteger(score)||score<0||score>9999){status('スコアは0〜9999の整数で入力してください',true);return}
- const report={success,hasLive,score,successCount:board.successLive.length};
+ const choices=board.live.map((id,slot)=>({id,slot})).filter(x=>x.id);
+ const selected=$('#onlineLiveReward')?.value;
+ const reward=success?(choices.length===1?choices[0]:choices.find(x=>selected!==''&&x.slot===Number(selected))):null;
+ if(success&&!reward){status('成功ライブカード置き場へ置くカードを1枚選択してください',true);return}
+ const report={success,hasLive,score,successCount:board.successLive.length,...(reward?{reward}:{})};
  try{await api.runTransaction(api.db,async tx=>{
   const ref=api.doc(api.db,'lovecaOnlineRooms',roomId),snap=await tx.get(ref);if(!snap.exists())throw Error('ルームなし');
   const d=snap.data(),v=d.phaseState||{};if(v.phase!==2)throw Error('ライブ勝敗フェイズではありません');
@@ -42,13 +47,23 @@ function renderLiveResults(){
  const el=$('#lovecaOnlineLiveResults');if(!el)return;
  el.hidden=!battleActive||currentPhase!==2;if(el.hidden)return;
  const mine=liveReports[uid],other=Object.keys(players).find(id=>id!==uid),their=liveReports[other];
- el.innerHTML='<h3>ライブ勝敗・結果入力</h3><p>各自が成功可否とスコアを入力します。双方提出後に勝敗・先攻を自動決定します。</p><label>ライブ結果 <select id="onlineLiveSuccess" '+(mine?'disabled':'')+'><option value="yes">成功</option><option value="no">失敗</option></select></label> <label>スコア <input id="onlineLiveScore" type="number" min="0" max="9999" value="0" style="width:90px" '+(mine?'disabled':'')+'></label> <button type="button" id="onlineLiveSubmit" '+(mine?'disabled':'')+'>結果を送信</button><p>あなた：'+(mine?(mine.success?'成功 '+mine.score+'点':'失敗'):'未提出')+' ／ 相手：'+(their?(their.success?'成功 '+their.score+'点':'失敗'):'未提出')+'</p>';
+ const choices=(board?.live||[]).map((id,slot)=>({id,slot})).filter(x=>x.id);
+ const rewardChoice=choices.length>1?'<label style="display:block;margin:8px 0">成功ライブカード置き場へ置く1枚 <select id="onlineLiveReward" '+(mine?'disabled':'')+'><option value="">カードを選択してください</option>'+choices.map(({id,slot})=>'<option value="'+slot+'">'+(slot+1)+'：'+esc(card(id)?.name||id)+'（'+esc(card(id)?.cardNo||id)+'）</option>').join('')+'</select></label>':'';
+ el.innerHTML='<h3>ライブ勝敗・結果入力</h3><p>各自が成功可否とスコアを入力します。双方提出後に勝敗・先攻を自動決定します。</p><label>ライブ結果 <select id="onlineLiveSuccess" '+(mine?'disabled':'')+'><option value="yes">成功</option><option value="no">失敗</option></select></label> <label>スコア <input id="onlineLiveScore" type="number" min="0" max="9999" value="0" style="width:90px" '+(mine?'disabled':'')+'></label>'+rewardChoice+' <button type="button" id="onlineLiveSubmit" '+(mine?'disabled':'')+'>結果を送信</button><p>あなた：'+(mine?(mine.success?'成功 '+mine.score+'点':'失敗'):'未提出')+' ／ 相手：'+(their?(their.success?'成功 '+their.score+'点':'失敗'):'未提出')+'</p>';
  el.querySelector('#onlineLiveSubmit').onclick=submitLive;
  if(!board?.live?.some(Boolean)){el.querySelector('#onlineLiveSuccess').value='no';el.querySelector('#onlineLiveSuccess').disabled=true}
 }
 function applyLiveResolution(result){
  if(!board||!result||board.lastLiveRound===result.round)return;
- if(result.placements?.[uid]&&board.successLive.length<2){const idx=board.live.findIndex(Boolean);if(idx>=0){board.successLive.push(board.live[idx]);board.live[idx]=null}}
+ if(result.placements?.[uid]&&board.successLive.length<(result.tie?2:3)){
+  const reward=result.rewards?.[uid],choices=board.live.map((id,slot)=>({id,slot})).filter(x=>x.id);
+  let idx=reward?(board.live[reward.slot]===reward.id?reward.slot:board.live.indexOf(reward.id)):-1;
+  if(!reward&&choices.length===1)idx=choices[0].slot;
+  // Older clients do not include a choice in their reports. Never silently pick the first card.
+  if(!reward&&choices.length>1){const answer=prompt('成功ライブカード置き場へ置くカードの番号を選択してください\n'+choices.map(x=>(x.slot+1)+'：'+(card(x.id)?.name||x.id)).join('\n'));if(answer!==null)idx=choices.find(x=>x.slot===Number(answer)-1)?.slot??-1}
+  if(idx<0){status('成功ライブカードが未選択、または移動しています。カードを確認して再接続してください',true);return}
+  board.successLive.push(board.live[idx]);board.live[idx]=null;
+ }
  board.lastLiveRound=result.round;publishBoard();
  status(result.tie?'同点：両者成功、先攻は変更なし':result.winner?(result.winner===uid?'ライブ勝利：次の先攻はあなた':'ライブ敗北：次の先攻は相手'):'双方失敗・ライブなし：先攻は変更なし');
 }
@@ -84,7 +99,7 @@ function slots(arr,kind,editable,under=[]){return (arr||[null,null,null]).map((i
 function diagnostics(){const el=$('#lovecaOnlineDiagnostics');if(el)el.textContent='自分の盤面：'+boardWriteState+' ／ 相手の盤面：'+opponentReadState}
 function showBoard(){
  const panel=$('#lovecaOnlineBattle');if(!panel||!board)return;
- panel.hidden=false;renderPhase();
+ panel.hidden=false;renderPhase();renderLiveResults();
  $('#lovecaOnlineOwnStage').innerHTML=slots(board.stage,'stage',true,board.stageUnder);
  $('#lovecaOnlineOwnLive').innerHTML=slots(board.live,'live',true);
  $('#lovecaOnlineOwnHand').innerHTML=board.hand.map((id,i)=>'<button type="button" data-online-hand="'+i+'">'+cardTile(id)+'</button>').join('');
