@@ -31,9 +31,7 @@ function render(){
     const cost=String(c.cost).trim();costs[cost]=(costs[cost]||0)+count;
    }
    const memberKinds=Array.isArray(c.bladeHeartTypes)?c.bladeHeartTypes:[];
-   // Note symbols are treated as non-blade for deck composition statistics.
-   const hasNote=memberKinds.includes('note')||c.specialHeart==='note';
-   if(hasNote||(!c.hasBladeHeart&&!memberKinds.length&&!c.specialHeart))nonBlade+=count;
+   if(!c.hasBladeHeart&&!memberKinds.some(k=>['pink','red','yellow','green','blue','purple','all','draw'].includes(k)))nonBlade+=count;
   }
   // Live cards can carry a special heart AND colored blade hearts simultaneously.
   // Count each kind independently for both member and live cards.
@@ -49,7 +47,7 @@ function render(){
   }else{
    for(const kind of kinds)if(Object.prototype.hasOwnProperty.call(colors,kind))colors[kind]+=count;
   }
-  for(const special of ['draw','note'])if(kinds.includes(special)||c.specialHeart===special)colors[special]+=count;
+  for(const special of ['draw','note'])if(kinds.includes(special)||c.specialHeart===special||(special==='note'&&c.specialHeart==='スコア'))colors[special]+=count;
  }
  const total=entries.reduce((n,[,c])=>n+(Number(c)||0),0);
  const max=Math.max(1,...Object.values(costs));
