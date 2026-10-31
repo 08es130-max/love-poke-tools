@@ -56,7 +56,7 @@ function render(){
  const colorRows=Object.entries(colors).map(([key,n])=>'<span style="display:inline-flex;justify-content:space-between;gap:6px;padding:5px 8px;border:1px solid #e9c5d3;border-radius:8px;background:#fff;white-space:nowrap">'+colorLabels[key]+' <strong>'+n+'</strong></span>').join('');
  stats.innerHTML='<section id="lovecaDeckSummary" style="border:2px solid #e98aaf;border-radius:14px;padding:12px;margin:12px 0;background:#fff8fb"><h3 style="margin:0 0 10px;color:#aa2d65">デッキ集計 <small style="font-size:12px">'+total+'枚</small></h3><div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;text-align:center"><div style="border-radius:10px;background:white;padding:8px 3px"><small>メンバー</small><div style="font-size:22px;font-weight:bold">'+memberCount+'</div></div><div style="border-radius:10px;background:white;padding:8px 3px"><small>ライブ</small><div style="font-size:22px;font-weight:bold">'+liveCount+'</div></div><div style="border-radius:10px;background:white;padding:8px 3px"><small>非ブレ</small><div style="font-size:22px;font-weight:bold">'+(nonBlade+liveNonBlade)+'</div></div></div></section><div style="border:1px solid #e9c5d3;border-radius:12px;padding:12px;margin:12px 0"><h3 style="margin:0 0 8px">詳細集計：'+total+'枚</h3><p style="margin:4px 0">メンバー <strong>'+memberCount+'枚</strong> ／ ライブ <strong>'+liveCount+'枚</strong></p><p style="margin:4px 0">非ブレ（メンバー） <strong>'+nonBlade+'枚</strong> ／ ライブを含む非ブレ <strong>'+(nonBlade+liveNonBlade)+'枚</strong></p><h4 style="margin:12px 0 6px">コスト別枚数（メンバー）</h4>'+(costRows||'<p class="hint">集計対象のメンバーなし</p>')+'<h4 style="margin:12px 0 6px">ブレードハート色別枚数</h4><div style="display:flex;flex-wrap:wrap;gap:5px">'+colorRows+'</div><p class="hint" style="margin:8px 0 0">色別・ドロー・音符をそれぞれ集計します。上部の非ブレはライブカードを含む合計です。</p>'+(unknown?'<p class="hint">カード情報未取得：'+unknown+'枚</p>':'')+'</div>';
 
- items.innerHTML=entries.map(([id,n])=>{const c=lookup(id);return '<div style="display:flex;gap:8px;align-items:center;border-bottom:1px solid #aaa4;padding:8px 0">'+(c?.imageUrl?'<img src="'+escape(c.imageUrl)+'" loading="lazy" style="width:45px">':'')+'<div style="flex:1;min-width:0"><strong>'+escape(c?.name||id)+'</strong><div class="hint">'+escape(c?.cardNo||'')+'</div></div><button class="ghost-btn" data-deck-adjust="'+escape(id)+'" data-delta="-1">−</button><strong>'+n+'</strong><button class="ghost-btn" data-deck-adjust="'+escape(id)+'" data-delta="1">＋</button></div>'}).join('')||'<p class="note">カード検索から追加してください。</p>';
+ items.innerHTML=entries.map(([id,n])=>{const c=lookup(id);return '<div style="display:flex;gap:8px;align-items:center;border-bottom:1px solid #aaa4;padding:8px 0">'+(c?.imageUrl?'<img src="'+escape(c.imageUrl)+'" loading="lazy" style="width:45px">':'')+'<button type="button" data-deck-detail="'+escape(id)+'" style="flex:1;min-width:0;text-align:left;background:none;border:0;padding:4px;cursor:pointer;color:inherit"><strong>'+escape(c?.name||id)+'</strong><div class="hint">'+escape(c?.cardNo||'')+' ／ 詳細を見る</div></button><button class="ghost-btn" data-deck-adjust="'+escape(id)+'" data-delta="-1">−</button><strong>'+n+'</strong><button class="ghost-btn" data-deck-adjust="'+escape(id)+'" data-delta="1">＋</button></div>'}).join('')||'<p class="note">カード検索から追加してください。</p>';
 }
 function addButtons(){
  const box=$('#lovecaCardResults');if(!box||!cards.length)return;
@@ -79,6 +79,20 @@ function init(){
  addDialog.style.cssText='width:min(92vw,420px);max-height:80dvh;overflow:auto;border:1px solid #e7b1c9;border-radius:14px;padding:18px;background:#fff;color:#333;box-shadow:0 12px 40px #0005';
  addDialog.innerHTML='<form method="dialog"><h3 style="margin:0 0 8px">デッキに追加</h3><p id="lovecaDeckAddCardName" style="margin:0 0 12px;overflow-wrap:anywhere"></p><label style="display:block;margin-bottom:12px">追加するデッキ<select id="lovecaDeckAddChoice" style="display:block;width:100%;min-height:44px;margin-top:6px"></select></label><p id="lovecaDeckAddEmpty" class="hint" style="display:none">デッキがありません。先にデッキ構築から作成してください。</p><div style="display:flex;gap:8px;justify-content:flex-end"><button type="button" id="lovecaDeckAddCancel" class="ghost-btn">キャンセル</button><button type="button" id="lovecaDeckAddConfirm" class="primary-btn">OK・追加</button></div></form>';
  document.body.append(addDialog);
+ const detailDialog=document.createElement('dialog');
+ detailDialog.id='lovecaDeckDetailDialog';
+ detailDialog.style.cssText='width:min(94vw,520px);max-height:88dvh;overflow:auto;border:1px solid #e7b1c9;border-radius:14px;padding:16px;background:#fff;color:#333;box-shadow:0 12px 40px #0005';
+ detailDialog.innerHTML='<div id="lovecaDeckDetailBody"></div><button type="button" class="primary-btn" id="lovecaDeckDetailClose" style="margin-top:12px">閉じる</button>';
+ document.body.append(detailDialog);
+ $('#lovecaDeckDetailClose').onclick=()=>detailDialog.close();
+ detailDialog.addEventListener('click',e=>{if(e.target===detailDialog)detailDialog.close()});
+ function showDeckDetail(id){
+  const c=lookup(id);if(!c)return;
+  const fields=[['カード番号',c.cardNo],['種類',c.cardType],['コスト',c.cost],['ブレード',c.blade],['ブレードハート',c.bladeHeart],['特殊アイコン',c.specialHeart],['必要ハート',c.requiredHearts],['スコア',c.score]];
+  $('#lovecaDeckDetailBody').innerHTML='<h3 style="margin:0 0 12px">'+escape(c.name||'カード詳細')+'</h3>'+(c.imageUrl?'<img src="'+escape(c.imageUrl)+'" alt="'+escape(c.name||'')+'" style="display:block;max-width:100%;max-height:52dvh;object-fit:contain;margin:0 auto 12px">':'')+'<div style="display:grid;grid-template-columns:auto 1fr;gap:6px 12px">'+fields.filter(([,v])=>v!==undefined&&v!==null&&v!=='').map(([label,v])=>'<strong>'+label+'</strong><span>'+escape(typeof v==='object'?JSON.stringify(v):v)+'</span>').join('')+'</div>'+(c.text?'<h4>カード効果</h4><p style="white-space:pre-wrap;overflow-wrap:anywhere">'+escape(c.text)+'</p>':'');
+  detailDialog.showModal();
+ }
+
  const toast=document.createElement('div');toast.id='lovecaDeckAddToast';toast.setAttribute('role','status');toast.setAttribute('aria-live','polite');toast.style.cssText='position:fixed;left:50%;bottom:105px;transform:translateX(-50%);z-index:99999;background:#a82e65;color:white;border-radius:12px;padding:12px 18px;font-weight:bold;box-shadow:0 5px 20px #0003;max-width:90vw;text-align:center;display:none';document.body.append(toast);
  let pendingAdd='',toastTimer;
  const notify=message=>{toast.textContent=message;toast.style.display='block';clearTimeout(toastTimer);toastTimer=setTimeout(()=>toast.style.display='none',2400)};
@@ -102,6 +116,7 @@ function init(){
  $('#lovecaDeckRename').onclick=()=>{const all=get(),deck=all.find(d=>d.id===selected);if(!deck)return;const name=prompt('新しいデッキ名',deck.name);if(name===null)return;const trimmed=name.trim();if(!trimmed){alert('デッキ名を入力してください');return}if(trimmed.length>60){alert('デッキ名は60文字以内にしてください');return}if(all.some(d=>d.id!==deck.id&&d.name===trimmed)){alert('同じ名前のデッキが既にあります');return}deck.name=trimmed;if(put(all)){render();notify('デッキ名を変更しました')}};
  $('#lovecaDeckDelete').onclick=()=>{if(!selected||!confirm('デッキを削除しますか？'))return;const all=get().filter(d=>d.id!==selected);if(put(all)){selected='';render()}};
  document.addEventListener('click',e=>{
+  const detail=e.target.closest('[data-deck-detail]');if(detail){showDeckDetail(detail.dataset.deckDetail);return}
   const add=e.target.closest('[data-deck-add]'),adjust=e.target.closest('[data-deck-adjust]');
   if(!add&&!adjust)return;
   if(add){
