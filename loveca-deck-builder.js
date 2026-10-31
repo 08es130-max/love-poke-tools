@@ -39,9 +39,9 @@ function render(){
   // The official data stores live-card symbols in bladeHeart (e.g. "紫1", "ALL1"),
   // while member-card colors are stored in bladeHeartTypes.
   if(isLive){
-   const labels={桃:'pink',赤:'red',黄:'yellow',緑:'green',青:'blue',紫:'purple',無:'all',ALL:'all'};
+   const labels={桃:'pink',赤:'red',黄:'yellow',緑:'green',青:'blue',紫:'purple',ALL:'all'};
    const raw=String(c.bladeHeart||'');
-   const matches=[...raw.matchAll(/(ALL|桃|赤|黄|緑|青|紫|無)\\s*(\\d+)/g)];
+   const matches=[...raw.matchAll(/(ALL|桃|赤|黄|緑|青|紫)\\s*(\\d+)/g)];
    for(const match of matches)colors[labels[match[1]]]+=count*Number(match[2]);
    if(!matches.length&&raw.includes('[全ブレード]'))colors.all+=count;
   }else{
