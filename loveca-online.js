@@ -115,7 +115,7 @@ function showOnlineJudge(){
  const owned=Object.fromEntries([...keys,'colorless','all'].map(k=>[k,0]));
  for(const id of board.stage.filter(Boolean)){const c=card(id);for(const k of [...keys,'colorless'])owned[k]+=Number(c?.hearts?.[k])||0}
  let notes=0,unknown=0;
- for(const id of board.revealed){const c=card(id);if(!c){unknown++;continue}const matches=[...String(c.bladeHeart||'').matchAll(/(ALL|桃|赤|黄|緑|青|紫)\\s*(\\d+)/g)];if(matches.length)for(const m of matches)owned[labels[m[1]]]+=Number(m[2]);else if(String(c.bladeHeart||'').includes('[全ブレード]'))owned.all++;else if(Array.isArray(c.bladeHeartTypes)&&c.bladeHeartTypes.length)for(const k of c.bladeHeartTypes)if(k in owned)owned[k]++;else if(c.hasBladeHeart&&!['draw','note','スコア'].includes(c.specialHeart))unknown++;if(['note','スコア'].includes(c.specialHeart)||c.bladeHeartTypes?.includes('note'))notes++}
+ for(const id of board.revealed){const c=card(id);if(!c){unknown++;continue}const matches=[...String(c.bladeHeart||'').matchAll(/(ALL|桃|赤|黄|緑|青|紫)\s*(\d+)/g)];if(matches.length)for(const m of matches)owned[labels[m[1]]]+=Number(m[2]);else if(String(c.bladeHeart||'').includes('[全ブレード]'))owned.all++;else if(Array.isArray(c.bladeHeartTypes)&&c.bladeHeartTypes.length)for(const k of c.bladeHeartTypes)if(k in owned)owned[k]++;else if(c.hasBladeHeart&&!['draw','note','スコア'].includes(c.specialHeart))unknown++;if(['note','スコア'].includes(c.specialHeart)||c.bladeHeartTypes?.includes('note'))notes++}
  const req=Object.fromEntries([...keys,'colorless'].map(k=>[k,0])),lives=board.live.filter(Boolean);
  for(const id of lives){const c=card(id);for(const k of Object.keys(req))req[k]+=Number(c?.hearts?.[k])||0}
  if(!lives.length){alert('ライブカードを配置してください');return}
