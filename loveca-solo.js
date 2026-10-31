@@ -84,19 +84,30 @@ function cheerAndJudge(){
  write(state);render();showCheerJudge();
 }
 function showCheerJudge(){
- const cheer=state.cheer||[],hearts=Object.fromEntries(HEART_KEYS.map(k=>[k,0]));
- for(const id of [...state.stageSlots.filter(Boolean),...cheer]){
-  const c=card(id);for(const k of HEART_KEYS)hearts[k]+=Number(c?.hearts?.[k])||0;
+ const cheer=state.cheer||[],keys=['pink','red','yellow','green','blue','purple'],owned=Object.fromEntries([...keys,'colorless','all'].map(k=>[k,0]));
+ const stage=state.stageSlots.filter(Boolean).map(card).filter(Boolean);
+ for(const c of stage)for(const k of [...keys,'colorless'])owned[k]+=Number(c.hearts?.[k])||0;
+ const labels={桃:'pink',赤:'red',黄:'yellow',緑:'green',青:'blue',紫:'purple',ALL:'all'};
+ let note=0,unknown=0;
+ for(const id of cheer){
+  const c=card(id);if(!c){unknown++;continue}
+  const raw=String(c.bladeHeart||'');
+  const matches=[...raw.matchAll(/(ALL|桃|赤|黄|緑|青|紫)\\s*(\\d+)/g)];
+  if(matches.length){for(const m of matches)owned[labels[m[1]]]+=Number(m[2])}
+  else if(raw.includes('[全ブレード]'))owned.all++;
+  else if(Array.isArray(c.bladeHeartTypes)&&c.bladeHeartTypes.length){for(const k of c.bladeHeartTypes)if(k in owned)owned[k]++}
+  else if(c.hasBladeHeart&&c.specialHeart!=='note'&&c.specialHeart!=='スコア'&&c.specialHeart!=='draw')unknown++;
+  if(['note','スコア'].includes(c.specialHeart)||c.bladeHeartTypes?.includes('note'))note++;
  }
- const note=cheer.filter(id=>['note','スコア'].includes(card(id)?.specialHeart)).length;
- const targets=state.liveSlots.map((id,i)=>({id,i,c:card(id)})).filter(x=>x.id);
- const lines=targets.map(({id,i,c})=>{
-  const req=c?.hearts||{},required=HEART_KEYS.filter(k=>(Number(req[k])||0)>0);
-  const ok=required.every(k=>(Number(req[k])||0)<=hearts[k]);
-  return '<div style="padding:8px;border-bottom:1px solid #ddd"><strong>ライブ'+(i+1)+'：'+esc(c?.name||id)+'</strong><p>'+(ok?'ハート条件達成':'ハート不足')+'</p><small>'+required.map(k=>k+': '+hearts[k]+'/'+req[k]).join(' ／ ')+'</small></div>';
- }).join('');
+ const lives=state.liveSlots.filter(Boolean).map(card).filter(Boolean),required=Object.fromEntries([...keys,'colorless'].map(k=>[k,0]));
+ for(const c of lives)for(const k of Object.keys(required))required[k]+=Number(c.hearts?.[k])||0;
+ let deficit=0,spare=0;
+ for(const k of keys){const delta=required[k]-owned[k];deficit+=Math.max(0,delta);spare+=Math.max(0,-delta)}
+ const grayMissing=Math.max(0,required.colorless-owned.colorless-spare);
+ const missing=Math.max(0,deficit+grayMissing-owned.all);
+ const canMeet=missing===0;
  const d=$('#loveSoloCardDialog');
- $('#loveSoloCardDetail').innerHTML='<h3>エール・ライブ成功判定</h3><p>公開したエール：'+cheer.length+'枚 ／ スコア加算（音符）：+'+note+'</p><div class="solo-discard-list">'+cheer.map(id=>{const c=card(id);return '<div>'+(c?.imageUrl?'<img src="'+esc(c.imageUrl)+'" alt="">':'')+'<span>'+esc(c?.name||id)+'</span></div>'}).join('')+'</div><p>盤面＋エールのハート：'+HEART_KEYS.map(k=>k+' '+hearts[k]).join(' ／ ')+'</p>'+lines+'<p class="hint">ハート条件の参考判定です。ALL・特殊効果・ライブごとの配分、追加スコア条件は自動判定対象外です。</p><button type="button" data-solo-cheer-discard>エールを控え室へ</button>';
+ $('#loveSoloCardDetail').innerHTML='<h3>エール・ライブ判定（参考）</h3><p>エール：'+cheer.length+'枚 ／ 音符によるスコア：+'+note+'</p><div class="solo-discard-list">'+cheer.map(id=>{const c=card(id);return '<div>'+(c?.imageUrl?'<img src="'+esc(c.imageUrl)+'" alt="">':'')+'<span>'+esc(c?.name||id)+'</span></div>'}).join('')+'</div><h4>盤面のハート＋エールのブレードハート</h4><p>'+Object.keys(owned).map(k=>esc(k)+' '+owned[k]).join(' ／ ')+'</p><h4>ライブ合計必要ハート</h4><p>'+Object.keys(required).map(k=>esc(k)+' '+required[k]).join(' ／ ')+'</p><strong>'+(canMeet?'ハート数の条件を満たす可能性があります':'ハート不足：残り'+missing+'個')+'</strong><p class="hint">複数ライブの必要数を合算し、無色は余剰色で代用、ALLは不足分に割り当てます。カード効果、ブレード数によるエール枚数の自動決定、個別の追加条件は未対応。'+(unknown?'識別できないブレードハート：'+unknown+'枚。':'')+'確定判定ではありません。</p><button type="button" data-solo-cheer-discard>エールを控え室へ</button>';
  d.showModal();
 }
 function simpleDrawEffect(text){
